@@ -1,6 +1,6 @@
-import logo from "figma:asset/752cb5fa34e556225adeb99828b6f5740fe05a54.png";
 import { useLanguage } from "./LanguageContext";
 import { Button } from "./ui/button";
+import { Plane } from "lucide-react";
 
 export function Header() {
   const { t, language, setLanguage } = useLanguage();
@@ -26,10 +26,9 @@ export function Header() {
             className="flex items-center transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#ffd700] rounded-lg"
             aria-label="Return to homepage"
           >
-            <img
-              src={logo}
-              alt="SkyParking Logo"
+            <Plane
               className="h-14 w-auto"
+              color="#ffd700"
             />
           </button>
 

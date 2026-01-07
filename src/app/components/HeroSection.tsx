@@ -2,7 +2,6 @@ import { Phone, Plane } from "lucide-react";
 import { Button } from "./ui/button";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { useLanguage } from "./LanguageContext";
-import logoImg from "figma:asset/3ae78f7daa8bc520f2c463f105daa481cacca74b.png";
 
 export function HeroSection() {
   const { t, language } = useLanguage();
@@ -23,13 +22,12 @@ export function HeroSection() {
       </div>
       
       <div className="relative z-10 text-center text-white px-4 max-w-5xl mx-auto">
-        <div className="flex items-center justify-center -mb-28">
-          <img 
-            src={logoImg} 
-            alt="SkyParking Logo" 
-            className="h-96 md:h-[480px] w-auto object-contain drop-shadow-2xl"
-          />
+        <div className="flex items-center justify-center mb-6">
+          <Plane className="h-16 w-16 text-[#ffd700]" />
         </div>
+        <h1 className="text-5xl md:text-7xl font-bold mb-6 tracking-tight">
+          {t("heroTitle")}
+        </h1>
         <p className="mb-10 text-xl md:text-2xl opacity-90 max-w-3xl mx-auto">
           {t("heroSubtitle")}
         </p>
