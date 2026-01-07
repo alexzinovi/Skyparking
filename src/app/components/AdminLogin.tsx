@@ -81,10 +81,6 @@ export function AdminLogin({ onLogin }: { onLogin: () => void }) {
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Sign In
           </Button>
-
-          <div className="text-sm text-gray-500 text-center mt-4">
-            Default password: <code className="bg-gray-100 px-2 py-1 rounded">skyparking2024</code>
-          </div>
         </form>
       </Card>
     </div>

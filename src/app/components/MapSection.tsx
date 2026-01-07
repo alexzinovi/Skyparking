@@ -12,12 +12,12 @@ export function MapSection() {
   };
 
   return (
-    <section className="py-16 bg-white">
+    <section id="location" className="py-16 bg-white">
       <div className="container mx-auto px-4">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-10">
             <h2 className="mb-4">
-              <MapPin className="inline h-8 w-8 mr-2 text-blue-600" />
+              <MapPin className="inline h-8 w-8 mr-2 text-[#1e90ff]" />
               {t("ourLocation")}
             </h2>
             <p className="text-gray-600">

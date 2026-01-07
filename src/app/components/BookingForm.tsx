@@ -432,7 +432,7 @@ export function BookingForm() {
               </div>
 
               {/* Submit Button */}
-              <Button type="submit" size="lg" className="w-full">
+              <Button type="submit" size="lg" className="w-full bg-[#ffd700] text-[#1a1a2e] hover:bg-[#ffed4e] font-bold">
                 {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <CreditCard className="mr-2 h-5 w-5" />}
                 {t("proceedToPayment")}
               </Button>

@@ -27,7 +27,7 @@ export function ContactForm() {
   };
 
   return (
-    <section className="py-16 bg-gray-50">
+    <section id="contact" className="py-16 bg-gray-50">
       <div className="container mx-auto px-4">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-10">
@@ -98,7 +98,7 @@ export function ContactForm() {
                 )}
               </div>
 
-              <Button type="submit" size="lg" className="w-full">
+              <Button type="submit" size="lg" className="w-full bg-[#ffd700] text-[#1a1a2e] hover:bg-[#ffed4e] font-bold">
                 <MessageSquare className="mr-2 h-5 w-5" />
                 {t("sendInquiry")}
               </Button>

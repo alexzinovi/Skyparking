@@ -1,31 +1,36 @@
-import { Phone } from "lucide-react";
+import { Phone, Plane } from "lucide-react";
 import { Button } from "./ui/button";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { useLanguage } from "./LanguageContext";
+import logoImg from "figma:asset/3ae78f7daa8bc520f2c463f105daa481cacca74b.png";
 
 export function HeroSection() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   
   const handleCallClick = () => {
     window.location.href = "tel:+359888123456";
   };
 
   return (
-    <section className="relative h-[600px] flex items-center justify-center overflow-hidden">
+    <section className="relative h-[700px] flex items-center justify-center overflow-hidden mt-20">
       <div className="absolute inset-0">
         <ImageWithFallback
           src="https://images.unsplash.com/photo-1705926984536-cf641440fd18?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhaXJwb3J0JTIwcGFya2luZyUyMGxvdHxlbnwxfHx8fDE3NjY0MDEyMjR8MA&ixlib=rb-4.1.0&q=80&w=1080"
           alt="Airport parking lot"
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-900/90 to-blue-900/70"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-[#1a1a2e]/95 via-[#1e90ff]/40 to-[#1a1a2e]/95"></div>
       </div>
       
-      <div className="relative z-10 text-center text-white px-4 max-w-4xl mx-auto">
-        <h1 className="mb-6">
-          {t("heroTitle")}
-        </h1>
-        <p className="mb-8 text-xl opacity-90">
+      <div className="relative z-10 text-center text-white px-4 max-w-5xl mx-auto">
+        <div className="flex items-center justify-center -mb-28">
+          <img 
+            src={logoImg} 
+            alt="SkyParking Logo" 
+            className="h-96 md:h-[480px] w-auto object-contain drop-shadow-2xl"
+          />
+        </div>
+        <p className="mb-10 text-xl md:text-2xl opacity-90 max-w-3xl mx-auto">
           {t("heroSubtitle")}
         </p>
         
@@ -33,19 +38,38 @@ export function HeroSection() {
           <Button 
             size="lg" 
             onClick={() => document.getElementById('booking')?.scrollIntoView({ behavior: 'smooth' })}
-            className="bg-white text-blue-900 hover:bg-gray-100"
+            className="bg-[#ffd700] text-[#1a1a2e] hover:bg-[#ffed4e] text-lg px-8 py-6 font-bold shadow-2xl transform hover:scale-105 transition-all"
           >
             {t("bookNow")}
           </Button>
           <Button 
             size="lg" 
             onClick={handleCallClick}
-            variant="outline"
-            className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-blue-900"
+            className="bg-[#ffd700] text-[#1a1a2e] hover:bg-[#ffed4e] text-lg px-8 py-6 font-bold shadow-2xl transform hover:scale-105 transition-all"
           >
             <Phone className="mr-2 h-5 w-5" />
             {t("callButton")}
           </Button>
+        </div>
+
+        {/* Trust badges */}
+        <div className="mt-12 flex flex-wrap justify-center gap-8 text-sm opacity-90">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">🔒</span>
+            <span>{language === "bg" ? "24/7 Охрана" : "24/7 Security"}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">🚐</span>
+            <span>{language === "bg" ? "Безплатен Шатъл" : "Free Shuttle"}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">⭐</span>
+            <span>{language === "bg" ? "5.0 Рейтинг" : "5.0 Rating"}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">💰</span>
+            <span>{language === "bg" ? "Най-Добра Цена" : "Best Price"}</span>
+          </div>
         </div>
       </div>
     </section>

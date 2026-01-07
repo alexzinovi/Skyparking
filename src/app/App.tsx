@@ -3,10 +3,11 @@ import { Features } from "./components/Features";
 import { BookingForm } from "./components/BookingForm";
 import { ContactForm } from "./components/ContactForm";
 import { MapSection } from "./components/MapSection";
-import { LanguageSwitcher } from "./components/LanguageSwitcher";
 import { LanguageProvider, useLanguage } from "./components/LanguageContext";
 import { AdminLogin } from "./components/AdminLogin";
 import { AdminDashboard } from "./components/AdminDashboard";
+import { Header } from "./components/Header";
+import { Reviews } from "./components/Reviews";
 import { Toaster } from "./components/ui/sonner";
 import { useState, useEffect } from "react";
 
@@ -60,7 +61,8 @@ function MainSite() {
 
   return (
     <div>
-      <LanguageSwitcher />
+      {/* Header */}
+      <Header />
       
       {/* Hero Section */}
       <HeroSection />
@@ -71,6 +73,9 @@ function MainSite() {
       {/* Booking Form */}
       <BookingForm />
 
+      {/* Reviews */}
+      <Reviews />
+
       {/* Contact/Inquiry Form */}
       <ContactForm />
 
@@ -78,20 +83,20 @@ function MainSite() {
       <MapSection />
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-8">
+      <footer className="bg-[#1a1a2e] text-white py-12">
         <div className="container mx-auto px-4 text-center">
-          <h3 className="mb-2">{t("heroTitle")}</h3>
-          <p className="text-gray-400 mb-4">
+          <h3 className="mb-2 text-2xl font-bold">{t("heroTitle")}</h3>
+          <p className="text-gray-300 mb-6">
             {t("footerTagline")}
           </p>
-          <div className="flex flex-col sm:flex-row gap-2 justify-center items-center text-sm text-gray-400">
+          <div className="flex flex-col sm:flex-row gap-2 justify-center items-center text-sm text-gray-300">
             <span>{t("footerLocation")}</span>
             <span className="hidden sm:inline">•</span>
             <span>📞 +359 888 123 456</span>
             <span className="hidden sm:inline">•</span>
             <span>✉️ info@sofiaairportparking.com</span>
           </div>
-          <div className="mt-6 pt-6 border-t border-gray-800 text-sm text-gray-500">
+          <div className="mt-8 pt-8 border-t border-gray-700 text-sm text-gray-400">
             {t("footerRights")}
           </div>
         </div>

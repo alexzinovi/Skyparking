@@ -16,6 +16,13 @@ const translations = {
     bookNow: "Резервирай сега",
     callButton: "Обади се +359 888 123 456",
     
+    // Navigation
+    navFeatures: "Предимства",
+    navBooking: "Резервация",
+    navContact: "Контакти",
+    navLocation: "Локация",
+    callNow: "Обади се",
+    
     // Features
     whyChooseUs: "Защо да изберете нас?",
     whyChooseUsDesc: "Предлагаме най-надеждното и удобно решение за паркиране за пътници от Летище София",
@@ -106,6 +113,13 @@ const translations = {
     heroSubtitle: "Secure, affordable parking just minutes from Sofia Airport. Book now and travel with peace of mind.",
     bookNow: "Book Now",
     callButton: "Call +359 888 123 456",
+    
+    // Navigation
+    navFeatures: "Features",
+    navBooking: "Booking",
+    navContact: "Contact",
+    navLocation: "Location",
+    callNow: "Call Now",
     
     // Features
     whyChooseUs: "Why Choose Us?",
