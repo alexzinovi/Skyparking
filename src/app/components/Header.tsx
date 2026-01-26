@@ -43,30 +43,34 @@ export function Header() {
             >
               {/* Desktop Logo */}
               <img
-                src="https://raw.githubusercontent.com/alexzinovi/Skyparking/main/public/logo-header.png?v=2"
+                src="/logo-header.png"
                 alt="SkyParking Logo"
                 className="h-20 w-auto hidden md:block"
                 onError={(e) => {
-                  // Show text fallback if image fails to load
-                  const fallback = document.createElement('span');
-                  fallback.className = 'text-[#ffd700] text-3xl font-bold';
-                  fallback.textContent = 'SkyParking';
-                  e.currentTarget.parentElement?.appendChild(fallback);
                   e.currentTarget.style.display = 'none';
+                  const parent = e.currentTarget.parentElement;
+                  if (parent && !parent.querySelector('.logo-fallback')) {
+                    const fallback = document.createElement('span');
+                    fallback.className = 'text-[#ffd700] text-3xl font-bold logo-fallback';
+                    fallback.textContent = 'SkyParking';
+                    parent.appendChild(fallback);
+                  }
                 }}
               />
               {/* Mobile Logo */}
               <img
-                src="https://raw.githubusercontent.com/alexzinovi/Skyparking/main/public/logo-header-mobile-white.png"
+                src="/logo-header-mobile-white.png"
                 alt="SkyParking Logo"
                 className="w-80 h-auto md:hidden max-w-none"
                 onError={(e) => {
-                  // Show text fallback if image fails to load
-                  const fallback = document.createElement('span');
-                  fallback.className = 'text-[#ffd700] text-2xl font-bold';
-                  fallback.textContent = 'SkyParking';
-                  e.currentTarget.parentElement?.appendChild(fallback);
                   e.currentTarget.style.display = 'none';
+                  const parent = e.currentTarget.parentElement;
+                  if (parent && !parent.querySelector('.logo-fallback')) {
+                    const fallback = document.createElement('span');
+                    fallback.className = 'text-[#ffd700] text-2xl font-bold logo-fallback';
+                    fallback.textContent = 'SkyParking';
+                    parent.appendChild(fallback);
+                  }
                 }}
               />
             </button>
