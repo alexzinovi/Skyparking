@@ -38,43 +38,49 @@ export function Header() {
             {/* Logo - Center */}
             <button
               onClick={handleLogoClick}
-              className="absolute left-1/2 transform -translate-x-1/2 flex items-center transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#ffd700] rounded-lg z-10 px-4 py-2"
+              className="absolute left-1/2 transform -translate-x-1/2 flex items-center transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#ffd700] rounded-lg z-10 overflow-visible"
               aria-label="Return to homepage"
             >
-              <div className="flex items-center gap-3">
-                <img
-                  src="https://raw.githubusercontent.com/alexzinovi/Skyparking/main/public/logo-header.png?v=2"
-                  alt="SkyParking Logo"
-                  className="h-20 w-auto"
-                  onError={(e) => {
-                    // Hide broken image and show text fallback
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-                <span className="text-[#ffd700] text-3xl font-bold">SkyParking</span>
-              </div>
+              {/* Desktop Logo */}
+              <img
+                src="https://raw.githubusercontent.com/alexzinovi/Skyparking/main/public/logo-header.png?v=2"
+                alt="SkyParking Logo"
+                className="h-20 w-auto hidden md:block"
+                onError={(e) => {
+                  // Show text fallback if image fails to load
+                  const fallback = document.createElement('span');
+                  fallback.className = 'text-[#ffd700] text-3xl font-bold';
+                  fallback.textContent = 'SkyParking';
+                  e.currentTarget.parentElement?.appendChild(fallback);
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+              {/* Mobile Logo */}
+              <img
+                src="https://raw.githubusercontent.com/alexzinovi/Skyparking/main/public/logo-header-mobile-white.png"
+                alt="SkyParking Logo"
+                className="w-80 h-auto md:hidden max-w-none"
+                onError={(e) => {
+                  // Show text fallback if image fails to load
+                  const fallback = document.createElement('span');
+                  fallback.className = 'text-[#ffd700] text-2xl font-bold';
+                  fallback.textContent = 'SkyParking';
+                  e.currentTarget.parentElement?.appendChild(fallback);
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
             </button>
 
             {/* Right Side - Language & Call Button */}
-            <div className="flex items-center gap-2">
-              <div className="flex gap-1">
-                <Button
-                  variant={language === "bg" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setLanguage("bg")}
-                  className={language === "bg" ? "bg-[#ffd700] text-[#1a1a2e] hover:bg-[#ffed4e] border-[#ffd700] text-xs px-2" : "bg-transparent text-white border-white/30 hover:bg-white/10 hover:border-white text-xs px-2"}
-                >
-                  БГ
-                </Button>
-                <Button
-                  variant={language === "en" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setLanguage("en")}
-                  className={language === "en" ? "bg-[#ffd700] text-[#1a1a2e] hover:bg-[#ffed4e] border-[#ffd700] text-xs px-2" : "bg-transparent text-white border-white/30 hover:bg-white/10 hover:border-white text-xs px-2"}
-                >
-                  EN
-                </Button>
-              </div>
+            <div className="flex items-center gap-2 relative z-20">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setLanguage(language === "bg" ? "en" : "bg")}
+                className="bg-transparent text-white border-white/30 hover:bg-white/10 hover:border-white text-xs px-2 min-w-[2.5rem]"
+              >
+                {language === "bg" ? "EN" : "БГ"}
+              </Button>
               <a
                 href="tel:+359888123456"
                 className="bg-[#ffd700] text-[#1a1a2e] px-3 py-2 md:px-4 md:py-2 rounded-full font-semibold text-sm whitespace-nowrap flex items-center gap-2"
