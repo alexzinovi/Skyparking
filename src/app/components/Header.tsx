@@ -43,7 +43,7 @@ export function Header() {
             >
               <div className="flex items-center gap-3">
                 <img
-                  src="https://raw.githubusercontent.com/alexzinovi/Skyparking/deef8bd39d73f71e2e3e5d56bd15e787d5ea55cb/public/logo-header.png"
+                  src="/logo-header.png"
                   alt="SkyParking Logo"
                   className="h-20 w-auto"
                   onError={(e) => {
