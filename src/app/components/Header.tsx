@@ -1,5 +1,5 @@
-import { useLanguage } from "./LanguageContext";
-import { Button } from "./ui/button";
+import { useLanguage } from "@/app/components/LanguageContext";
+import { Button } from "@/app/components/ui/button";
 import { useState } from "react";
 import { X } from "lucide-react";
 
@@ -38,14 +38,21 @@ export function Header() {
             {/* Logo - Center */}
             <button
               onClick={handleLogoClick}
-              className="absolute left-1/2 transform -translate-x-1/2 flex items-center transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#ffd700] rounded-lg z-10"
+              className="absolute left-1/2 transform -translate-x-1/2 flex items-center transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#ffd700] rounded-lg z-10 px-4 py-2"
               aria-label="Return to homepage"
             >
-              <img
-                src="/logo-header.png"
-                alt="SkyParking Logo"
-                className="h-35 w-auto"
-              />
+              <div className="flex items-center gap-3">
+                <img
+                  src="/logo-header.png"
+                  alt="SkyParking Logo"
+                  className="h-20 w-auto"
+                  onError={(e) => {
+                    // Fallback to text if logo doesn't load (e.g., in Figma Make preview)
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+                <span className="text-[#ffd700] text-3xl font-bold">SkyParking</span>
+              </div>
             </button>
 
             {/* Right Side - Language & Call Button */}
@@ -70,9 +77,10 @@ export function Header() {
               </div>
               <a
                 href="tel:+359888123456"
-                className="bg-[#ffd700] text-[#1a1a2e] px-4 py-2 rounded-full font-semibold text-sm whitespace-nowrap"
+                className="bg-[#ffd700] text-[#1a1a2e] px-3 py-2 md:px-4 md:py-2 rounded-full font-semibold text-sm whitespace-nowrap flex items-center gap-2"
               >
-                📞 {t("callNow")}
+                <span className="text-lg">📞</span>
+                <span className="hidden md:inline">{t("callNow")}</span>
               </a>
             </div>
           </div>

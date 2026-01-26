@@ -1,14 +1,14 @@
-import { HeroSection } from "./components/HeroSection";
-import { Features } from "./components/Features";
-import { BookingForm } from "./components/BookingForm";
-import { ContactForm } from "./components/ContactForm";
-import { MapSection } from "./components/MapSection";
-import { LanguageProvider, useLanguage } from "./components/LanguageContext";
-import { AdminLogin } from "./components/AdminLogin";
-import { AdminDashboard } from "./components/AdminDashboard";
-import { Header } from "./components/Header";
-import { Reviews } from "./components/Reviews";
-import { Toaster } from "./components/ui/sonner";
+import { HeroSection } from "@/app/components/HeroSection";
+import { Features } from "@/app/components/Features";
+import { BookingForm } from "@/app/components/BookingForm";
+import { ContactForm } from "@/app/components/ContactForm";
+import { MapSection } from "@/app/components/MapSection";
+import { LanguageProvider, useLanguage } from "@/app/components/LanguageContext";
+import { AdminLogin } from "@/app/components/AdminLogin";
+import { AdminDashboard } from "@/app/components/AdminDashboard";
+import { Header } from "@/app/components/Header";
+import { Reviews } from "@/app/components/Reviews";
+import { Toaster } from "@/app/components/ui/sonner";
 import { useState, useEffect } from "react";
 
 export default function App() {
