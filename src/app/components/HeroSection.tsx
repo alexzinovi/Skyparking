@@ -58,7 +58,7 @@ export function HeroSection() {
           </div>
           <div className="flex items-center gap-2">
             <span className="text-2xl">🚐</span>
-            <span>{language === "bg" ? "Безплатен Шатъл" : "Free Shuttle"}</span>
+            <span>{language === "bg" ? "безплатен траснфер" : "Free Shuttle"}</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-2xl">⭐</span>
