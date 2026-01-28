@@ -45,7 +45,7 @@ export function Header() {
               <img
                 src="https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/white%20web%20header.png"
                 alt="SkyParking Logo"
-                className="h-20 w-auto hidden md:block"
+                className="h-30 w-auto hidden md:block"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
                   const parent = e.currentTarget.parentElement;
@@ -61,7 +61,7 @@ export function Header() {
               <img
                 src="https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/header%20mobile.png"
                 alt="SkyParking Logo"
-                className="w-80 h-auto md:hidden max-w-none"
+                className="w-48 h-auto md:hidden max-w-none"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
                   const parent = e.currentTarget.parentElement;
