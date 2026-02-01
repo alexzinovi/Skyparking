@@ -4,7 +4,7 @@ import { Card } from "./ui/card";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Button } from "./ui/button";
-import { CalendarIcon, CreditCard, Loader2 } from "lucide-react";
+import { CalendarIcon, CreditCard, Loader2, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "./LanguageContext";
 
@@ -26,6 +26,14 @@ interface BookingFormData {
   licensePlate4?: string;
   licensePlate5?: string;
   passengers: number;
+  needsInvoice: boolean;
+  companyName?: string;
+  companyOwner?: string;
+  taxNumber?: string;
+  isVAT?: boolean;
+  vatNumber?: string;
+  city?: string;
+  address?: string;
 }
 
 export function BookingForm() {
@@ -33,12 +41,16 @@ export function BookingForm() {
   const [totalPrice, setTotalPrice] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [numberOfCars, setNumberOfCars] = useState(1);
+  const [needsInvoice, setNeedsInvoice] = useState(false);
+  const [isVAT, setIsVAT] = useState(false);
+  const [autoVatNumber, setAutoVatNumber] = useState("");
   const { register, handleSubmit, watch, formState: { errors } } = useForm<BookingFormData>();
 
   const arrivalDate = watch("arrivalDate");
   const arrivalTime = watch("arrivalTime");
   const departureDate = watch("departureDate");
   const departureTime = watch("departureTime");
+  const taxNumber = watch("taxNumber");
 
   const calculatePrice = (arrival: string, arrivalT: string, departure: string, departureT: string) => {
     if (!arrival || !departure || !arrivalT || !departureT) return null;
@@ -67,6 +79,20 @@ export function BookingForm() {
     setTotalPrice(price);
   }, [arrivalDate, arrivalTime, departureDate, departureTime, numberOfCars]);
 
+  // Auto-populate VAT number when VAT is checked and tax number exists
+  useEffect(() => {
+    if (isVAT && taxNumber) {
+      const cleanTaxNumber = taxNumber.trim();
+      if (cleanTaxNumber) {
+        setAutoVatNumber(`BG${cleanTaxNumber}`);
+      } else {
+        setAutoVatNumber("");
+      }
+    } else {
+      setAutoVatNumber("");
+    }
+  }, [isVAT, taxNumber]);
+
   const onSubmit = async (data: BookingFormData) => {
     const price = calculatePrice(data.arrivalDate, data.arrivalTime, data.departureDate, data.departureTime);
     
@@ -90,6 +116,7 @@ export function BookingForm() {
           numberOfCars: numberOfCars, // Pass number of cars to backend
           totalPrice: price,
           paymentStatus: "unpaid", // Customer will pay on arrival
+          vatNumber: isVAT ? autoVatNumber : undefined, // Use auto-generated VAT number if VAT is checked
         }),
       });
 
@@ -327,6 +354,166 @@ export function BookingForm() {
                       <p className="text-sm text-red-500">{errors.phone.message}</p>
                     )}
                   </div>
+                </div>
+
+                {/* Invoice Section */}
+                <div className="space-y-4 pt-4 border-t border-gray-200">
+                  <div className="space-y-2">
+                    <Label>{t("needInvoice")}</Label>
+                    <div className="flex gap-4">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          value="yes"
+                          checked={needsInvoice === true}
+                          onChange={() => setNeedsInvoice(true)}
+                          className="w-4 h-4 text-blue-600"
+                        />
+                        <span>{t("yes")}</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          value="no"
+                          checked={needsInvoice === false}
+                          onChange={() => setNeedsInvoice(false)}
+                          className="w-4 h-4 text-blue-600"
+                        />
+                        <span>{t("no")}</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Conditional Invoice Fields */}
+                  {needsInvoice && (
+                    <div className="space-y-4 bg-blue-50 p-4 rounded-lg border border-blue-200">
+                      <h4 className="font-semibold text-blue-900">{t("invoiceDetails")}</h4>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="companyName">{t("companyName")}</Label>
+                        <Input
+                          id="companyName"
+                          {...register("companyName", { required: needsInvoice ? t("companyNameRequired") : false })}
+                          placeholder={t("companyNamePlaceholder")}
+                          className={errors.companyName ? "border-red-500 bg-white" : "bg-white"}
+                        />
+                        {errors.companyName && (
+                          <p className="text-sm text-red-500">{errors.companyName.message}</p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="companyOwner">{t("companyOwner")}</Label>
+                        <Input
+                          id="companyOwner"
+                          {...register("companyOwner", { required: needsInvoice ? t("companyOwnerRequired") : false })}
+                          placeholder={t("companyOwnerPlaceholder")}
+                          className={errors.companyOwner ? "border-red-500 bg-white" : "bg-white"}
+                        />
+                        {errors.companyOwner && (
+                          <p className="text-sm text-red-500">{errors.companyOwner.message}</p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="taxNumber">{t("taxNumber")}</Label>
+                        <Input
+                          id="taxNumber"
+                          {...register("taxNumber", { required: needsInvoice ? t("taxNumberRequired") : false })}
+                          placeholder={t("taxNumberPlaceholder")}
+                          className={errors.taxNumber ? "border-red-500 bg-white" : "bg-white"}
+                        />
+                        {errors.taxNumber && (
+                          <p className="text-sm text-red-500">{errors.taxNumber.message}</p>
+                        )}
+                      </div>
+
+                      {/* Auto-generated VAT Number Display - appears when VAT is checked */}
+                      {isVAT && (
+                        <div className={`space-y-2 p-3 rounded-md border ${autoVatNumber ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
+                          {autoVatNumber ? (
+                            <>
+                              <Label htmlFor="autoVatNumber">{t("vatNumber")}</Label>
+                              <Input
+                                id="autoVatNumber"
+                                value={autoVatNumber}
+                                readOnly
+                                className="bg-white font-semibold text-green-700"
+                              />
+                              <p className="text-xs text-green-600">{t("autoGeneratedVAT")}</p>
+                            </>
+                          ) : (
+                            <p className="text-sm text-yellow-700 flex items-center gap-2">
+                              <span>⚠️</span>
+                              <span>{t("enterTaxNumberFirst")}</span>
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* VAT Checkbox */}
+                      <div className="space-y-3">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={isVAT}
+                            onChange={(e) => setIsVAT(e.target.checked)}
+                            className="w-4 h-4 text-blue-600 rounded"
+                          />
+                          <span className="font-medium">{t("isVAT")}</span>
+                        </label>
+                      </div>
+
+                      {/* City Dropdown with Search */}
+                      <div className="space-y-2">
+                        <Label htmlFor="city">{t("city")}</Label>
+                        <select
+                          id="city"
+                          {...register("city", { required: needsInvoice ? t("cityRequired") : false })}
+                          className={`w-full h-10 px-3 border rounded-md bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 ${errors.city ? "border-red-500" : "border-gray-300"}`}
+                        >
+                          <option value="">{t("selectCity")}</option>
+                          <option value="Sofia">София / Sofia</option>
+                          <option value="Plovdiv">Пловдив / Plovdiv</option>
+                          <option value="Varna">Варна / Varna</option>
+                          <option value="Burgas">Бургас / Burgas</option>
+                          <option value="Ruse">Русе / Ruse</option>
+                          <option value="Stara Zagora">Стара Загора / Stara Zagora</option>
+                          <option value="Pleven">Плевен / Pleven</option>
+                          <option value="Sliven">Сливен / Sliven</option>
+                          <option value="Dobrich">Добрич / Dobrich</option>
+                          <option value="Shumen">Шумен / Shumen</option>
+                          <option value="Pernik">Перник / Pernik</option>
+                          <option value="Haskovo">Хасково / Haskovo</option>
+                          <option value="Yambol">Ямбол / Yambol</option>
+                          <option value="Pazardzhik">Пазарджик / Pazardzhik</option>
+                          <option value="Blagoevgrad">Благоевград / Blagoevgrad</option>
+                          <option value="Veliko Tarnovo">Велико Търново / Veliko Tarnovo</option>
+                          <option value="Vratsa">Враца / Vratsa</option>
+                          <option value="Gabrovo">Габрово / Gabrovo</option>
+                          <option value="Vidin">Видин / Vidin</option>
+                          <option value="Kardzhali">Кърджали / Kardzhali</option>
+                        </select>
+                        {errors.city && (
+                          <p className="text-sm text-red-500">{errors.city.message}</p>
+                        )}
+                      </div>
+
+                      {/* Address */}
+                      <div className="space-y-2">
+                        <Label htmlFor="address">{t("address")}</Label>
+                        <Input
+                          id="address"
+                          {...register("address", { required: needsInvoice ? t("addressRequired") : false })}
+                          placeholder={t("addressPlaceholder")}
+                          className={errors.address ? "border-red-500 bg-white" : "bg-white"}
+                        />
+                        {errors.address && (
+                          <p className="text-sm text-red-500">{errors.address.message}</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* License Plates Section */}

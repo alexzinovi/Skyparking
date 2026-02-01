@@ -37,28 +37,40 @@ export default function App() {
     window.location.href = "/";
   };
 
-  // Wrap everything in LanguageProvider
-  return (
-    <LanguageProvider>
+  // Render admin without LanguageProvider
+  if (isAdmin) {
+    return (
       <div className="min-h-screen">
         <Toaster />
-        {isAdmin ? (
-          isLoggedIn ? (
-            <AdminDashboard onLogout={handleLogout} />
-          ) : (
-            <AdminLogin onLogin={handleLogin} />
-          )
+        {isLoggedIn ? (
+          <AdminDashboard onLogout={handleLogout} />
         ) : (
-          <MainSite />
+          <AdminLogin onLogin={handleLogin} />
         )}
       </div>
+    );
+  }
+
+  // Render main site with LanguageProvider - wrap everything here
+  return (
+    <LanguageProvider>
+      <MainSiteContent />
     </LanguageProvider>
   );
 }
 
-function MainSite() {
+function MainSiteContent() {
   const { t } = useLanguage();
 
+  return (
+    <div className="min-h-screen">
+      <Toaster />
+      <MainSite t={t} />
+    </div>
+  );
+}
+
+function MainSite({ t }: { t: (key: string) => string }) {
   return (
     <div>
       {/* Header */}
