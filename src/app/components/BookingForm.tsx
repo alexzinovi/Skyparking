@@ -105,19 +105,21 @@ export function BookingForm() {
     
     try {
       // Create reservation in database
+      const bookingData = {
+        ...data,
+        totalPrice,
+        numberOfCars,
+        paymentStatus: "unpaid",
+        status: "pending", // New bookings start as pending
+      };
+
       const response = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/bookings`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${publicAnonKey}`,
         },
-        body: JSON.stringify({
-          ...data,
-          numberOfCars: numberOfCars, // Pass number of cars to backend
-          totalPrice: price,
-          paymentStatus: "unpaid", // Customer will pay on arrival
-          vatNumber: isVAT ? autoVatNumber : undefined, // Use auto-generated VAT number if VAT is checked
-        }),
+        body: JSON.stringify(bookingData),
       });
 
       const result = await response.json();
