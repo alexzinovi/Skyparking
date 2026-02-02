@@ -24,10 +24,13 @@ import {
   LogIn,
   History,
   Key,
-  AlertTriangle
+  AlertTriangle,
+  Users,
+  Shield
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "./ui/dialog";
 import { toast } from "sonner";
+import type { User as UserType } from "./LoginScreen";
 
 const projectId = "dbybybmjjeeocoecaewv";
 const publicAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRieWJ5Ym1qamVlb2NvZWNhZXd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODgxMzAsImV4cCI6MjA4MjA2NDEzMH0.fMZ3Yi5gZpE6kBBz-y1x0FKZcGczxSJZ9jL-Zeau340";
@@ -49,6 +52,7 @@ const bg = {
   completedReservations: "Приключени",
   archiveReservations: "Архив",
   allReservations: "Всички",
+  usersTab: "Потребители",
   
   // Booking details
   customer: "Клиент",
@@ -177,6 +181,26 @@ const bg = {
   keysOverflow: "Допълнителен капацитет (с ключове)",
   closeDialog: "Затвори",
   capacityOverrideWarning: "ВНИМАНИЕ: Приемате резервация над лимита на капацитета!",
+  
+  // User Management
+  addUser: "Добави потребител",
+  editUser: "Редактирай потребител",
+  deleteUser: "Изтрий потребител",
+  username: "Потребителско име",
+  password: "Парола",
+  role: "Роля",
+  active: "Активен",
+  inactive: "Неактивен",
+  lastLogin: "Последен вход",
+  createdBy: "Създаден от",
+  roleAdmin: "Администратор",
+  roleManager: "Мениджър",
+  roleOperator: "Оператор",
+  deleteUserConfirm: "Сигурни ли сте, че искате да изтриете този потребител?",
+  userDeleted: "Потребителят е изтрит успешно",
+  userCreated: "Потребителят е създаден успешно",
+  userUpdated: "Потребителят е обновен успешно",
+  resetPassword: "Нова парола (оставете празно за запазване на старата)",
 };
 
 interface StatusChange {
@@ -240,9 +264,15 @@ interface CapacityDay {
   wouldFit: boolean;
 }
 
-type TabType = "new" | "confirmed" | "arrived" | "completed" | "archive" | "all";
+type TabType = "new" | "confirmed" | "arrived" | "completed" | "archive" | "all" | "users";
 
-export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
+interface AdminDashboardProps {
+  onLogout: () => void;
+  currentUser: UserType;
+  permissions: string[];
+}
+
+export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDashboardProps) {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -251,7 +281,7 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [formData, setFormData] = useState<Partial<Booking>>({});
   const [activeTab, setActiveTab] = useState<TabType>("new");
-  const [operatorName, setOperatorName] = useState<string>("");
+  const operatorName = currentUser.fullName; // Use logged-in user's name
 
   // Capacity warning modal state
   const [capacityWarning, setCapacityWarning] = useState<{
@@ -260,17 +290,16 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     dailyBreakdown: CapacityDay[];
   }>({ show: false, booking: null, dailyBreakdown: [] });
 
-  // Get operator name from localStorage or prompt
-  useEffect(() => {
-    const stored = localStorage.getItem("skyparking_operator");
-    if (stored) {
-      setOperatorName(stored);
-    } else {
-      const name = prompt(bg.operatorName) || "Неизвестен";
-      setOperatorName(name);
-      localStorage.setItem("skyparking_operator", name);
-    }
-  }, []);
+  // Live capacity data
+  const [capacityData, setCapacityData] = useState<CapacityDay[]>([]);
+  const [capacityLoading, setCapacityLoading] = useState(false);
+
+  // User management state
+  const [users, setUsers] = useState<UserType[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [editingUser, setEditingUser] = useState<UserType | null>(null);
+  const [isAddingUser, setIsAddingUser] = useState(false);
+  const [userFormData, setUserFormData] = useState<Partial<UserType & { password?: string }>>({});
 
   // Fetch all bookings
   const fetchBookings = async () => {
@@ -299,8 +328,74 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     }
   };
 
+  // Fetch live capacity for next 14 days
+  const fetchCapacity = async () => {
+    try {
+      setCapacityLoading(true);
+      const today = new Date();
+      const endDate = new Date(today);
+      endDate.setDate(endDate.getDate() + 14);
+
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/capacity/preview?` +
+        `arrivalDate=${today.toISOString().split('T')[0]}&` +
+        `departureDate=${endDate.toISOString().split('T')[0]}`,
+        {
+          headers: {
+            "Authorization": `Bearer ${publicAnonKey}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+      if (data.success && data.capacity) {
+        setCapacityData(data.capacity.dailyBreakdown || []);
+      }
+    } catch (error) {
+      console.error("Fetch capacity error:", error);
+    } finally {
+      setCapacityLoading(false);
+    }
+  };
+
+  // Fetch users (admin only)
+  const fetchUsers = async () => {
+    if (!permissions.includes("manage_users")) return;
+    
+    try {
+      setUsersLoading(true);
+      const token = localStorage.getItem("skyparking-token");
+      
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/users`,
+        {
+          headers: {
+            "Authorization": `Bearer ${publicAnonKey}`,
+            "X-Session-Token": token || "",
+          },
+        }
+      );
+
+      const data = await response.json();
+      if (data.success) {
+        setUsers(data.users);
+      } else {
+        toast.error("Грешка при зареждане на потребителите");
+      }
+    } catch (error) {
+      console.error("Fetch users error:", error);
+      toast.error("Грешка при зареждане на потребителите");
+    } finally {
+      setUsersLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchBookings();
+    fetchCapacity();
+    if (permissions.includes("manage_users")) {
+      fetchUsers();
+    }
   }, []);
 
   // Filter bookings by tab and search
@@ -342,6 +437,92 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     setFilteredBookings(filtered);
   }, [searchTerm, bookings, activeTab]);
 
+  // ============= USER MANAGEMENT FUNCTIONS =============
+
+  // Create or update user
+  const saveUser = async () => {
+    const token = localStorage.getItem("skyparking-token");
+    
+    try {
+      const url = editingUser
+        ? `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/users/${editingUser.id}`
+        : `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/users`;
+
+      const method = editingUser ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${publicAnonKey}`,
+          "X-Session-Token": token || "",
+        },
+        body: JSON.stringify(userFormData),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        toast.success(editingUser ? bg.userUpdated : bg.userCreated);
+        setEditingUser(null);
+        setIsAddingUser(false);
+        setUserFormData({});
+        fetchUsers();
+      } else {
+        toast.error(data.message || "Грешка при запазване на потребител");
+      }
+    } catch (error) {
+      console.error("Save user error:", error);
+      toast.error("Грешка при запазване на потребител");
+    }
+  };
+
+  // Delete user
+  const deleteUser = async (userId: string) => {
+    if (!confirm(bg.deleteUserConfirm)) return;
+
+    const token = localStorage.getItem("skyparking-token");
+
+    try {
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/users/${userId}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Authorization": `Bearer ${publicAnonKey}`,
+            "X-Session-Token": token || "",
+          },
+        }
+      );
+
+      const data = await response.json();
+      if (data.success) {
+        toast.success(bg.userDeleted);
+        fetchUsers();
+      } else {
+        toast.error(data.message || "Грешка при изтриване на потребител");
+      }
+    } catch (error) {
+      console.error("Delete user error:", error);
+      toast.error("Грешка при изтриване на потребител");
+    }
+  };
+
+  // Get role badge
+  const getRoleBadge = (role: string) => {
+    switch (role) {
+      case "admin":
+        return <Badge className="bg-red-500 hover:bg-red-600"><Shield className="h-3 w-3 mr-1" />{bg.roleAdmin}</Badge>;
+      case "manager":
+        return <Badge className="bg-blue-500 hover:bg-blue-600"><Users className="h-3 w-3 mr-1" />{bg.roleManager}</Badge>;
+      case "operator":
+        return <Badge className="bg-gray-500 hover:bg-gray-600"><User className="h-3 w-3 mr-1" />{bg.roleOperator}</Badge>;
+      default:
+        return <Badge>{role}</Badge>;
+    }
+  };
+
+  // ============= END USER MANAGEMENT FUNCTIONS =============
+
   // Delete booking
   const deleteBooking = async (id: string) => {
     if (!confirm(bg.deleteConfirm)) return;
@@ -361,6 +542,7 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
       if (data.success) {
         toast.success(bg.bookingDeleted);
         fetchBookings();
+        fetchCapacity();
       } else {
         toast.error(bg.failedToDelete);
       }
@@ -395,6 +577,7 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         setIsAddingNew(false);
         setFormData({});
         fetchBookings();
+        fetchCapacity();
       } else {
         toast.error(data.message || bg.failedToSave);
       }
@@ -427,6 +610,7 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         toast.success(bg.bookingAccepted);
         setCapacityWarning({ show: false, booking: null, dailyBreakdown: [] });
         fetchBookings();
+        fetchCapacity(); // Refresh capacity dashboard
       } else if (data.requiresOverride && data.capacityPreview) {
         // Show capacity warning modal
         setCapacityWarning({
@@ -465,6 +649,7 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
       if (data.success) {
         toast.success(bg.bookingCancelled);
         fetchBookings();
+        fetchCapacity();
       } else {
         toast.error(data.message || bg.failedToSave);
       }
@@ -495,6 +680,7 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
       if (data.success) {
         toast.success(bg.bookingMarkedArrived);
         fetchBookings();
+        fetchCapacity();
       } else {
         toast.error(data.message || bg.failedToSave);
       }
@@ -526,6 +712,7 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
       if (data.success) {
         toast.success(bg.bookingMarkedNoShow);
         fetchBookings();
+        fetchCapacity();
       } else {
         toast.error(data.message || bg.failedToSave);
       }
@@ -556,6 +743,7 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
       if (data.success) {
         toast.success(bg.bookingCheckedOut);
         fetchBookings();
+        fetchCapacity();
       } else {
         toast.error(data.message || bg.failedToSave);
       }
@@ -667,7 +855,10 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-bold">{bg.dashboardTitle}</h1>
-              <p className="text-sm text-gray-500">Оператор: {operatorName}</p>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-sm text-gray-500">{currentUser.fullName}</p>
+                {getRoleBadge(currentUser.role)}
+              </div>
             </div>
             <Button onClick={onLogout} variant="outline">
               <LogOut className="mr-2 h-4 w-4" />
@@ -741,29 +932,222 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             >
               {bg.allReservations} ({counts.all})
             </button>
+            {permissions.includes("manage_users") && (
+              <button
+                onClick={() => setActiveTab("users")}
+                className={`px-4 py-3 font-medium text-sm whitespace-nowrap border-b-2 transition-colors ${
+                  activeTab === "users"
+                    ? "border-purple-500 text-purple-600"
+                    : "border-transparent text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                <Users className="inline h-4 w-4 mr-1" />
+                {bg.usersTab} ({users.length})
+              </button>
+            )}
           </div>
         </div>
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        {/* Actions Bar */}
-        <div className="mb-6 flex flex-col sm:flex-row gap-4 justify-between">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder={bg.search}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+        {/* Live Capacity Dashboard */}
+        <Card className="mb-6 p-6 bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold flex items-center gap-2">
+              <Car className="h-5 w-5" />
+              Капацитет на паркинга - Следващи 14 дни
+            </h2>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={fetchCapacity}
+              disabled={capacityLoading}
+            >
+              {capacityLoading ? "Зареждане..." : "Обнови"}
+            </Button>
           </div>
-          <Button onClick={() => { setIsAddingNew(true); setFormData({ paymentStatus: "manual", status: "confirmed" }); }}>
-            <Plus className="mr-2 h-4 w-4" />
-            {bg.addManualBooking}
-          </Button>
-        </div>
 
-        {/* Bookings List */}
+          {capacityLoading ? (
+            <div className="text-center py-4 text-gray-500">Зареждане на капацитет...</div>
+          ) : capacityData.length === 0 ? (
+            <div className="text-center py-4 text-gray-500">Няма данни за капацитет</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-white/50">
+                  <tr>
+                    <th className="text-left p-3 font-semibold border-b-2">{bg.date}</th>
+                    <th className="text-center p-3 font-semibold border-b-2">{bg.regularCars}</th>
+                    <th className="text-center p-3 font-semibold border-b-2">{bg.withKeys}</th>
+                    <th className="text-center p-3 font-semibold border-b-2">{bg.total}</th>
+                    <th className="text-center p-3 font-semibold border-b-2">Макс.</th>
+                    <th className="text-left p-3 font-semibold border-b-2">Заетост</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {capacityData.map((day, idx) => {
+                    const regularPercent = (day.nonKeysCount / day.maxSpots) * 100;
+                    const totalPercent = (day.totalCount / day.maxTotal) * 100;
+                    const isHigh = totalPercent >= 80;
+                    const isFull = totalPercent >= 100;
+                    const isOverRegular = day.isOverNonKeysLimit;
+
+                    return (
+                      <tr key={idx} className={`border-b ${isFull ? 'bg-red-100' : isHigh ? 'bg-yellow-50' : 'bg-white'}`}>
+                        <td className="p-3 font-medium">
+                          {new Date(day.date).toLocaleDateString('bg-BG', { weekday: 'short', month: 'short', day: 'numeric' })}
+                        </td>
+                        <td className="text-center p-3">
+                          <span className={isOverRegular ? 'text-red-600 font-bold' : ''}>
+                            {day.nonKeysCount}/{day.maxSpots}
+                            {isOverRegular && ' ⚠'}
+                          </span>
+                        </td>
+                        <td className="text-center p-3 text-purple-700 font-medium">
+                          {day.keysCount}
+                        </td>
+                        <td className="text-center p-3 font-bold">
+                          {day.totalCount}/{day.maxTotal}
+                        </td>
+                        <td className="text-center p-3 text-gray-600">
+                          {day.maxTotal}
+                        </td>
+                        <td className="p-3">
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 bg-gray-200 rounded-full h-6 overflow-hidden">
+                              <div 
+                                className={`h-full transition-all ${
+                                  isFull ? 'bg-red-500' : 
+                                  isHigh ? 'bg-yellow-500' : 
+                                  'bg-green-500'
+                                }`}
+                                style={{ width: `${Math.min(totalPercent, 100)}%` }}
+                              />
+                            </div>
+                            <span className={`text-xs font-semibold w-12 text-right ${
+                              isFull ? 'text-red-600' : 
+                              isHigh ? 'text-yellow-700' : 
+                              'text-green-600'
+                            }`}>
+                              {totalPercent.toFixed(0)}%
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <div className="mt-4 pt-4 border-t flex items-center gap-6 text-xs text-gray-600">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-green-500 rounded"></div>
+              <span>&lt; 80% - Свободно</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-yellow-500 rounded"></div>
+              <span>80-99% - Почти пълно</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-red-500 rounded"></div>
+              <span>≥100% - Пълно</span>
+            </div>
+            <div className="ml-auto text-purple-700 font-medium">
+              <Key className="h-3 w-3 inline mr-1" />
+              Лилаво = Коли с ключове (могат да се преместват)
+            </div>
+          </div>
+        </Card>
+
+        {/* Content - Bookings or Users */}
+        {activeTab === "users" ? (
+          /* ========== USERS TAB ========== */
+          <>
+            {/* Users Actions Bar */}
+            <div className="mb-6 flex justify-end">
+              <Button onClick={() => { setIsAddingUser(true); setUserFormData({ role: "operator", isActive: true }); }}>
+                <Plus className="mr-2 h-4 w-4" />
+                {bg.addUser}
+              </Button>
+            </div>
+
+            {/* Users List */}
+            {usersLoading ? (
+              <div className="text-center py-12">Зареждане на потребители...</div>
+            ) : users.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">Няма потребители</div>
+            ) : (
+              <div className="grid gap-4">
+                {users.map((user) => (
+                  <Card key={user.id} className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="text-lg font-semibold">{user.fullName}</h3>
+                          {getRoleBadge(user.role)}
+                          {!user.isActive && <Badge variant="outline" className="bg-gray-100">Неактивен</Badge>}
+                          {user.id === currentUser.id && <Badge variant="outline" className="bg-green-100 text-green-700">Вие</Badge>}
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-gray-600">
+                          <div><strong>{bg.username}:</strong> {user.username}</div>
+                          <div><strong>{bg.email}:</strong> {user.email}</div>
+                          {user.lastLogin && <div><strong>{bg.lastLogin}:</strong> {new Date(user.lastLogin).toLocaleString('bg-BG')}</div>}
+                        </div>
+                        <div className="text-xs text-gray-400 mt-2">
+                          {bg.created}: {new Date(user.createdAt).toLocaleString('bg-BG')}
+                          {user.createdBy && ` • ${bg.createdBy}: ${user.createdBy}`}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setEditingUser(user);
+                            setUserFormData({ ...user, password: undefined });
+                          }}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        {user.id !== currentUser.id && (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => deleteUser(user.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </>
+        ) : (
+          /* ========== BOOKINGS TABS ========== */
+          <>
+            {/* Actions Bar */}
+            <div className="mb-6 flex flex-col sm:flex-row gap-4 justify-between">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder={bg.search}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Button onClick={() => { setIsAddingNew(true); setFormData({ paymentStatus: "manual", status: "confirmed" }); }}>
+                <Plus className="mr-2 h-4 w-4" />
+                {bg.addManualBooking}
+              </Button>
+            </div>
+
+            {/* Bookings List */}
         {isLoading ? (
           <div className="text-center py-12">{bg.loadingBookings}</div>
         ) : filteredBookings.length === 0 ? (
@@ -857,24 +1241,28 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                         </Button>
                       )}
                       
-                      {/* Edit and Delete always available */}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setEditingBooking(booking);
-                          setFormData(booking);
-                        }}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => deleteBooking(booking.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {/* Edit and Delete based on permissions */}
+                      {permissions.includes("edit_bookings") && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setEditingBooking(booking);
+                            setFormData(booking);
+                          }}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {permissions.includes("delete_bookings") && (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => deleteBooking(booking.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </div>
 
@@ -1008,9 +1396,11 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             ))}
           </div>
         )}
+          </>
+        )}
       </div>
 
-      {/* Edit/Add Dialog */}
+      {/* Edit/Add Booking Dialog */}
       <Dialog open={editingBooking !== null || isAddingNew} onOpenChange={(open) => {
         if (!open) {
           setEditingBooking(null);
@@ -1330,6 +1720,102 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             </Button>
             <Button onClick={saveBooking}>
               {editingBooking ? bg.update : bg.create}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit/Add User Dialog */}
+      <Dialog open={editingUser !== null || isAddingUser} onOpenChange={(open) => {
+        if (!open) {
+          setEditingUser(null);
+          setIsAddingUser(false);
+          setUserFormData({});
+        }
+      }}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>{editingUser ? bg.editUser : bg.addUser}</DialogTitle>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="fullName">{bg.fullName}</Label>
+                <Input
+                  id="fullName"
+                  value={userFormData.fullName || ""}
+                  onChange={(e) => setUserFormData({ ...userFormData, fullName: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="username">{bg.username}</Label>
+                <Input
+                  id="username"
+                  value={userFormData.username || ""}
+                  onChange={(e) => setUserFormData({ ...userFormData, username: e.target.value })}
+                  disabled={!!editingUser} // Can't change username
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="email">{bg.email}</Label>
+              <Input
+                id="email"
+                type="email"
+                value={userFormData.email || ""}
+                onChange={(e) => setUserFormData({ ...userFormData, email: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="password">{editingUser ? bg.resetPassword : bg.password}</Label>
+              <Input
+                id="password"
+                type="password"
+                value={userFormData.password || ""}
+                onChange={(e) => setUserFormData({ ...userFormData, password: e.target.value })}
+                placeholder={editingUser ? "Оставете празно за запазване на старата парола" : ""}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="role">{bg.role}</Label>
+              <select
+                id="role"
+                className="w-full h-10 px-3 border rounded-md"
+                value={userFormData.role || "operator"}
+                onChange={(e) => setUserFormData({ ...userFormData, role: e.target.value as any })}
+              >
+                <option value="operator">{bg.roleOperator}</option>
+                <option value="manager">{bg.roleManager}</option>
+                <option value="admin">{bg.roleAdmin}</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="isActive"
+                checked={userFormData.isActive !== false}
+                onChange={(e) => setUserFormData({ ...userFormData, isActive: e.target.checked })}
+                className="w-4 h-4"
+              />
+              <Label htmlFor="isActive" className="cursor-pointer">{bg.active}</Label>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setEditingUser(null);
+              setIsAddingUser(false);
+              setUserFormData({});
+            }}>
+              {bg.cancel}
+            </Button>
+            <Button onClick={saveUser}>
+              {editingUser ? bg.update : bg.create}
             </Button>
           </DialogFooter>
         </DialogContent>

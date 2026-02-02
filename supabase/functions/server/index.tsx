@@ -2,6 +2,7 @@ import { Hono } from "npm:hono";
 import { cors } from "npm:hono/cors";
 import { logger } from "npm:hono/logger";
 import * as kv from "./kv_store.tsx";
+import * as users from "./users.tsx";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const app = new Hono();
@@ -46,6 +47,92 @@ function addStatusChange(booking: any, toStatus: string, action: string, operato
   });
   
   return statusHistory;
+}
+
+// Check if two date ranges overlap
+function datesOverlap(start1: string, end1: string, start2: string, end2: string): boolean {
+  const s1 = new Date(start1);
+  const e1 = new Date(end1);
+  const s2 = new Date(start2);
+  const e2 = new Date(end2);
+  
+  return s1 <= e2 && s2 <= e1;
+}
+
+// Find available parking spots for a booking
+async function findAvailableParkingSpots(
+  arrivalDate: string,
+  departureDate: string,
+  numberOfCars: number,
+  carKeys: boolean,
+  excludeBookingId?: string
+): Promise<number[] | null> {
+  try {
+    // Get all bookings
+    const allBookings = await kv.getByPrefix("booking:");
+    
+    // Find overlapping bookings
+    const overlappingBookings = allBookings.filter((b: any) => 
+      b.id !== excludeBookingId &&
+      (b.status === "confirmed" || b.status === "arrived") &&
+      datesOverlap(b.arrivalDate, b.departureDate, arrivalDate, departureDate)
+    );
+    
+    // Collect occupied spots
+    const occupiedSpots = new Set<number>();
+    overlappingBookings.forEach((b: any) => {
+      if (b.parkingSpots && Array.isArray(b.parkingSpots)) {
+        b.parkingSpots.forEach((spot: number) => occupiedSpots.add(spot));
+      }
+    });
+    
+    // Find available spots
+    const maxCapacity = carKeys ? MAX_TOTAL_SPOTS : MAX_SPOTS;
+    const availableSpots: number[] = [];
+    
+    for (let i = 1; i <= maxCapacity; i++) {
+      if (!occupiedSpots.has(i)) {
+        availableSpots.push(i);
+      }
+    }
+    
+    // Check if we have enough spots
+    if (availableSpots.length < numberOfCars) {
+      return null; // Not enough spots available
+    }
+    
+    // Try to find consecutive spots for multiple cars
+    const assignedSpots: number[] = [];
+    
+    if (numberOfCars > 1) {
+      // Try to find consecutive spots
+      for (let i = 0; i <= availableSpots.length - numberOfCars; i++) {
+        let consecutive = true;
+        for (let j = 0; j < numberOfCars - 1; j++) {
+          if (availableSpots[i + j + 1] !== availableSpots[i + j] + 1) {
+            consecutive = false;
+            break;
+          }
+        }
+        if (consecutive) {
+          for (let j = 0; j < numberOfCars; j++) {
+            assignedSpots.push(availableSpots[i + j]);
+          }
+          return assignedSpots;
+        }
+      }
+    }
+    
+    // If consecutive not found or only 1 car, assign first available spots
+    for (let i = 0; i < numberOfCars && i < availableSpots.length; i++) {
+      assignedSpots.push(availableSpots[i]);
+    }
+    
+    return assignedSpots;
+  } catch (error) {
+    console.log("Error finding parking spots:", error);
+    return null;
+  }
 }
 
 // Get all calendar days between two dates (inclusive)
@@ -169,7 +256,7 @@ app.use(
   "/*",
   cors({
     origin: "*",
-    allowHeaders: ["Content-Type", "Authorization"],
+    allowHeaders: ["Content-Type", "Authorization", "X-Session-Token"],
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     exposeHeaders: ["Content-Length"],
     maxAge: 600,
@@ -221,9 +308,30 @@ app.post("/make-server-47a4914e/bookings", async (c) => {
       id: bookingId,
       createdAt: new Date().toISOString(),
       paymentStatus: booking.paymentStatus || "pending",
-      status: "new",
+      status: booking.status || "new", // Use provided status, default to "new"
       statusHistory: []
     };
+    
+    // If booking is created as "confirmed" (manual booking), assign parking spots immediately
+    if (bookingData.status === "confirmed") {
+      const numberOfCars = bookingData.numberOfCars || 1;
+      const parkingSpots = await findAvailableParkingSpots(
+        bookingData.arrivalDate,
+        bookingData.departureDate,
+        numberOfCars,
+        bookingData.carKeys || false,
+        bookingId
+      );
+      
+      if (!parkingSpots) {
+        return c.json({
+          success: false,
+          message: "No parking spots available for the requested period"
+        }, 400);
+      }
+      
+      bookingData.parkingSpots = parkingSpots;
+    }
     
     await kv.set(bookingId, bookingData);
     
@@ -284,6 +392,34 @@ app.put("/make-server-47a4914e/bookings/:id", async (c) => {
       ...updates,
       updatedAt: new Date().toISOString(),
     };
+    
+    // If confirmed booking and dates/numberOfCars changed, reassign parking spots
+    if (updated.status === "confirmed" || updated.status === "arrived") {
+      const datesChanged = 
+        updates.arrivalDate !== undefined || 
+        updates.departureDate !== undefined ||
+        updates.numberOfCars !== undefined;
+        
+      if (datesChanged) {
+        const numberOfCars = updated.numberOfCars || 1;
+        const parkingSpots = await findAvailableParkingSpots(
+          updated.arrivalDate,
+          updated.departureDate,
+          numberOfCars,
+          updated.carKeys || false,
+          id
+        );
+        
+        if (!parkingSpots) {
+          return c.json({
+            success: false,
+            message: "No parking spots available for the updated dates/car count"
+          }, 400);
+        }
+        
+        updated.parkingSpots = parkingSpots;
+      }
+    }
     
     await kv.set(id, updated);
     
@@ -487,6 +623,23 @@ app.put("/make-server-47a4914e/bookings/:id/accept", async (c) => {
       }
     }
     
+    // Assign parking spots
+    const numberOfCars = booking.numberOfCars || 1;
+    const parkingSpots = await findAvailableParkingSpots(
+      booking.arrivalDate,
+      booking.departureDate,
+      numberOfCars,
+      booking.carKeys || false,
+      id
+    );
+    
+    if (!parkingSpots) {
+      return c.json({
+        success: false,
+        message: "No parking spots available for the requested period"
+      }, 400);
+    }
+    
     // Log capacity override if forced
     const statusHistory = addStatusChange(
       booking, 
@@ -499,6 +652,7 @@ app.put("/make-server-47a4914e/bookings/:id/accept", async (c) => {
     const updated = {
       ...booking,
       status: 'confirmed',
+      parkingSpots,
       statusHistory,
       updatedAt: new Date().toISOString(),
       capacityOverride: force || undefined
@@ -554,7 +708,7 @@ app.put("/make-server-47a4914e/bookings/:id/cancel", async (c) => {
 app.put("/make-server-47a4914e/bookings/:id/mark-arrived", async (c) => {
   try {
     const id = c.req.param("id");
-    const { operator } = await c.req.json();
+    const { operator, paymentMethod, paymentStatus } = await c.req.json();
     
     const booking = await kv.get(id);
     if (!booking) {
@@ -574,6 +728,9 @@ app.put("/make-server-47a4914e/bookings/:id/mark-arrived", async (c) => {
       ...booking,
       status: 'arrived',
       arrivedAt: new Date().toISOString(),
+      paymentMethod: paymentMethod || booking.paymentMethod, // 'cash', 'card', 'pay-on-leave'
+      paymentStatus: paymentStatus || booking.paymentStatus, // 'pending', 'paid'
+      paidAt: (paymentStatus === 'paid' && !booking.paidAt) ? new Date().toISOString() : booking.paidAt,
       statusHistory,
       updatedAt: new Date().toISOString(),
     };
@@ -628,7 +785,7 @@ app.put("/make-server-47a4914e/bookings/:id/mark-no-show", async (c) => {
 app.put("/make-server-47a4914e/bookings/:id/checkout", async (c) => {
   try {
     const id = c.req.param("id");
-    const { operator } = await c.req.json();
+    const { operator, paymentMethod, finalPrice } = await c.req.json();
     
     const booking = await kv.get(id);
     if (!booking) {
@@ -644,10 +801,17 @@ app.put("/make-server-47a4914e/bookings/:id/checkout", async (c) => {
     
     const statusHistory = addStatusChange(booking, 'checked-out', 'checkout', operator || 'system');
     
+    // Handle payment on departure if applicable
+    const shouldUpdatePayment = booking.paymentMethod === 'pay-on-leave' && paymentMethod;
+    
     const updated = {
       ...booking,
       status: 'checked-out',
       checkedOutAt: new Date().toISOString(),
+      paymentMethod: shouldUpdatePayment ? paymentMethod : booking.paymentMethod,
+      paymentStatus: shouldUpdatePayment ? 'paid' : booking.paymentStatus,
+      paidAt: shouldUpdatePayment ? new Date().toISOString() : booking.paidAt,
+      finalPrice: finalPrice || booking.totalPrice, // Allow price adjustment at checkout
       statusHistory,
       updatedAt: new Date().toISOString(),
     };
@@ -658,6 +822,186 @@ app.put("/make-server-47a4914e/bookings/:id/checkout", async (c) => {
   } catch (error) {
     console.log("Checkout error:", error);
     return c.json({ success: false, message: "Failed to checkout" }, 500);
+  }
+});
+
+// ============= USER MANAGEMENT ENDPOINTS =============
+
+// Ensure admin user exists on startup
+await users.ensureAdminUser();
+
+// User login endpoint
+app.post("/make-server-47a4914e/auth/login", async (c) => {
+  try {
+    const { username, password } = await c.req.json();
+    
+    const user = await users.authenticateUser(username, password);
+    if (!user) {
+      return c.json({ success: false, message: "Невалидно потребителско име или парола" }, 401);
+    }
+    
+    const token = users.createSessionToken(user);
+    
+    // Return user without password hash
+    const { passwordHash, ...userWithoutPassword } = user;
+    
+    return c.json({ 
+      success: true, 
+      user: userWithoutPassword,
+      token,
+      permissions: users.ROLES[user.role].permissions
+    });
+  } catch (error) {
+    console.log("Login error:", error);
+    return c.json({ success: false, message: "Грешка при вход" }, 500);
+  }
+});
+
+// Verify session token
+app.get("/make-server-47a4914e/auth/verify", async (c) => {
+  try {
+    const authHeader = c.req.header("Authorization");
+    const sessionToken = c.req.header("X-Session-Token");
+    const token = sessionToken || (authHeader ? authHeader.replace("Bearer ", "") : "");
+    
+    if (!token) {
+      return c.json({ success: false, message: "No session token" }, 401);
+    }
+    
+    const user = await users.verifySessionToken(token);
+    
+    if (!user) {
+      return c.json({ success: false, message: "Invalid or expired token" }, 401);
+    }
+    
+    const { passwordHash, ...userWithoutPassword } = user;
+    
+    return c.json({ 
+      success: true, 
+      user: userWithoutPassword,
+      permissions: users.ROLES[user.role].permissions
+    });
+  } catch (error) {
+    console.log("Verify token error:", error);
+    return c.json({ success: false, message: "Token verification error" }, 500);
+  }
+});
+
+// Get all users (admin only)
+app.get("/make-server-47a4914e/users", async (c) => {
+  try {
+    const sessionToken = c.req.header("X-Session-Token");
+    if (!sessionToken) {
+      return c.json({ success: false, message: "Unauthorized" }, 401);
+    }
+    
+    const currentUser = await users.verifySessionToken(sessionToken);
+    
+    if (!currentUser || !users.hasPermission(currentUser, "manage_users")) {
+      return c.json({ success: false, message: "Insufficient permissions" }, 403);
+    }
+    
+    const allUsers = await users.getAllUsers();
+    
+    // Remove password hashes
+    const safeUsers = allUsers.map(({ passwordHash, ...user }) => user);
+    
+    return c.json({ success: true, users: safeUsers });
+  } catch (error) {
+    console.log("Get users error:", error);
+    return c.json({ success: false, message: "Failed to fetch users" }, 500);
+  }
+});
+
+// Create user (admin only)
+app.post("/make-server-47a4914e/users", async (c) => {
+  try {
+    const sessionToken = c.req.header("X-Session-Token");
+    if (!sessionToken) {
+      return c.json({ success: false, message: "Unauthorized" }, 401);
+    }
+    
+    const currentUser = await users.verifySessionToken(sessionToken);
+    
+    if (!currentUser || !users.hasPermission(currentUser, "manage_users")) {
+      return c.json({ success: false, message: "Insufficient permissions" }, 403);
+    }
+    
+    const userData = await c.req.json();
+    const result = await users.createUser(userData, currentUser.fullName);
+    
+    if (!result.success) {
+      return c.json(result, 400);
+    }
+    
+    // Remove password hash
+    const { passwordHash, ...safeUser } = result.user!;
+    
+    return c.json({ success: true, user: safeUser });
+  } catch (error) {
+    console.log("Create user error:", error);
+    return c.json({ success: false, message: "Failed to create user" }, 500);
+  }
+});
+
+// Update user (admin only)
+app.put("/make-server-47a4914e/users/:id", async (c) => {
+  try {
+    const sessionToken = c.req.header("X-Session-Token");
+    if (!sessionToken) {
+      return c.json({ success: false, message: "Unauthorized" }, 401);
+    }
+    
+    const currentUser = await users.verifySessionToken(sessionToken);
+    
+    if (!currentUser || !users.hasPermission(currentUser, "manage_users")) {
+      return c.json({ success: false, message: "Insufficient permissions" }, 403);
+    }
+    
+    const userId = c.req.param("id");
+    const updates = await c.req.json();
+    
+    const result = await users.updateUser(userId, updates);
+    
+    if (!result.success) {
+      return c.json(result, 400);
+    }
+    
+    // Remove password hash
+    const { passwordHash, ...safeUser } = result.user!;
+    
+    return c.json({ success: true, user: safeUser });
+  } catch (error) {
+    console.log("Update user error:", error);
+    return c.json({ success: false, message: "Failed to update user" }, 500);
+  }
+});
+
+// Delete user (admin only)
+app.delete("/make-server-47a4914e/users/:id", async (c) => {
+  try {
+    const sessionToken = c.req.header("X-Session-Token");
+    if (!sessionToken) {
+      return c.json({ success: false, message: "Unauthorized" }, 401);
+    }
+    
+    const currentUser = await users.verifySessionToken(sessionToken);
+    
+    if (!currentUser || !users.hasPermission(currentUser, "manage_users")) {
+      return c.json({ success: false, message: "Insufficient permissions" }, 403);
+    }
+    
+    const userId = c.req.param("id");
+    const result = await users.deleteUser(userId);
+    
+    if (!result.success) {
+      return c.json(result, 400);
+    }
+    
+    return c.json({ success: true });
+  } catch (error) {
+    console.log("Delete user error:", error);
+    return c.json({ success: false, message: "Failed to delete user" }, 500);
   }
 });
 
