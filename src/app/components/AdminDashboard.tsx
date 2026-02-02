@@ -227,6 +227,19 @@ interface Booking {
   capacityOverride?: boolean;
 }
 
+interface CapacityDay {
+  date: string;
+  nonKeysCount: number;
+  keysCount: number;
+  totalCount: number;
+  maxSpots: number;
+  keysOverflowSpots: number;
+  maxTotal: number;
+  isOverNonKeysLimit: boolean;
+  isOverTotalLimit: boolean;
+  wouldFit: boolean;
+}
+
 type TabType = "new" | "confirmed" | "arrived" | "completed" | "archive" | "all";
 
 export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
@@ -751,6 +764,18 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                     <div className="flex items-center gap-3">
                       {getStatusBadge(booking.status)}
                       {getPaymentStatusBadge(booking.paymentStatus)}
+                      {booking.carKeys && (
+                        <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-300">
+                          <Key className="h-3 w-3 mr-1" />
+                          {bg.carKeysYes}
+                        </Badge>
+                      )}
+                      {booking.capacityOverride && (
+                        <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-300">
+                          <AlertTriangle className="h-3 w-3 mr-1" />
+                          Capacity Override
+                        </Badge>
+                      )}
                     </div>
                     
                     <div className="flex flex-wrap gap-2">
@@ -1116,6 +1141,53 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                 <option value="no-show">{bg.statusNoShow}</option>
                 <option value="cancelled">{bg.statusCancelled}</option>
               </select>
+            </div>
+
+            {/* Car Keys Section */}
+            <div className="border-t pt-4">
+              <div className="mb-4">
+                <Label className="flex items-center gap-2">
+                  <Key className="h-4 w-4" />
+                  {bg.carKeys}
+                </Label>
+                <div className="flex gap-4 mt-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      checked={formData.carKeys === true}
+                      onChange={() => setFormData({ ...formData, carKeys: true })}
+                      className="w-4 h-4"
+                    />
+                    <span>{bg.carKeysYes}</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      checked={formData.carKeys === false || formData.carKeys === undefined}
+                      onChange={() => setFormData({ ...formData, carKeys: false })}
+                      className="w-4 h-4"
+                    />
+                    <span>{bg.carKeysNo}</span>
+                  </label>
+                </div>
+              </div>
+
+              {formData.carKeys && (
+                <div>
+                  <Label htmlFor="carKeysNotes">{bg.carKeysNotes}</Label>
+                  <textarea
+                    id="carKeysNotes"
+                    value={formData.carKeysNotes || ""}
+                    onChange={(e) => setFormData({ ...formData, carKeysNotes: e.target.value })}
+                    placeholder={bg.carKeysNotesPlaceholder}
+                    className="w-full h-20 px-3 py-2 border rounded-md resize-none"
+                    maxLength={500}
+                  />
+                  <div className="text-xs text-gray-500 mt-1">
+                    {(formData.carKeysNotes || "").length}/500
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Invoice Section */}
