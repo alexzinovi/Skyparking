@@ -27,6 +27,8 @@ interface BookingFormData {
   licensePlate5?: string;
   passengers: number;
   needsInvoice: boolean;
+  carKeys: boolean;
+  carKeysNotes?: string;
   companyName?: string;
   companyOwner?: string;
   taxNumber?: string;
@@ -110,7 +112,7 @@ export function BookingForm() {
         totalPrice,
         numberOfCars,
         paymentStatus: "unpaid",
-        status: "pending", // New bookings start as pending
+        status: "new", // All new bookings start as "new"
       };
 
       const response = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/bookings`, {
@@ -618,6 +620,9 @@ export function BookingForm() {
                     <p className="text-sm text-red-500">{errors.passengers.message}</p>
                   )}
                 </div>
+
+                {/* Car Keys Section - Note: This feature is only shown in admin, not customer-facing */}
+                {/* Customer bookings default to carKeys=false, admin can edit later */}
               </div>
 
               {/* Submit Button */}

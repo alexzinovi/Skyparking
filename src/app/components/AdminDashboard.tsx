@@ -13,15 +13,18 @@ import {
   Calendar,
   Car,
   User,
-  Mail,
-  Phone,
   Euro,
   CheckCircle,
   XCircle,
   Clock,
   FileText,
   Check,
-  X
+  X,
+  MapPin,
+  LogIn,
+  History,
+  Key,
+  AlertTriangle
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "./ui/dialog";
 import { toast } from "sonner";
@@ -40,8 +43,11 @@ const bg = {
   addManualBooking: "Добави Ръчна Резервация",
   
   // Tabs
-  newReservations: "Нови резервации",
+  newReservations: "Нови",
   confirmedReservations: "Потвърдени",
+  arrivedReservations: "Пристигнали",
+  completedReservations: "Приключени",
+  archiveReservations: "Архив",
   allReservations: "Всички",
   
   // Booking details
@@ -63,21 +69,31 @@ const bg = {
   address: "Адрес",
   created: "Създадена",
   updated: "Обновена",
+  statusHistory: "История на статусите",
+  
+  // Status names
+  statusNew: "Нова",
+  statusConfirmed: "Потвърдена",
+  statusArrived: "Пристигнал",
+  statusCheckedOut: "Приключена",
+  statusNoShow: "Не се яви",
+  statusCancelled: "Отказана",
   
   // Actions
   accept: "Приеми",
   reject: "Откажи",
+  markArrived: "Пристигна",
+  markNoShow: "Не се яви",
+  checkout: "Приключи",
   edit: "Редактирай",
   delete: "Изтрий",
   
-  // Status
-  pending: "Чакаща",
-  confirmed: "Потвърдена",
-  cancelled: "Отказана",
+  // Payment status
   paid: "Платена",
   unpaid: "Неплатена",
   manual: "Ръчна",
   failed: "Неуспешна",
+  pending: "Чакаща",
   
   // Dialog
   editBooking: "Редактирай резервация",
@@ -104,6 +120,8 @@ const bg = {
   cancel: "Отказ",
   update: "Обнови",
   create: "Създай",
+  reason: "Причина",
+  enterReason: "Въведете причина...",
   
   // Messages
   loadingBookings: "Зареждане на резервации...",
@@ -114,13 +132,61 @@ const bg = {
   bookingUpdated: "Резервацията е обновена",
   bookingCreated: "Резервацията е създадена",
   bookingAccepted: "Резервацията е приета",
-  bookingRejected: "Резервацията е отказана",
+  bookingCancelled: "Резервацията е отказана",
+  bookingMarkedArrived: "Клиентът е маркиран като пристигнал",
+  bookingMarkedNoShow: "Резервацията е маркирана като 'не се яви'",
+  bookingCheckedOut: "Резервацията е приключена",
   failedToFetch: "Неуспешно зареждане на резервациите",
   failedToDelete: "Неуспешно изтриване на резервацията",
   failedToSave: "Неуспешно запазване на резервацията",
   acceptConfirm: "Сигурни ли сте, че искате да приемете тази резервация?",
-  rejectConfirm: "Сигурни ли сте, че искате да откажете тази резервация?",
+  cancelConfirm: "Сигурни ли сте, че искате да откажете тази резервация?",
+  arrivedConfirm: "Сигурни ли сте, че клиентът е пристигнал?",
+  noShowConfirm: "Сигурни ли сте, че клиентът не се е явил?",
+  checkoutConfirm: "Сигурни ли сте, че искате да приключите тази резервация?",
+  operatorName: "Въведете вашето име:",
+  
+  // Audit trail
+  actionAccept: "Приета",
+  actionCancel: "Отказана",
+  actionMarkArrived: "Маркирана като пристигнала",
+  actionMarkNoShow: "Маркирана като 'не се яви'",
+  actionCheckout: "Приключена",
+  system: "система",
+  
+  // Car Keys
+  carKeys: "Ключове от кола",
+  carKeysYes: "ДА - можем да преместим",
+  carKeysNo: "НЕ - няма ключове",
+  carKeysNotes: "Бележки за ключовете",
+  carKeysNotesPlaceholder: "Напр.: Ключове оставени в офиса, паркирана в зона B...",
+  
+  // Capacity
+  capacityWarning: "⚠️ Предупреждение за капацитет",
+  capacityExceeded: "Капацитетът е надвишен",
+  capacityDetails: "Детайли за капацитета",
+  date: "Дата",
+  regularCars: "Обикновени коли",
+  withKeys: "С ключове",
+  total: "Общо",
+  available: "Налични",
+  overCapacity: "Надвишен",
+  forceAccept: "Приеми въпреки това (Админ)",
+  capacityOk: "✓ Капацитетът е достатъчен",
+  maxCapacity: "Макс. капацитет",
+  keysOverflow: "Допълнителен капацитет (с ключове)",
+  closeDialog: "Затвори",
+  capacityOverrideWarning: "ВНИМАНИЕ: Приемате резервация над лимита на капацитета!",
 };
+
+interface StatusChange {
+  from: string;
+  to: string;
+  action: string;
+  timestamp: string;
+  operator: string;
+  reason?: string;
+}
 
 interface Booking {
   id: string;
@@ -140,7 +206,7 @@ interface Booking {
   passengers: number;
   totalPrice: number;
   paymentStatus: string;
-  status?: string; // pending, confirmed, cancelled
+  status: 'new' | 'confirmed' | 'arrived' | 'checked-out' | 'no-show' | 'cancelled';
   createdAt: string;
   updatedAt?: string;
   needsInvoice?: boolean;
@@ -151,9 +217,17 @@ interface Booking {
   vatNumber?: string;
   city?: string;
   address?: string;
+  statusHistory?: StatusChange[];
+  cancellationReason?: string;
+  noShowReason?: string;
+  arrivedAt?: string;
+  checkedOutAt?: string;
+  carKeys?: boolean;
+  carKeysNotes?: string;
+  capacityOverride?: boolean;
 }
 
-type TabType = "new" | "confirmed" | "all";
+type TabType = "new" | "confirmed" | "arrived" | "completed" | "archive" | "all";
 
 export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -164,6 +238,19 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [formData, setFormData] = useState<Partial<Booking>>({});
   const [activeTab, setActiveTab] = useState<TabType>("new");
+  const [operatorName, setOperatorName] = useState<string>("");
+
+  // Get operator name from localStorage or prompt
+  useEffect(() => {
+    const stored = localStorage.getItem("skyparking_operator");
+    if (stored) {
+      setOperatorName(stored);
+    } else {
+      const name = prompt(bg.operatorName) || "Неизвестен";
+      setOperatorName(name);
+      localStorage.setItem("skyparking_operator", name);
+    }
+  }, []);
 
   // Fetch all bookings
   const fetchBookings = async () => {
@@ -181,7 +268,6 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
       const data = await response.json();
       if (data.success) {
         setBookings(data.bookings);
-        setFilteredBookings(data.bookings);
       } else {
         toast.error(bg.failedToFetch);
       }
@@ -197,21 +283,44 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     fetchBookings();
   }, []);
 
-  // Filter bookings based on search
+  // Filter bookings by tab and search
   useEffect(() => {
-    if (!searchTerm) {
-      setFilteredBookings(bookings);
-      return;
+    let filtered = bookings;
+
+    // Filter by tab
+    switch (activeTab) {
+      case "new":
+        filtered = bookings.filter(b => b.status === "new");
+        break;
+      case "confirmed":
+        filtered = bookings.filter(b => b.status === "confirmed");
+        break;
+      case "arrived":
+        filtered = bookings.filter(b => b.status === "arrived");
+        break;
+      case "completed":
+        filtered = bookings.filter(b => b.status === "checked-out");
+        break;
+      case "archive":
+        filtered = bookings.filter(b => b.status === "no-show" || b.status === "cancelled");
+        break;
+      case "all":
+        filtered = bookings;
+        break;
     }
 
-    const filtered = bookings.filter(booking =>
-      booking.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.licensePlate.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.phone.includes(searchTerm)
-    );
+    // Filter by search term
+    if (searchTerm) {
+      filtered = filtered.filter(booking =>
+        booking.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        booking.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        booking.licensePlate.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        booking.phone.includes(searchTerm)
+      );
+    }
+
     setFilteredBookings(filtered);
-  }, [searchTerm, bookings]);
+  }, [searchTerm, bookings, activeTab]);
 
   // Delete booking
   const deleteBooking = async (id: string) => {
@@ -275,23 +384,20 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     }
   };
 
-  // Accept booking
+  // Accept booking (new → confirmed)
   const acceptBooking = async (booking: Booking) => {
     if (!confirm(bg.acceptConfirm)) return;
 
     try {
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/bookings/${booking.id}`,
+        `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/bookings/${booking.id}/accept`,
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${publicAnonKey}`,
           },
-          body: JSON.stringify({
-            ...booking,
-            status: "confirmed",
-          }),
+          body: JSON.stringify({ operator: operatorName }),
         }
       );
 
@@ -300,7 +406,7 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         toast.success(bg.bookingAccepted);
         fetchBookings();
       } else {
-        toast.error(bg.failedToSave);
+        toast.error(data.message || bg.failedToSave);
       }
     } catch (error) {
       console.error("Accept error:", error);
@@ -308,68 +414,221 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     }
   };
 
-  // Reject booking
-  const rejectBooking = async (booking: Booking) => {
-    if (!confirm(bg.rejectConfirm)) return;
+  // Cancel booking
+  const cancelBooking = async (booking: Booking) => {
+    const reason = prompt(bg.enterReason);
+    if (!reason) return;
 
     try {
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/bookings/${booking.id}`,
+        `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/bookings/${booking.id}/cancel`,
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${publicAnonKey}`,
           },
-          body: JSON.stringify({
-            ...booking,
-            status: "cancelled",
-          }),
+          body: JSON.stringify({ operator: operatorName, reason }),
         }
       );
 
       const data = await response.json();
       if (data.success) {
-        toast.success(bg.bookingRejected);
+        toast.success(bg.bookingCancelled);
         fetchBookings();
       } else {
-        toast.error(bg.failedToSave);
+        toast.error(data.message || bg.failedToSave);
       }
     } catch (error) {
-      console.error("Reject error:", error);
+      console.error("Cancel error:", error);
       toast.error(bg.failedToSave);
     }
   };
 
-  const getPaymentStatusBadge = (status: string) => {
+  // Mark arrived (confirmed → arrived)
+  const markArrived = async (booking: Booking) => {
+    if (!confirm(bg.arrivedConfirm)) return;
+
+    try {
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/bookings/${booking.id}/mark-arrived`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${publicAnonKey}`,
+          },
+          body: JSON.stringify({ operator: operatorName }),
+        }
+      );
+
+      const data = await response.json();
+      if (data.success) {
+        toast.success(bg.bookingMarkedArrived);
+        fetchBookings();
+      } else {
+        toast.error(data.message || bg.failedToSave);
+      }
+    } catch (error) {
+      console.error("Mark arrived error:", error);
+      toast.error(bg.failedToSave);
+    }
+  };
+
+  // Mark no-show (confirmed → no-show)
+  const markNoShow = async (booking: Booking) => {
+    const reason = prompt(bg.enterReason);
+    if (!reason) return;
+
+    try {
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/bookings/${booking.id}/mark-no-show`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${publicAnonKey}`,
+          },
+          body: JSON.stringify({ operator: operatorName, reason }),
+        }
+      );
+
+      const data = await response.json();
+      if (data.success) {
+        toast.success(bg.bookingMarkedNoShow);
+        fetchBookings();
+      } else {
+        toast.error(data.message || bg.failedToSave);
+      }
+    } catch (error) {
+      console.error("Mark no-show error:", error);
+      toast.error(bg.failedToSave);
+    }
+  };
+
+  // Checkout (arrived → checked-out)
+  const checkout = async (booking: Booking) => {
+    if (!confirm(bg.checkoutConfirm)) return;
+
+    try {
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/bookings/${booking.id}/checkout`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${publicAnonKey}`,
+          },
+          body: JSON.stringify({ operator: operatorName }),
+        }
+      );
+
+      const data = await response.json();
+      if (data.success) {
+        toast.success(bg.bookingCheckedOut);
+        fetchBookings();
+      } else {
+        toast.error(data.message || bg.failedToSave);
+      }
+    } catch (error) {
+      console.error("Checkout error:", error);
+      toast.error(bg.failedToSave);
+    }
+  };
+
+  // Get status badge
+  const getStatusBadge = (status: string) => {
     switch (status) {
-      case "paid":
-        return <Badge className="bg-green-500"><CheckCircle className="h-3 w-3 mr-1" />Paid</Badge>;
-      case "unpaid":
-        return <Badge className="bg-yellow-500"><Clock className="h-3 w-3 mr-1" />Unpaid</Badge>;
-      case "pending":
-        return <Badge className="bg-orange-500"><Clock className="h-3 w-3 mr-1" />Pending</Badge>;
-      case "failed":
-        return <Badge className="bg-red-500"><XCircle className="h-3 w-3 mr-1" />Failed</Badge>;
-      case "manual":
-        return <Badge className="bg-blue-500"><CheckCircle className="h-3 w-3 mr-1" />Manual</Badge>;
+      case "new":
+        return <Badge className="bg-yellow-500 hover:bg-yellow-600"><Clock className="h-3 w-3 mr-1" />{bg.statusNew}</Badge>;
+      case "confirmed":
+        return <Badge className="bg-green-500 hover:bg-green-600"><CheckCircle className="h-3 w-3 mr-1" />{bg.statusConfirmed}</Badge>;
+      case "arrived":
+        return <Badge className="bg-blue-500 hover:bg-blue-600"><MapPin className="h-3 w-3 mr-1" />{bg.statusArrived}</Badge>;
+      case "checked-out":
+        return <Badge className="bg-gray-500 hover:bg-gray-600"><CheckCircle className="h-3 w-3 mr-1" />{bg.statusCheckedOut}</Badge>;
+      case "no-show":
+        return <Badge className="bg-gray-700 hover:bg-gray-800"><XCircle className="h-3 w-3 mr-1" />{bg.statusNoShow}</Badge>;
+      case "cancelled":
+        return <Badge className="bg-red-500 hover:bg-red-600"><XCircle className="h-3 w-3 mr-1" />{bg.statusCancelled}</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  // Get payment status badge
+  const getPaymentStatusBadge = (status: string) => {
     switch (status) {
+      case "paid":
+        return <Badge className="bg-green-500"><CheckCircle className="h-3 w-3 mr-1" />{bg.paid}</Badge>;
+      case "unpaid":
+        return <Badge className="bg-yellow-500"><Clock className="h-3 w-3 mr-1" />{bg.unpaid}</Badge>;
       case "pending":
-        return <Badge className="bg-orange-500"><Clock className="h-3 w-3 mr-1" />Pending</Badge>;
-      case "confirmed":
-        return <Badge className="bg-green-500"><Check className="h-3 w-3 mr-1" />Confirmed</Badge>;
-      case "cancelled":
-        return <Badge className="bg-red-500"><X className="h-3 w-3 mr-1" />Cancelled</Badge>;
+        return <Badge className="bg-orange-500"><Clock className="h-3 w-3 mr-1" />{bg.pending}</Badge>;
+      case "failed":
+        return <Badge className="bg-red-500"><XCircle className="h-3 w-3 mr-1" />{bg.failed}</Badge>;
+      case "manual":
+        return <Badge className="bg-blue-500"><CheckCircle className="h-3 w-3 mr-1" />{bg.manual}</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
   };
+
+  // Format status history for display
+  const formatStatusHistory = (history: StatusChange[] | undefined) => {
+    if (!history || history.length === 0) return null;
+
+    return (
+      <div className="mt-4 border-t pt-4">
+        <div className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
+          <History className="h-4 w-4" />
+          {bg.statusHistory}
+        </div>
+        <div className="space-y-2">
+          {history.map((change, index) => (
+            <div key={index} className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
+              <div className="flex items-center gap-2">
+                <span className="font-medium">{new Date(change.timestamp).toLocaleString('bg-BG')}</span>
+                <span>-</span>
+                <span>{getActionName(change.action)}</span>
+                <span className="text-gray-500">({change.operator || bg.system})</span>
+              </div>
+              {change.reason && (
+                <div className="text-xs text-gray-500 mt-1">
+                  {bg.reason}: {change.reason}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const getActionName = (action: string) => {
+    switch (action) {
+      case "accept": return bg.actionAccept;
+      case "cancel": return bg.actionCancel;
+      case "mark-arrived": return bg.actionMarkArrived;
+      case "mark-no-show": return bg.actionMarkNoShow;
+      case "checkout": return bg.actionCheckout;
+      default: return action;
+    }
+  };
+
+  // Get tab counts
+  const getTabCounts = () => {
+    return {
+      new: bookings.filter(b => b.status === "new").length,
+      confirmed: bookings.filter(b => b.status === "confirmed").length,
+      arrived: bookings.filter(b => b.status === "arrived").length,
+      completed: bookings.filter(b => b.status === "checked-out").length,
+      archive: bookings.filter(b => b.status === "no-show" || b.status === "cancelled").length,
+      all: bookings.length,
+    };
+  };
+
+  const counts = getTabCounts();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -377,11 +636,82 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
       <div className="bg-white border-b">
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold">{bg.dashboardTitle}</h1>
+            <div>
+              <h1 className="text-2xl font-bold">{bg.dashboardTitle}</h1>
+              <p className="text-sm text-gray-500">Оператор: {operatorName}</p>
+            </div>
             <Button onClick={onLogout} variant="outline">
               <LogOut className="mr-2 h-4 w-4" />
               {bg.logout}
             </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="bg-white border-b">
+        <div className="container mx-auto px-4">
+          <div className="flex gap-1 overflow-x-auto">
+            <button
+              onClick={() => setActiveTab("new")}
+              className={`px-4 py-3 font-medium text-sm whitespace-nowrap border-b-2 transition-colors ${
+                activeTab === "new"
+                  ? "border-yellow-500 text-yellow-600"
+                  : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              {bg.newReservations} ({counts.new})
+            </button>
+            <button
+              onClick={() => setActiveTab("confirmed")}
+              className={`px-4 py-3 font-medium text-sm whitespace-nowrap border-b-2 transition-colors ${
+                activeTab === "confirmed"
+                  ? "border-green-500 text-green-600"
+                  : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              {bg.confirmedReservations} ({counts.confirmed})
+            </button>
+            <button
+              onClick={() => setActiveTab("arrived")}
+              className={`px-4 py-3 font-medium text-sm whitespace-nowrap border-b-2 transition-colors ${
+                activeTab === "arrived"
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              {bg.arrivedReservations} ({counts.arrived})
+            </button>
+            <button
+              onClick={() => setActiveTab("completed")}
+              className={`px-4 py-3 font-medium text-sm whitespace-nowrap border-b-2 transition-colors ${
+                activeTab === "completed"
+                  ? "border-gray-500 text-gray-600"
+                  : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              {bg.completedReservations} ({counts.completed})
+            </button>
+            <button
+              onClick={() => setActiveTab("archive")}
+              className={`px-4 py-3 font-medium text-sm whitespace-nowrap border-b-2 transition-colors ${
+                activeTab === "archive"
+                  ? "border-red-500 text-red-600"
+                  : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              {bg.archiveReservations} ({counts.archive})
+            </button>
+            <button
+              onClick={() => setActiveTab("all")}
+              className={`px-4 py-3 font-medium text-sm whitespace-nowrap border-b-2 transition-colors ${
+                activeTab === "all"
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              {bg.allReservations} ({counts.all})
+            </button>
           </div>
         </div>
       </div>
@@ -398,34 +728,10 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               className="pl-10"
             />
           </div>
-          <Button onClick={() => { setIsAddingNew(true); setFormData({ paymentStatus: "manual" }); }}>
+          <Button onClick={() => { setIsAddingNew(true); setFormData({ paymentStatus: "manual", status: "confirmed" }); }}>
             <Plus className="mr-2 h-4 w-4" />
             {bg.addManualBooking}
           </Button>
-        </div>
-
-        {/* Tabs */}
-        <div className="mb-4">
-          <div className="flex space-x-4">
-            <Button
-              variant={activeTab === "new" ? "default" : "outline"}
-              onClick={() => setActiveTab("new")}
-            >
-              {bg.newReservations}
-            </Button>
-            <Button
-              variant={activeTab === "confirmed" ? "default" : "outline"}
-              onClick={() => setActiveTab("confirmed")}
-            >
-              {bg.confirmedReservations}
-            </Button>
-            <Button
-              variant={activeTab === "all" ? "default" : "outline"}
-              onClick={() => setActiveTab("all")}
-            >
-              {bg.allReservations}
-            </Button>
-          </div>
         </div>
 
         {/* Bookings List */}
@@ -437,133 +743,21 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           </div>
         ) : (
           <div className="grid gap-4">
-            {filteredBookings
-              .filter(booking => {
-                if (activeTab === "new") return booking.status === "pending";
-                if (activeTab === "confirmed") return booking.status === "confirmed";
-                return true;
-              })
-              .map((booking) => (
-                <Card key={booking.id} className="p-6">
-                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                    <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      <div>
-                        <div className="flex items-center text-sm text-gray-500 mb-1">
-                          <User className="h-4 w-4 mr-1" />
-                          {bg.customer}
-                        </div>
-                        <div className="font-medium">{booking.name}</div>
-                        <div className="text-sm text-gray-600">{booking.email}</div>
-                        <div className="text-sm text-gray-600">{booking.phone}</div>
-                      </div>
-
-                      <div>
-                        <div className="flex items-center text-sm text-gray-500 mb-1">
-                          <Calendar className="h-4 w-4 mr-1" />
-                          {bg.dates}
-                        </div>
-                        <div className="text-sm">
-                          <div><strong>{bg.arrival}:</strong> {booking.arrivalDate} {booking.arrivalTime}</div>
-                          <div><strong>{bg.departure}:</strong> {booking.departureDate} {booking.departureTime}</div>
-                        </div>
-                      </div>
-
-                      <div>
-                        <div className="flex items-center text-sm text-gray-500 mb-1">
-                          <Car className="h-4 w-4 mr-1" />
-                          {booking.numberOfCars && booking.numberOfCars > 1 ? bg.vehicles : bg.vehicle}
-                        </div>
-                        <div className="font-medium">{booking.licensePlate}</div>
-                        {booking.licensePlate2 && <div className="text-sm text-gray-600">{booking.licensePlate2}</div>}
-                        {booking.licensePlate3 && <div className="text-sm text-gray-600">{booking.licensePlate3}</div>}
-                        {booking.licensePlate4 && <div className="text-sm text-gray-600">{booking.licensePlate4}</div>}
-                        {booking.licensePlate5 && <div className="text-sm text-gray-600">{booking.licensePlate5}</div>}
-                        <div className="text-sm text-gray-600 mt-1">{booking.passengers} {bg.passengers}</div>
-                      </div>
-
-                      <div>
-                        <div className="flex items-center text-sm text-gray-500 mb-1">
-                          <Euro className="h-4 w-4 mr-1" />
-                          {bg.payment}
-                        </div>
-                        <div className="font-bold text-lg">€{booking.totalPrice}</div>
-                        <div>{getPaymentStatusBadge(booking.paymentStatus)}</div>
-                        {booking.needsInvoice && (
-                          <div className="mt-2">
-                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300">
-                              <FileText className="h-3 w-3 mr-1" />
-                              {bg.invoiceRequested}
-                            </Badge>
-                          </div>
-                        )}
-                      </div>
-
-                      {booking.needsInvoice && (
-                        <div className="md:col-span-2 lg:col-span-3">
-                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
-                            <div className="flex items-center text-sm font-semibold text-blue-900 mb-2">
-                              <FileText className="h-4 w-4 mr-1" />
-                              {bg.invoiceDetails}
-                            </div>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
-                              {booking.companyName && (
-                                <div>
-                                  <span className="text-gray-600">{bg.company}:</span>
-                                  <div className="font-medium">{booking.companyName}</div>
-                                </div>
-                              )}
-                              {booking.companyOwner && (
-                                <div>
-                                  <span className="text-gray-600">{bg.owner}:</span>
-                                  <div className="font-medium">{booking.companyOwner}</div>
-                                </div>
-                              )}
-                              {booking.taxNumber && (
-                                <div>
-                                  <span className="text-gray-600">{bg.taxNumber}:</span>
-                                  <div className="font-medium">{booking.taxNumber}</div>
-                                </div>
-                              )}
-                              {booking.isVAT && booking.vatNumber && (
-                                <div>
-                                  <span className="text-gray-600">{bg.vatNumber}:</span>
-                                  <div className="font-medium text-green-700">{booking.vatNumber}</div>
-                                </div>
-                              )}
-                              {booking.city && (
-                                <div>
-                                  <span className="text-gray-600">{bg.city}:</span>
-                                  <div className="font-medium">{booking.city}</div>
-                                </div>
-                              )}
-                              {booking.address && (
-                                <div className="md:col-span-2">
-                                  <span className="text-gray-600">{bg.address}:</span>
-                                  <div className="font-medium">{booking.address}</div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="md:col-span-2">
-                        <div className="text-xs text-gray-400">
-                          {bg.created}: {new Date(booking.createdAt).toLocaleString()}
-                        </div>
-                        {booking.updatedAt && (
-                          <div className="text-xs text-gray-400">
-                            {bg.updated}: {new Date(booking.updatedAt).toLocaleString()}
-                          </div>
-                        )}
-                      </div>
+            {filteredBookings.map((booking) => (
+              <Card key={booking.id} className="p-6">
+                <div className="space-y-4">
+                  {/* Top row - Status and Actions */}
+                  <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b">
+                    <div className="flex items-center gap-3">
+                      {getStatusBadge(booking.status)}
+                      {getPaymentStatusBadge(booking.paymentStatus)}
                     </div>
-
-                    <div className="flex gap-2">
-                      {booking.status === "pending" && (
+                    
+                    <div className="flex flex-wrap gap-2">
+                      {/* Context-aware action buttons */}
+                      {booking.status === "new" && (
                         <>
                           <Button
-                            variant="default"
                             size="sm"
                             className="bg-green-600 hover:bg-green-700"
                             onClick={() => acceptBooking(booking)}
@@ -572,15 +766,57 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                             {bg.accept}
                           </Button>
                           <Button
-                            variant="destructive"
                             size="sm"
-                            onClick={() => rejectBooking(booking)}
+                            variant="destructive"
+                            onClick={() => cancelBooking(booking)}
                           >
                             <X className="h-4 w-4 mr-1" />
                             {bg.reject}
                           </Button>
                         </>
                       )}
+                      
+                      {booking.status === "confirmed" && (
+                        <>
+                          <Button
+                            size="sm"
+                            className="bg-blue-600 hover:bg-blue-700"
+                            onClick={() => markArrived(booking)}
+                          >
+                            <LogIn className="h-4 w-4 mr-1" />
+                            {bg.markArrived}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => markNoShow(booking)}
+                          >
+                            <XCircle className="h-4 w-4 mr-1" />
+                            {bg.markNoShow}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => cancelBooking(booking)}
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            {bg.reject}
+                          </Button>
+                        </>
+                      )}
+                      
+                      {booking.status === "arrived" && (
+                        <Button
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700"
+                          onClick={() => checkout(booking)}
+                        >
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          {bg.checkout}
+                        </Button>
+                      )}
+                      
+                      {/* Edit and Delete always available */}
                       <Button
                         variant="outline"
                         size="sm"
@@ -600,8 +836,135 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                       </Button>
                     </div>
                   </div>
-                </Card>
-              ))}
+
+                  {/* Booking details */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                      <div className="flex items-center text-sm text-gray-500 mb-1">
+                        <User className="h-4 w-4 mr-1" />
+                        {bg.customer}
+                      </div>
+                      <div className="font-medium">{booking.name}</div>
+                      <div className="text-sm text-gray-600">{booking.email}</div>
+                      <div className="text-sm text-gray-600">{booking.phone}</div>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center text-sm text-gray-500 mb-1">
+                        <Calendar className="h-4 w-4 mr-1" />
+                        {bg.dates}
+                      </div>
+                      <div className="text-sm">
+                        <div><strong>{bg.arrival}:</strong> {booking.arrivalDate} {booking.arrivalTime}</div>
+                        <div><strong>{bg.departure}:</strong> {booking.departureDate} {booking.departureTime}</div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center text-sm text-gray-500 mb-1">
+                        <Car className="h-4 w-4 mr-1" />
+                        {booking.numberOfCars && booking.numberOfCars > 1 ? bg.vehicles : bg.vehicle}
+                      </div>
+                      <div className="font-medium">{booking.licensePlate}</div>
+                      {booking.licensePlate2 && <div className="text-sm text-gray-600">{booking.licensePlate2}</div>}
+                      {booking.licensePlate3 && <div className="text-sm text-gray-600">{booking.licensePlate3}</div>}
+                      {booking.licensePlate4 && <div className="text-sm text-gray-600">{booking.licensePlate4}</div>}
+                      {booking.licensePlate5 && <div className="text-sm text-gray-600">{booking.licensePlate5}</div>}
+                      <div className="text-sm text-gray-600 mt-1">{booking.passengers} {bg.passengers}</div>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center text-sm text-gray-500 mb-1">
+                        <Euro className="h-4 w-4 mr-1" />
+                        {bg.payment}
+                      </div>
+                      <div className="font-bold text-lg">€{booking.totalPrice}</div>
+                      {booking.needsInvoice && (
+                        <div className="mt-2">
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300">
+                            <FileText className="h-3 w-3 mr-1" />
+                            {bg.invoiceRequested}
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Invoice details */}
+                  {booking.needsInvoice && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
+                      <div className="flex items-center text-sm font-semibold text-blue-900 mb-2">
+                        <FileText className="h-4 w-4 mr-1" />
+                        {bg.invoiceDetails}
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+                        {booking.companyName && (
+                          <div>
+                            <span className="text-gray-600">{bg.company}:</span>
+                            <div className="font-medium">{booking.companyName}</div>
+                          </div>
+                        )}
+                        {booking.companyOwner && (
+                          <div>
+                            <span className="text-gray-600">{bg.owner}:</span>
+                            <div className="font-medium">{booking.companyOwner}</div>
+                          </div>
+                        )}
+                        {booking.taxNumber && (
+                          <div>
+                            <span className="text-gray-600">{bg.taxNumber}:</span>
+                            <div className="font-medium">{booking.taxNumber}</div>
+                          </div>
+                        )}
+                        {booking.isVAT && booking.vatNumber && (
+                          <div>
+                            <span className="text-gray-600">{bg.vatNumber}:</span>
+                            <div className="font-medium text-green-700">{booking.vatNumber}</div>
+                          </div>
+                        )}
+                        {booking.city && (
+                          <div>
+                            <span className="text-gray-600">{bg.city}:</span>
+                            <div className="font-medium">{booking.city}</div>
+                          </div>
+                        )}
+                        {booking.address && (
+                          <div className="md:col-span-2">
+                            <span className="text-gray-600">{bg.address}:</span>
+                            <div className="font-medium">{booking.address}</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Cancellation/No-show reason */}
+                  {booking.cancellationReason && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm">
+                      <span className="font-semibold text-red-900">{bg.reason}:</span>
+                      <span className="text-red-700 ml-2">{booking.cancellationReason}</span>
+                    </div>
+                  )}
+                  {booking.noShowReason && (
+                    <div className="bg-gray-100 border border-gray-300 rounded-lg p-3 text-sm">
+                      <span className="font-semibold text-gray-900">{bg.reason}:</span>
+                      <span className="text-gray-700 ml-2">{booking.noShowReason}</span>
+                    </div>
+                  )}
+
+                  {/* Timestamps */}
+                  <div className="text-xs text-gray-400 pt-2 border-t">
+                    <div>{bg.created}: {new Date(booking.createdAt).toLocaleString('bg-BG')}</div>
+                    {booking.updatedAt && (
+                      <div>{bg.updated}: {new Date(booking.updatedAt).toLocaleString('bg-BG')}</div>
+                    )}
+                  </div>
+
+                  {/* Status history */}
+                  {formatStatusHistory(booking.statusHistory)}
+                </div>
+              </Card>
+            ))}
           </div>
         )}
       </div>
@@ -738,6 +1101,23 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               </div>
             </div>
 
+            <div>
+              <Label htmlFor="status">{bg.bookingStatus}</Label>
+              <select
+                id="status"
+                className="w-full h-10 px-3 border rounded-md"
+                value={formData.status || "new"}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+              >
+                <option value="new">{bg.statusNew}</option>
+                <option value="confirmed">{bg.statusConfirmed}</option>
+                <option value="arrived">{bg.statusArrived}</option>
+                <option value="checked-out">{bg.statusCheckedOut}</option>
+                <option value="no-show">{bg.statusNoShow}</option>
+                <option value="cancelled">{bg.statusCancelled}</option>
+              </select>
+            </div>
+
             {/* Invoice Section */}
             <div className="border-t pt-4">
               <div className="mb-4">
@@ -861,7 +1241,7 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               {bg.cancel}
             </Button>
             <Button onClick={saveBooking}>
-              {editingBooking ? bg.update : bg.create} {bg.bookingStatus}
+              {editingBooking ? bg.update : bg.create}
             </Button>
           </DialogFooter>
         </DialogContent>
