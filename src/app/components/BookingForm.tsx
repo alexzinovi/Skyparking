@@ -111,6 +111,7 @@ export function BookingForm() {
         ...data,
         totalPrice,
         numberOfCars,
+        needsInvoice,
         paymentStatus: "unpaid",
         status: "new", // All new bookings start as "new"
       };

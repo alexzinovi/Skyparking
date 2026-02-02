@@ -62,6 +62,14 @@ interface Booking {
   parkingSpots?: number[]; // Array of assigned spot numbers
   totalPrice: number;
   carKeys?: boolean;
+  needsInvoice?: boolean;
+  companyName?: string;
+  companyOwner?: string;
+  taxNumber?: string;
+  isVAT?: boolean;
+  vatNumber?: string;
+  city?: string;
+  address?: string;
   paymentStatus: string;
   paymentMethod?: string;
   status: string;
@@ -291,10 +299,12 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
     notes: "",
     // Invoice fields
     companyName: "",
+    companyOwner: "",
+    taxNumber: "",
+    isVAT: false,
     vatNumber: "",
-    companyAddress: "",
-    companyCity: "",
-    companyCountry: "",
+    city: "",
+    address: "",
   });
 
   const shiftRange = useMemo(() => getShiftTimeRange(selectedShift), [selectedShift]);
@@ -622,14 +632,16 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
       passengers: booking.passengers,
       numberOfCars: booking.numberOfCars || 1,
       carKeys: booking.carKeys || false,
-      needsInvoice: false,
+      needsInvoice: booking.needsInvoice || false,
       notes: "",
       // Invoice fields
-      companyName: "",
-      vatNumber: "",
-      companyAddress: "",
-      companyCity: "",
-      companyCountry: "",
+      companyName: booking.companyName || "",
+      companyOwner: booking.companyOwner || "",
+      taxNumber: booking.taxNumber || "",
+      isVAT: booking.isVAT || false,
+      vatNumber: booking.vatNumber || "",
+      city: booking.city || "",
+      address: booking.address || "",
     });
     setShowBookingForm(true);
   };
@@ -798,6 +810,12 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
             {booking.parkingSpots && booking.parkingSpots.length > 0 && (
               <Badge variant="outline" className="text-xs bg-blue-50">
                 🅿️ {booking.parkingSpots.join(", ")}
+              </Badge>
+            )}
+            {booking.needsInvoice && (
+              <Badge variant="outline" className="text-xs bg-yellow-50 border-yellow-300">
+                <FileText className="w-3 h-3 inline mr-1" />
+                Фактура
               </Badge>
             )}
           </div>
@@ -970,6 +988,12 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                                 🅿️ {booking.parkingSpots.join(", ")}
                               </Badge>
                             )}
+                            {booking.needsInvoice && (
+                              <Badge variant="outline" className="text-xs bg-yellow-50 border-yellow-300">
+                                <FileText className="w-3 h-3 inline mr-1" />
+                                Фактура
+                              </Badge>
+                            )}
                           </div>
                           <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
                             <div>📞 {booking.phone}</div>
@@ -1089,6 +1113,12 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                             {booking.parkingSpots && booking.parkingSpots.length > 0 && (
                               <Badge variant="outline" className="text-xs bg-blue-50">
                                 🅿️ {booking.parkingSpots.join(", ")}
+                              </Badge>
+                            )}
+                            {booking.needsInvoice && (
+                              <Badge variant="outline" className="text-xs bg-yellow-50 border-yellow-300">
+                                <FileText className="w-3 h-3 inline mr-1" />
+                                Фактура
                               </Badge>
                             )}
                           </div>
@@ -1551,11 +1581,56 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                   </div>
 
                   <div className="space-y-2">
+                    <Label>МОЛ (Управител) *</Label>
+                    <Input
+                      value={bookingForm.companyOwner}
+                      onChange={(e) => setBookingForm({...bookingForm, companyOwner: e.target.value})}
+                      placeholder="Име на управител"
+                      className="bg-white"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
                     <Label>ЕИК / Булстат *</Label>
                     <Input
-                      value={bookingForm.vatNumber}
-                      onChange={(e) => setBookingForm({...bookingForm, vatNumber: e.target.value})}
-                      placeholder="BG123456789"
+                      value={bookingForm.taxNumber}
+                      onChange={(e) => setBookingForm({...bookingForm, taxNumber: e.target.value})}
+                      placeholder="123456789"
+                      className="bg-white"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="isVAT"
+                        checked={bookingForm.isVAT}
+                        onChange={(e) => setBookingForm({...bookingForm, isVAT: e.target.checked})}
+                        className="w-4 h-4"
+                      />
+                      <Label htmlFor="isVAT" className="cursor-pointer">Регистрирано по ДДС</Label>
+                    </div>
+                  </div>
+
+                  {bookingForm.isVAT && (
+                    <div className="space-y-2">
+                      <Label>ДДС номер</Label>
+                      <Input
+                        value={bookingForm.vatNumber}
+                        onChange={(e) => setBookingForm({...bookingForm, vatNumber: e.target.value})}
+                        placeholder="BG123456789"
+                        className="bg-white"
+                      />
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label>Град *</Label>
+                    <Input
+                      value={bookingForm.city}
+                      onChange={(e) => setBookingForm({...bookingForm, city: e.target.value})}
+                      placeholder="София"
                       className="bg-white"
                     />
                   </div>
@@ -1563,33 +1638,11 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                   <div className="space-y-2">
                     <Label>Адрес *</Label>
                     <Input
-                      value={bookingForm.companyAddress}
-                      onChange={(e) => setBookingForm({...bookingForm, companyAddress: e.target.value})}
+                      value={bookingForm.address}
+                      onChange={(e) => setBookingForm({...bookingForm, address: e.target.value})}
                       placeholder="Улица, номер"
                       className="bg-white"
                     />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <Label>Град *</Label>
-                      <Input
-                        value={bookingForm.companyCity}
-                        onChange={(e) => setBookingForm({...bookingForm, companyCity: e.target.value})}
-                        placeholder="София"
-                        className="bg-white"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Държава *</Label>
-                      <Input
-                        value={bookingForm.companyCountry}
-                        onChange={(e) => setBookingForm({...bookingForm, companyCountry: e.target.value})}
-                        placeholder="България"
-                        className="bg-white"
-                      />
-                    </div>
                   </div>
                 </div>
               </div>
