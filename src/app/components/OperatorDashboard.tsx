@@ -300,9 +300,11 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
   const shiftRange = useMemo(() => getShiftTimeRange(selectedShift), [selectedShift]);
 
   // Fetch bookings
-  const fetchBookings = async () => {
+  const fetchBookings = async (showLoadingSpinner = false) => {
     try {
-      setLoading(true);
+      if (showLoadingSpinner) {
+        setLoading(true);
+      }
       const response = await fetch(
         `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/bookings`,
         {
@@ -316,19 +318,25 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
       if (data.success) {
         setBookings(data.bookings);
       } else {
-        toast.error("Грешка при зареждане на резервации");
+        if (showLoadingSpinner) {
+          toast.error("Грешка при зареждане на резервации");
+        }
       }
     } catch (error) {
       console.error("Fetch bookings error:", error);
-      toast.error("Грешка при зареждане на резервации");
+      if (showLoadingSpinner) {
+        toast.error("Грешка при зареждане на резервации");
+      }
     } finally {
-      setLoading(false);
+      if (showLoadingSpinner) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    fetchBookings();
-    const interval = setInterval(fetchBookings, 30000); // Refresh every 30s
+    fetchBookings(true); // Show loading spinner only on initial load
+    const interval = setInterval(() => fetchBookings(false), 30000); // Background refresh without spinner
     return () => clearInterval(interval);
   }, []);
 
@@ -403,7 +411,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
       const data = await response.json();
       if (data.success) {
         toast.success("Резервацията е потвърдена");
-        fetchBookings();
+        fetchBookings(false);
       } else {
         toast.error(data.message || "Грешка");
       }
@@ -446,7 +454,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
       const data = await response.json();
       if (data.success) {
         toast.success("Маркирано като неявил се");
-        fetchBookings();
+        fetchBookings(false);
       } else {
         toast.error(data.message || "Грешка");
       }
@@ -488,7 +496,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
         toast.success("Маркирано като пристигнал");
         setPaymentDialog(false);
         setSelectedBooking(null);
-        fetchBookings();
+        fetchBookings(false);
       } else {
         toast.error(data.message || "Грешка");
       }
@@ -547,7 +555,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
         toast.success("Напуснал паркинга");
         setPaymentDialog(false);
         setSelectedBooking(null);
-        fetchBookings();
+        fetchBookings(false);
       } else {
         toast.error(data.message || "Грешка");
       }
@@ -664,7 +672,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
         if (data.success) {
           toast.success("Резервацията е обновена");
           setShowBookingForm(false);
-          fetchBookings();
+          fetchBookings(false);
         } else {
           toast.error(data.message || "Грешка");
         }
@@ -693,7 +701,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
         if (data.success) {
           toast.success("Резервацията е създадена");
           setShowBookingForm(false);
-          fetchBookings();
+          fetchBookings(false);
         } else {
           toast.error(data.message || "Грешка");
         }
