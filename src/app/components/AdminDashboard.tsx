@@ -253,6 +253,13 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [activeTab, setActiveTab] = useState<TabType>("new");
   const [operatorName, setOperatorName] = useState<string>("");
 
+  // Capacity warning modal state
+  const [capacityWarning, setCapacityWarning] = useState<{
+    show: boolean;
+    booking: Booking | null;
+    dailyBreakdown: CapacityDay[];
+  }>({ show: false, booking: null, dailyBreakdown: [] });
+
   // Get operator name from localStorage or prompt
   useEffect(() => {
     const stored = localStorage.getItem("skyparking_operator");
@@ -398,8 +405,8 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   };
 
   // Accept booking (new → confirmed)
-  const acceptBooking = async (booking: Booking) => {
-    if (!confirm(bg.acceptConfirm)) return;
+  const acceptBooking = async (booking: Booking, forceOverride: boolean = false) => {
+    if (!forceOverride && !confirm(bg.acceptConfirm)) return;
 
     try {
       const response = await fetch(
@@ -410,14 +417,23 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${publicAnonKey}`,
           },
-          body: JSON.stringify({ operator: operatorName }),
+          body: JSON.stringify({ operator: operatorName, force: forceOverride }),
         }
       );
 
       const data = await response.json();
+      
       if (data.success) {
         toast.success(bg.bookingAccepted);
+        setCapacityWarning({ show: false, booking: null, dailyBreakdown: [] });
         fetchBookings();
+      } else if (data.requiresOverride && data.capacityPreview) {
+        // Show capacity warning modal
+        setCapacityWarning({
+          show: true,
+          booking: booking,
+          dailyBreakdown: data.capacityPreview.dailyBreakdown || []
+        });
       } else {
         toast.error(data.message || bg.failedToSave);
       }
@@ -1314,6 +1330,110 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             </Button>
             <Button onClick={saveBooking}>
               {editingBooking ? bg.update : bg.create}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Capacity Warning Modal */}
+      <Dialog open={capacityWarning.show} onOpenChange={(open) => !open && setCapacityWarning({ show: false, booking: null, dailyBreakdown: [] })}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-orange-600">
+              <AlertTriangle className="h-5 w-5" />
+              {bg.capacityWarning}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+              <p className="font-semibold text-orange-900">{bg.capacityExceeded}</p>
+              <p className="text-sm text-orange-700 mt-1">
+                Следните дни надвишават капацитета на паркинга. Моля, прегледайте подробностите по-долу.
+              </p>
+            </div>
+            
+            {capacityWarning.dailyBreakdown.length > 0 && (
+              <div className="border rounded-lg overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th className="text-left p-3 font-semibold">{bg.date}</th>
+                        <th className="text-center p-3 font-semibold">{bg.regularCars}</th>
+                        <th className="text-center p-3 font-semibold">{bg.withKeys}</th>
+                        <th className="text-center p-3 font-semibold">{bg.total}</th>
+                        <th className="text-center p-3 font-semibold">{bg.maxCapacity}</th>
+                        <th className="text-center p-3 font-semibold">Статус</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {capacityWarning.dailyBreakdown.map((day, idx) => (
+                        <tr key={idx} className={day.wouldFit ? "bg-white" : "bg-red-50"}>
+                          <td className="p-3 font-medium">{day.date}</td>
+                          <td className="text-center p-3">
+                            {day.nonKeysCount}
+                            {day.isOverNonKeysLimit && <span className="text-red-600 ml-1">⚠</span>}
+                          </td>
+                          <td className="text-center p-3 text-purple-700">{day.keysCount}</td>
+                          <td className="text-center p-3 font-bold">{day.totalCount}</td>
+                          <td className="text-center p-3 text-gray-600">
+                            {day.maxSpots} + {day.keysOverflowSpots} = {day.maxTotal}
+                          </td>
+                          <td className="text-center p-3">
+                            {day.wouldFit ? (
+                              <span className="text-green-600 font-semibold">✓ OK</span>
+                            ) : (
+                              <span className="text-red-600 font-semibold">⚠ {bg.overCapacity}</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+            
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="font-semibold text-gray-700">Легенда:</p>
+                  <ul className="mt-2 space-y-1 text-gray-600">
+                    <li>• <strong>{bg.regularCars}:</strong> Коли без ключове (макс. {capacityWarning.dailyBreakdown[0]?.maxSpots || 200})</li>
+                    <li>• <strong className="text-purple-700">{bg.withKeys}:</strong> Коли с ключове (до +{capacityWarning.dailyBreakdown[0]?.keysOverflowSpots || 20} допълнително)</li>
+                    <li>• <strong>{bg.total}:</strong> Общ брой коли</li>
+                  </ul>
+                </div>
+                <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
+                  <p className="font-semibold text-yellow-900 mb-2">{bg.capacityOverrideWarning}</p>
+                  <p className="text-xs text-yellow-700">
+                    Ако приемете тази резервация, ще надвишите лимита на капацитета. 
+                    Уверете се, че имате план за управление на излишните коли.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter className="gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setCapacityWarning({ show: false, booking: null, dailyBreakdown: [] })}
+            >
+              <X className="h-4 w-4 mr-2" />
+              {bg.closeDialog}
+            </Button>
+            <Button 
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+              onClick={() => {
+                if (capacityWarning.booking) {
+                  acceptBooking(capacityWarning.booking, true);
+                }
+              }}
+            >
+              <AlertTriangle className="h-4 w-4 mr-2" />
+              {bg.forceAccept}
             </Button>
           </DialogFooter>
         </DialogContent>
