@@ -4,6 +4,7 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
+import { formatDateDisplay, formatDateTimeDisplay } from "../utils/dateFormat";
 import { 
   Plus, 
   Edit, 
@@ -31,6 +32,8 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "./ui/dialog";
 import { toast } from "sonner";
 import type { User as UserType } from "./LoginScreen";
+import { PricingManager } from "./PricingManager";
+import { calculatePrice } from "@/app/utils/pricing";
 
 const projectId = "dbybybmjjeeocoecaewv";
 const publicAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRieWJ5Ym1qamVlb2NvZWNhZXd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODgxMzAsImV4cCI6MjA4MjA2NDEzMH0.fMZ3Yi5gZpE6kBBz-y1x0FKZcGczxSJZ9jL-Zeau340";
@@ -53,6 +56,7 @@ const bg = {
   archiveReservations: "Архив",
   allReservations: "Всички",
   usersTab: "Потребители",
+  pricingTab: "Ценообразуване",
   
   // Booking details
   customer: "Клиент",
@@ -230,7 +234,7 @@ interface Booking {
   passengers: number;
   totalPrice: number;
   paymentStatus: string;
-  status: 'new' | 'confirmed' | 'arrived' | 'checked-out' | 'no-show' | 'cancelled';
+  status: 'new' | 'confirmed' | 'arrived' | 'checked-out' | 'no-show' | 'cancelled' | 'declined';
   createdAt: string;
   updatedAt?: string;
   needsInvoice?: boolean;
@@ -249,6 +253,7 @@ interface Booking {
   carKeys?: boolean;
   carKeysNotes?: string;
   capacityOverride?: boolean;
+  declineReason?: string;
 }
 
 interface CapacityDay {
@@ -264,12 +269,23 @@ interface CapacityDay {
   wouldFit: boolean;
 }
 
-type TabType = "new" | "confirmed" | "arrived" | "completed" | "archive" | "all" | "users";
+type TabType = "new" | "confirmed" | "arrived" | "completed" | "archive" | "all" | "users" | "pricing";
 
 interface AdminDashboardProps {
   onLogout: () => void;
   currentUser: UserType;
   permissions: string[];
+}
+
+// Generate time slots in half-hour increments (00:00 - 23:30)
+function generateTimeSlots(): string[] {
+  const slots: string[] = [];
+  for (let hour = 0; hour < 24; hour++) {
+    const hourStr = hour.toString().padStart(2, '0');
+    slots.push(`${hourStr}:00`);
+    slots.push(`${hourStr}:30`);
+  }
+  return slots;
 }
 
 export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDashboardProps) {
@@ -390,6 +406,53 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
     }
   };
 
+  // Delete all bookings (for testing)
+  const handleDeleteAllBookings = async () => {
+    const confirmed = confirm(
+      "⚠️ ВНИМАНИЕ: Това ще изтрие ВСИЧКИ резервации!\n\nТова действие е необратимо!\n\nСигурни ли сте, че искате да продължите?"
+    );
+    
+    if (!confirmed) return;
+    
+    const doubleConfirm = prompt(
+      "За да потвърдите, въведете 'DELETE ALL' (с главни букви):"
+    );
+    
+    if (doubleConfirm !== "DELETE ALL") {
+      toast.error("Изтриването е отказано - неправилно потвърждение");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("skyparking-token");
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/bookings/delete-all`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${publicAnonKey}`,
+            "X-Session-Token": token || "",
+          },
+          body: JSON.stringify({
+            operator: currentUser.fullName,
+          }),
+        }
+      );
+
+      const data = await response.json();
+      if (data.success) {
+        toast.success(`Успешно изтрити ${data.deletedCount} резервации`);
+        fetchBookings();
+      } else {
+        toast.error(data.message || "Грешка при изтриване");
+      }
+    } catch (error) {
+      console.error("Delete all bookings error:", error);
+      toast.error("Грешка при изтриване на резервациите");
+    }
+  };
+
   useEffect(() => {
     fetchBookings();
     fetchCapacity();
@@ -397,6 +460,26 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
       fetchUsers();
     }
   }, []);
+
+  // Auto-calculate price when dates change in manual booking form
+  useEffect(() => {
+    async function updatePrice() {
+      if (formData.arrivalDate && formData.arrivalTime && formData.departureDate && formData.departureTime) {
+        const numberOfCars = formData.numberOfCars || 1;
+        const price = await calculatePrice(
+          formData.arrivalDate,
+          formData.arrivalTime,
+          formData.departureDate,
+          formData.departureTime,
+          numberOfCars
+        );
+        if (price !== null && price !== formData.totalPrice) {
+          setFormData(prev => ({ ...prev, totalPrice: price }));
+        }
+      }
+    }
+    updatePrice();
+  }, [formData.arrivalDate, formData.arrivalTime, formData.departureDate, formData.departureTime, formData.numberOfCars]);
 
   // Filter bookings by tab and search
   useEffect(() => {
@@ -796,22 +879,22 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
     if (!history || history.length === 0) return null;
 
     return (
-      <div className="mt-4 border-t pt-4">
-        <div className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
-          <History className="h-4 w-4" />
+      <div className="mt-6 border-t pt-6">
+        <div className="flex items-center gap-2 text-base font-semibold text-gray-700 mb-4">
+          <History className="h-5 w-5" />
           {bg.statusHistory}
         </div>
-        <div className="space-y-2">
+        <div className="space-y-3">
           {history.map((change, index) => (
-            <div key={index} className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
+            <div key={index} className="text-base text-gray-600 bg-gray-50 p-3 rounded">
               <div className="flex items-center gap-2">
-                <span className="font-medium">{new Date(change.timestamp).toLocaleString('bg-BG')}</span>
+                <span className="font-medium">{formatDateTimeDisplay(change.timestamp)}</span>
                 <span>-</span>
                 <span>{getActionName(change.action)}</span>
                 <span className="text-gray-500">({change.operator || bg.system})</span>
               </div>
               {change.reason && (
-                <div className="text-xs text-gray-500 mt-1">
+                <div className="text-sm text-gray-600 mt-2">
                   {bg.reason}: {change.reason}
                 </div>
               )}
@@ -851,30 +934,40 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
+        <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <h1 className="text-2xl font-bold">{bg.dashboardTitle}</h1>
-              <div className="flex items-center gap-2 mt-1">
-                <p className="text-sm text-gray-500">{currentUser.fullName}</p>
+              <h1 className="text-3xl sm:text-4xl font-bold">{bg.dashboardTitle}</h1>
+              <div className="flex items-center gap-2 mt-2">
+                <p className="text-lg sm:text-xl text-gray-500">{currentUser.fullName}</p>
                 {getRoleBadge(currentUser.role)}
               </div>
             </div>
-            <Button onClick={onLogout} variant="outline">
-              <LogOut className="mr-2 h-4 w-4" />
-              {bg.logout}
-            </Button>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+              <Button 
+                onClick={handleDeleteAllBookings} 
+                variant="destructive"
+                className="bg-red-600 hover:bg-red-700 text-base sm:text-lg py-5 sm:py-6 px-6"
+              >
+                <Trash2 className="mr-2 h-5 w-5 sm:h-6 sm:w-6" />
+                Изтрий всички
+              </Button>
+              <Button onClick={onLogout} variant="outline" className="text-base sm:text-lg py-5 sm:py-6 px-6">
+                <LogOut className="mr-2 h-5 w-5 sm:h-6 sm:w-6" />
+                {bg.logout}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Tabs */}
       <div className="bg-white border-b">
-        <div className="container mx-auto px-4">
-          <div className="flex gap-1 overflow-x-auto">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="flex gap-1 overflow-x-auto scrollbar-hide">
             <button
               onClick={() => setActiveTab("new")}
-              className={`px-4 py-3 font-medium text-sm whitespace-nowrap border-b-2 transition-colors ${
+              className={`px-4 sm:px-6 py-4 sm:py-5 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors ${
                 activeTab === "new"
                   ? "border-yellow-500 text-yellow-600"
                   : "border-transparent text-gray-600 hover:text-gray-900"
@@ -884,7 +977,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
             </button>
             <button
               onClick={() => setActiveTab("confirmed")}
-              className={`px-4 py-3 font-medium text-sm whitespace-nowrap border-b-2 transition-colors ${
+              className={`px-4 sm:px-6 py-4 sm:py-5 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors ${
                 activeTab === "confirmed"
                   ? "border-green-500 text-green-600"
                   : "border-transparent text-gray-600 hover:text-gray-900"
@@ -894,7 +987,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
             </button>
             <button
               onClick={() => setActiveTab("arrived")}
-              className={`px-4 py-3 font-medium text-sm whitespace-nowrap border-b-2 transition-colors ${
+              className={`px-4 sm:px-6 py-4 sm:py-5 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors ${
                 activeTab === "arrived"
                   ? "border-blue-500 text-blue-600"
                   : "border-transparent text-gray-600 hover:text-gray-900"
@@ -904,7 +997,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
             </button>
             <button
               onClick={() => setActiveTab("completed")}
-              className={`px-4 py-3 font-medium text-sm whitespace-nowrap border-b-2 transition-colors ${
+              className={`px-4 sm:px-6 py-4 sm:py-5 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors ${
                 activeTab === "completed"
                   ? "border-gray-500 text-gray-600"
                   : "border-transparent text-gray-600 hover:text-gray-900"
@@ -914,7 +1007,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
             </button>
             <button
               onClick={() => setActiveTab("archive")}
-              className={`px-4 py-3 font-medium text-sm whitespace-nowrap border-b-2 transition-colors ${
+              className={`px-4 sm:px-6 py-4 sm:py-5 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors ${
                 activeTab === "archive"
                   ? "border-red-500 text-red-600"
                   : "border-transparent text-gray-600 hover:text-gray-900"
@@ -924,7 +1017,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
             </button>
             <button
               onClick={() => setActiveTab("all")}
-              className={`px-4 py-3 font-medium text-sm whitespace-nowrap border-b-2 transition-colors ${
+              className={`px-4 sm:px-6 py-4 sm:py-5 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors ${
                 activeTab === "all"
                   ? "border-blue-500 text-blue-600"
                   : "border-transparent text-gray-600 hover:text-gray-900"
@@ -933,23 +1026,36 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
               {bg.allReservations} ({counts.all})
             </button>
             {permissions.includes("manage_users") && (
-              <button
-                onClick={() => setActiveTab("users")}
-                className={`px-4 py-3 font-medium text-sm whitespace-nowrap border-b-2 transition-colors ${
-                  activeTab === "users"
-                    ? "border-purple-500 text-purple-600"
-                    : "border-transparent text-gray-600 hover:text-gray-900"
-                }`}
-              >
-                <Users className="inline h-4 w-4 mr-1" />
-                {bg.usersTab} ({users.length})
-              </button>
+              <>
+                <button
+                  onClick={() => setActiveTab("users")}
+                  className={`px-4 sm:px-6 py-4 sm:py-5 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors ${
+                    activeTab === "users"
+                      ? "border-purple-500 text-purple-600"
+                      : "border-transparent text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  <Users className="inline h-5 w-5 sm:h-6 sm:w-6 mr-1" />
+                  {bg.usersTab} ({users.length})
+                </button>
+                <button
+                  onClick={() => setActiveTab("pricing")}
+                  className={`px-4 sm:px-6 py-4 sm:py-5 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors ${
+                    activeTab === "pricing"
+                      ? "border-green-500 text-green-600"
+                      : "border-transparent text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  <Euro className="inline h-5 w-5 sm:h-6 sm:w-6 mr-1" />
+                  {bg.pricingTab}
+                </button>
+              </>
             )}
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Live Capacity Dashboard */}
         <Card className="mb-6 p-6 bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
           <div className="flex items-center justify-between mb-4">
@@ -973,15 +1079,15 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
             <div className="text-center py-4 text-gray-500">Няма данни за капацитет</div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-base sm:text-lg">
                 <thead className="bg-white/50">
                   <tr>
-                    <th className="text-left p-3 font-semibold border-b-2">{bg.date}</th>
-                    <th className="text-center p-3 font-semibold border-b-2">{bg.regularCars}</th>
-                    <th className="text-center p-3 font-semibold border-b-2">{bg.withKeys}</th>
-                    <th className="text-center p-3 font-semibold border-b-2">{bg.total}</th>
-                    <th className="text-center p-3 font-semibold border-b-2">Макс.</th>
-                    <th className="text-left p-3 font-semibold border-b-2">Заетост</th>
+                    <th className="text-left p-3 sm:p-4 font-semibold border-b-2 text-base sm:text-lg">{bg.date}</th>
+                    <th className="text-center p-3 sm:p-4 font-semibold border-b-2 text-base sm:text-lg">{bg.regularCars}</th>
+                    <th className="text-center p-3 sm:p-4 font-semibold border-b-2 text-base sm:text-lg">{bg.withKeys}</th>
+                    <th className="text-center p-3 sm:p-4 font-semibold border-b-2 text-base sm:text-lg">{bg.total}</th>
+                    <th className="text-center p-3 sm:p-4 font-semibold border-b-2 text-base sm:text-lg">Макс.</th>
+                    <th className="text-left p-3 sm:p-4 font-semibold border-b-2 text-base sm:text-lg">Заетост</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -994,25 +1100,25 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
 
                     return (
                       <tr key={idx} className={`border-b ${isFull ? 'bg-red-100' : isHigh ? 'bg-yellow-50' : 'bg-white'}`}>
-                        <td className="p-3 font-medium">
-                          {new Date(day.date).toLocaleDateString('bg-BG', { weekday: 'short', month: 'short', day: 'numeric' })}
+                        <td className="p-3 sm:p-4 font-medium text-base sm:text-lg">
+                          {formatDateDisplay(day.date)}
                         </td>
-                        <td className="text-center p-3">
+                        <td className="text-center p-3 sm:p-4 text-base sm:text-lg">
                           <span className={isOverRegular ? 'text-red-600 font-bold' : ''}>
                             {day.nonKeysCount}/{day.maxSpots}
                             {isOverRegular && ' ⚠'}
                           </span>
                         </td>
-                        <td className="text-center p-3 text-purple-700 font-medium">
+                        <td className="text-center p-3 sm:p-4 text-purple-700 font-medium text-base sm:text-lg">
                           {day.keysCount}
                         </td>
-                        <td className="text-center p-3 font-bold">
+                        <td className="text-center p-3 sm:p-4 font-bold text-base sm:text-lg">
                           {day.totalCount}/{day.maxTotal}
                         </td>
-                        <td className="text-center p-3 text-gray-600">
+                        <td className="text-center p-3 sm:p-4 text-gray-600 text-base sm:text-lg">
                           {day.maxTotal}
                         </td>
-                        <td className="p-3">
+                        <td className="p-3 sm:p-4">
                           <div className="flex items-center gap-2">
                             <div className="flex-1 bg-gray-200 rounded-full h-6 overflow-hidden">
                               <div 
@@ -1061,8 +1167,11 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
           </div>
         </Card>
 
-        {/* Content - Bookings or Users */}
-        {activeTab === "users" ? (
+        {/* Content - Bookings, Users, or Pricing */}
+        {activeTab === "pricing" ? (
+          /* ========== PRICING TAB ========== */
+          <PricingManager sessionToken={localStorage.getItem("skyparking-token") || ""} />
+        ) : activeTab === "users" ? (
           /* ========== USERS TAB ========== */
           <>
             {/* Users Actions Bar */}
@@ -1093,10 +1202,10 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-gray-600">
                           <div><strong>{bg.username}:</strong> {user.username}</div>
                           <div><strong>{bg.email}:</strong> {user.email}</div>
-                          {user.lastLogin && <div><strong>{bg.lastLogin}:</strong> {new Date(user.lastLogin).toLocaleString('bg-BG')}</div>}
+                          {user.lastLogin && <div><strong>{bg.lastLogin}:</strong> {formatDateTimeDisplay(user.lastLogin)}</div>}
                         </div>
                         <div className="text-xs text-gray-400 mt-2">
-                          {bg.created}: {new Date(user.createdAt).toLocaleString('bg-BG')}
+                          {bg.created}: {formatDateTimeDisplay(user.createdAt)}
                           {user.createdBy && ` • ${bg.createdBy}: ${user.createdBy}`}
                         </div>
                       </div>
@@ -1133,25 +1242,28 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
             {/* Actions Bar */}
             <div className="mb-6 flex flex-col sm:flex-row gap-4 justify-between">
               <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 sm:h-6 sm:w-6" />
                 <Input
                   placeholder={bg.search}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 sm:pl-12 text-base sm:text-lg py-5 sm:py-6"
                 />
               </div>
-              <Button onClick={() => { setIsAddingNew(true); setFormData({ paymentStatus: "manual", status: "confirmed" }); }}>
-                <Plus className="mr-2 h-4 w-4" />
+              <Button 
+                onClick={() => { setIsAddingNew(true); setFormData({ paymentStatus: "manual", status: "confirmed", passengers: 0, numberOfCars: 1 }); }}
+                className="text-base sm:text-lg py-5 sm:py-6 px-6"
+              >
+                <Plus className="mr-2 h-5 w-5 sm:h-6 sm:w-6" />
                 {bg.addManualBooking}
               </Button>
             </div>
 
             {/* Bookings List */}
         {isLoading ? (
-          <div className="text-center py-12">{bg.loadingBookings}</div>
+          <div className="text-center py-16 text-lg text-gray-600">{bg.loadingBookings}</div>
         ) : filteredBookings.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
+          <div className="text-center py-16 text-lg text-gray-500">
             {searchTerm ? bg.noResults : bg.noBookings}
           </div>
         ) : (
@@ -1165,37 +1277,36 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                       {getStatusBadge(booking.status)}
                       {getPaymentStatusBadge(booking.paymentStatus)}
                       {booking.carKeys && (
-                        <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-300">
-                          <Key className="h-3 w-3 mr-1" />
+                        <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-300 text-base py-1 px-3">
+                          <Key className="h-4 w-4 mr-1" />
                           {bg.carKeysYes}
                         </Badge>
                       )}
                       {booking.capacityOverride && (
-                        <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-300">
-                          <AlertTriangle className="h-3 w-3 mr-1" />
+                        <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-300 text-base py-1 px-3">
+                          <AlertTriangle className="h-4 w-4 mr-1" />
                           Capacity Override
                         </Badge>
                       )}
                     </div>
                     
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2 sm:gap-3">
                       {/* Context-aware action buttons */}
                       {booking.status === "new" && (
                         <>
                           <Button
-                            size="sm"
-                            className="bg-green-600 hover:bg-green-700"
+                            className="bg-green-600 hover:bg-green-700 text-base sm:text-lg py-5 sm:py-6 px-4 sm:px-6"
                             onClick={() => acceptBooking(booking)}
                           >
-                            <Check className="h-4 w-4 mr-1" />
+                            <Check className="h-5 w-5 sm:h-6 sm:w-6 mr-2" />
                             {bg.accept}
                           </Button>
                           <Button
-                            size="sm"
                             variant="destructive"
+                            className="text-base sm:text-lg py-5 sm:py-6 px-4 sm:px-6"
                             onClick={() => cancelBooking(booking)}
                           >
-                            <X className="h-4 w-4 mr-1" />
+                            <X className="h-5 w-5 sm:h-6 sm:w-6 mr-2" />
                             {bg.reject}
                           </Button>
                         </>
@@ -1204,27 +1315,26 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                       {booking.status === "confirmed" && (
                         <>
                           <Button
-                            size="sm"
-                            className="bg-blue-600 hover:bg-blue-700"
+                            className="bg-blue-600 hover:bg-blue-700 text-base sm:text-lg py-5 sm:py-6 px-4 sm:px-6"
                             onClick={() => markArrived(booking)}
                           >
-                            <LogIn className="h-4 w-4 mr-1" />
+                            <LogIn className="h-5 w-5 sm:h-6 sm:w-6 mr-2" />
                             {bg.markArrived}
                           </Button>
                           <Button
-                            size="sm"
                             variant="outline"
+                            className="text-base sm:text-lg py-5 sm:py-6 px-4 sm:px-6"
                             onClick={() => markNoShow(booking)}
                           >
-                            <XCircle className="h-4 w-4 mr-1" />
+                            <XCircle className="h-5 w-5 sm:h-6 sm:w-6 mr-2" />
                             {bg.markNoShow}
                           </Button>
                           <Button
-                            size="sm"
                             variant="destructive"
+                            className="text-base sm:text-lg py-5 sm:py-6 px-4 sm:px-6"
                             onClick={() => cancelBooking(booking)}
                           >
-                            <X className="h-4 w-4 mr-1" />
+                            <X className="h-5 w-5 sm:h-6 sm:w-6 mr-2" />
                             {bg.reject}
                           </Button>
                         </>
@@ -1232,11 +1342,10 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                       
                       {booking.status === "arrived" && (
                         <Button
-                          size="sm"
-                          className="bg-green-600 hover:bg-green-700"
+                          className="bg-green-600 hover:bg-green-700 text-base sm:text-lg py-5 sm:py-6 px-4 sm:px-6"
                           onClick={() => checkout(booking)}
                         >
-                          <CheckCircle className="h-4 w-4 mr-1" />
+                          <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 mr-2" />
                           {bg.checkout}
                         </Button>
                       )}
@@ -1245,73 +1354,73 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                       {permissions.includes("edit_bookings") && (
                         <Button
                           variant="outline"
-                          size="sm"
+                          className="text-base sm:text-lg py-5 sm:py-6 px-4 sm:px-6"
                           onClick={() => {
                             setEditingBooking(booking);
                             setFormData(booking);
                           }}
                         >
-                          <Edit className="h-4 w-4" />
+                          <Edit className="h-5 w-5 sm:h-6 sm:w-6" />
                         </Button>
                       )}
                       {permissions.includes("delete_bookings") && (
                         <Button
                           variant="destructive"
-                          size="sm"
+                          className="text-base sm:text-lg py-5 sm:py-6 px-4 sm:px-6"
                           onClick={() => deleteBooking(booking.id)}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-5 w-5 sm:h-6 sm:w-6" />
                         </Button>
                       )}
                     </div>
                   </div>
 
                   {/* Booking details */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <div>
-                      <div className="flex items-center text-sm text-gray-500 mb-1">
-                        <User className="h-4 w-4 mr-1" />
+                      <div className="flex items-center text-lg text-gray-600 mb-3 font-medium">
+                        <User className="h-6 w-6 mr-2" />
                         {bg.customer}
                       </div>
-                      <div className="font-medium">{booking.name}</div>
-                      <div className="text-sm text-gray-600">{booking.email}</div>
-                      <div className="text-sm text-gray-600">{booking.phone}</div>
+                      <div className="font-bold text-xl mb-1">{booking.name}</div>
+                      <div className="text-lg text-gray-700">{booking.email}</div>
+                      <div className="text-lg text-gray-700">{booking.phone}</div>
                     </div>
 
                     <div>
-                      <div className="flex items-center text-sm text-gray-500 mb-1">
-                        <Calendar className="h-4 w-4 mr-1" />
+                      <div className="flex items-center text-lg text-gray-600 mb-3 font-medium">
+                        <Calendar className="h-6 w-6 mr-2" />
                         {bg.dates}
                       </div>
-                      <div className="text-sm">
-                        <div><strong>{bg.arrival}:</strong> {booking.arrivalDate} {booking.arrivalTime}</div>
-                        <div><strong>{bg.departure}:</strong> {booking.departureDate} {booking.departureTime}</div>
+                      <div className="text-lg space-y-1">
+                        <div><strong>{bg.arrival}:</strong> {formatDateDisplay(booking.arrivalDate)} {booking.arrivalTime}</div>
+                        <div><strong>{bg.departure}:</strong> {formatDateDisplay(booking.departureDate)} {booking.departureTime}</div>
                       </div>
                     </div>
 
                     <div>
-                      <div className="flex items-center text-sm text-gray-500 mb-1">
-                        <Car className="h-4 w-4 mr-1" />
+                      <div className="flex items-center text-lg text-gray-600 mb-3 font-medium">
+                        <Car className="h-6 w-6 mr-2" />
                         {booking.numberOfCars && booking.numberOfCars > 1 ? bg.vehicles : bg.vehicle}
                       </div>
-                      <div className="font-medium">{booking.licensePlate}</div>
-                      {booking.licensePlate2 && <div className="text-sm text-gray-600">{booking.licensePlate2}</div>}
-                      {booking.licensePlate3 && <div className="text-sm text-gray-600">{booking.licensePlate3}</div>}
-                      {booking.licensePlate4 && <div className="text-sm text-gray-600">{booking.licensePlate4}</div>}
-                      {booking.licensePlate5 && <div className="text-sm text-gray-600">{booking.licensePlate5}</div>}
-                      <div className="text-sm text-gray-600 mt-1">{booking.passengers} {bg.passengers}</div>
+                      <div className="font-bold text-xl mb-1">{booking.licensePlate}</div>
+                      {booking.licensePlate2 && <div className="text-lg text-gray-700">{booking.licensePlate2}</div>}
+                      {booking.licensePlate3 && <div className="text-lg text-gray-700">{booking.licensePlate3}</div>}
+                      {booking.licensePlate4 && <div className="text-lg text-gray-700">{booking.licensePlate4}</div>}
+                      {booking.licensePlate5 && <div className="text-lg text-gray-700">{booking.licensePlate5}</div>}
+                      <div className="text-lg text-gray-700 mt-2">{booking.passengers} {bg.passengers}</div>
                     </div>
 
                     <div>
-                      <div className="flex items-center text-sm text-gray-500 mb-1">
-                        <Euro className="h-4 w-4 mr-1" />
+                      <div className="flex items-center text-lg text-gray-600 mb-3 font-medium">
+                        <Euro className="h-6 w-6 mr-2" />
                         {bg.payment}
                       </div>
-                      <div className="font-bold text-lg">€{booking.totalPrice}</div>
+                      <div className="font-bold text-3xl text-gray-900">€{booking.totalPrice}</div>
                       {booking.needsInvoice && (
-                        <div className="mt-2">
-                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300">
-                            <FileText className="h-3 w-3 mr-1" />
+                        <div className="mt-3">
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300 text-base py-1 px-3">
+                            <FileText className="h-4 w-4 mr-1" />
                             {bg.invoiceRequested}
                           </Badge>
                         </div>
@@ -1321,12 +1430,12 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
 
                   {/* Invoice details */}
                   {booking.needsInvoice && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
-                      <div className="flex items-center text-sm font-semibold text-blue-900 mb-2">
-                        <FileText className="h-4 w-4 mr-1" />
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+                      <div className="flex items-center text-base font-semibold text-blue-900 mb-3">
+                        <FileText className="h-5 w-5 mr-2" />
                         {bg.invoiceDetails}
                       </div>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-base">
                         {booking.companyName && (
                           <div>
                             <span className="text-gray-600">{bg.company}:</span>
@@ -1369,23 +1478,23 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
 
                   {/* Cancellation/No-show reason */}
                   {booking.cancellationReason && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm">
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-base">
                       <span className="font-semibold text-red-900">{bg.reason}:</span>
                       <span className="text-red-700 ml-2">{booking.cancellationReason}</span>
                     </div>
                   )}
                   {booking.noShowReason && (
-                    <div className="bg-gray-100 border border-gray-300 rounded-lg p-3 text-sm">
+                    <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 text-base">
                       <span className="font-semibold text-gray-900">{bg.reason}:</span>
                       <span className="text-gray-700 ml-2">{booking.noShowReason}</span>
                     </div>
                   )}
 
                   {/* Timestamps */}
-                  <div className="text-xs text-gray-400 pt-2 border-t">
-                    <div>{bg.created}: {new Date(booking.createdAt).toLocaleString('bg-BG')}</div>
+                  <div className="text-sm text-gray-500 pt-3 border-t space-y-1">
+                    <div>{bg.created}: {formatDateTimeDisplay(booking.createdAt)}</div>
                     {booking.updatedAt && (
-                      <div>{bg.updated}: {new Date(booking.updatedAt).toLocaleString('bg-BG')}</div>
+                      <div>{bg.updated}: {formatDateTimeDisplay(booking.updatedAt)}</div>
                     )}
                   </div>
 
@@ -1408,119 +1517,157 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
           setFormData({});
         }
       }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingBooking ? bg.editBooking : bg.addBooking}</DialogTitle>
+            <DialogTitle className="text-2xl font-bold">{editingBooking ? bg.editBooking : bg.addBooking}</DialogTitle>
           </DialogHeader>
 
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-6 py-4">
+            <div className="grid grid-cols-2 gap-6">
               <div>
-                <Label htmlFor="name">{bg.fullName}</Label>
+                <Label htmlFor="name" className="text-base font-semibold">{bg.fullName}</Label>
                 <Input
                   id="name"
                   value={formData.name || ""}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="h-12 text-base"
                 />
               </div>
               <div>
-                <Label htmlFor="email">{bg.email}</Label>
+                <Label htmlFor="email" className="text-base font-semibold">{bg.email}</Label>
                 <Input
                   id="email"
                   type="email"
                   value={formData.email || ""}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="h-12 text-base"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-6">
               <div>
-                <Label htmlFor="phone">{bg.phone}</Label>
+                <Label htmlFor="phone" className="text-base font-semibold">{bg.phone}</Label>
                 <Input
                   id="phone"
                   value={formData.phone || ""}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  className="h-12 text-base"
                 />
               </div>
               <div>
-                <Label htmlFor="licensePlate">{bg.licensePlate}</Label>
+                <Label htmlFor="licensePlate" className="text-base font-semibold">{bg.licensePlate}</Label>
                 <Input
                   id="licensePlate"
                   value={formData.licensePlate || ""}
                   onChange={(e) => setFormData({ ...formData, licensePlate: e.target.value })}
+                  className="h-12 text-base"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-6">
               <div>
-                <Label htmlFor="arrivalDate">{bg.arrivalDate}</Label>
+                <Label htmlFor="arrivalDate" className="text-base font-semibold">{bg.arrivalDate}</Label>
                 <Input
                   id="arrivalDate"
                   type="date"
                   value={formData.arrivalDate || ""}
                   onChange={(e) => setFormData({ ...formData, arrivalDate: e.target.value })}
+                  className="h-12 text-base"
                 />
               </div>
               <div>
-                <Label htmlFor="arrivalTime">{bg.arrivalTime}</Label>
-                <Input
+                <Label htmlFor="arrivalTime" className="text-base font-semibold">{bg.arrivalTime}</Label>
+                <select
                   id="arrivalTime"
-                  type="time"
                   value={formData.arrivalTime || ""}
                   onChange={(e) => setFormData({ ...formData, arrivalTime: e.target.value })}
-                />
+                  className="w-full h-12 px-3 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Изберете час</option>
+                  {generateTimeSlots().map(time => (
+                    <option key={time} value={time}>{time}</option>
+                  ))}
+                </select>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-6">
               <div>
-                <Label htmlFor="departureDate">{bg.departureDate}</Label>
+                <Label htmlFor="departureDate" className="text-base font-semibold">{bg.departureDate}</Label>
                 <Input
                   id="departureDate"
                   type="date"
                   value={formData.departureDate || ""}
                   onChange={(e) => setFormData({ ...formData, departureDate: e.target.value })}
+                  className="h-12 text-base"
                 />
               </div>
               <div>
-                <Label htmlFor="departureTime">{bg.departureTime}</Label>
-                <Input
+                <Label htmlFor="departureTime" className="text-base font-semibold">{bg.departureTime}</Label>
+                <select
                   id="departureTime"
-                  type="time"
                   value={formData.departureTime || ""}
                   onChange={(e) => setFormData({ ...formData, departureTime: e.target.value })}
-                />
+                  className="w-full h-12 px-3 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Изберете час</option>
+                  {generateTimeSlots().map(time => (
+                    <option key={time} value={time}>{time}</option>
+                  ))}
+                </select>
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-4 gap-6">
               <div>
-                <Label htmlFor="passengers">{bg.passengersLabel}</Label>
+                <Label htmlFor="numberOfCars" className="text-base font-semibold">{bg.numberOfCars || "Number of Cars"}</Label>
+                <Input
+                  id="numberOfCars"
+                  type="number"
+                  min="1"
+                  max="5"
+                  value={formData.numberOfCars || 1}
+                  onChange={(e) => setFormData({ ...formData, numberOfCars: parseInt(e.target.value) })}
+                  className="h-12 text-base"
+                />
+              </div>
+              <div>
+                <Label htmlFor="passengers" className="text-base font-semibold">{bg.passengersLabel}</Label>
                 <Input
                   id="passengers"
                   type="number"
-                  min="1"
-                  value={formData.passengers || 1}
-                  onChange={(e) => setFormData({ ...formData, passengers: parseInt(e.target.value) })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="totalPrice">{bg.totalPrice}</Label>
-                <Input
-                  id="totalPrice"
-                  type="number"
                   min="0"
-                  value={formData.totalPrice || 0}
-                  onChange={(e) => setFormData({ ...formData, totalPrice: parseFloat(e.target.value) })}
+                  value={formData.passengers || ""}
+                  onChange={(e) => setFormData({ ...formData, passengers: parseInt(e.target.value) || 0 })}
+                  placeholder="Въведете брой пътници"
+                  className="h-12 text-base"
                 />
               </div>
               <div>
-                <Label htmlFor="paymentStatus">{bg.paymentStatus}</Label>
+                <Label htmlFor="totalPrice" className="text-base font-semibold">
+                  {bg.totalPrice}
+                  <span className="ml-2 text-xs text-green-600">(Auto-calculated)</span>
+                </Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-base text-gray-500">€</span>
+                  <Input
+                    id="totalPrice"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.totalPrice || 0}
+                    onChange={(e) => setFormData({ ...formData, totalPrice: parseFloat(e.target.value) })}
+                    className="pl-10 bg-green-50 h-12 text-base"
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="paymentStatus" className="text-base font-semibold">{bg.paymentStatus}</Label>
                 <select
                   id="paymentStatus"
-                  className="w-full h-10 px-3 border rounded-md"
+                  className="w-full h-12 px-3 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={formData.paymentStatus || "unpaid"}
                   onChange={(e) => setFormData({ ...formData, paymentStatus: e.target.value })}
                 >
@@ -1533,10 +1680,10 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
             </div>
 
             <div>
-              <Label htmlFor="status">{bg.bookingStatus}</Label>
+              <Label htmlFor="status" className="text-base font-semibold">{bg.bookingStatus}</Label>
               <select
                 id="status"
-                className="w-full h-10 px-3 border rounded-md"
+                className="w-full h-12 px-3 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={formData.status || "new"}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
               >
@@ -1550,46 +1697,46 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
             </div>
 
             {/* Car Keys Section */}
-            <div className="border-t pt-4">
+            <div className="border-t pt-6 mt-2">
               <div className="mb-4">
-                <Label className="flex items-center gap-2">
-                  <Key className="h-4 w-4" />
+                <Label className="flex items-center gap-2 text-base font-semibold">
+                  <Key className="h-5 w-5" />
                   {bg.carKeys}
                 </Label>
-                <div className="flex gap-4 mt-2">
+                <div className="flex gap-6 mt-3">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="radio"
                       checked={formData.carKeys === true}
                       onChange={() => setFormData({ ...formData, carKeys: true })}
-                      className="w-4 h-4"
+                      className="w-5 h-5"
                     />
-                    <span>{bg.carKeysYes}</span>
+                    <span className="text-base">{bg.carKeysYes}</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="radio"
                       checked={formData.carKeys === false || formData.carKeys === undefined}
                       onChange={() => setFormData({ ...formData, carKeys: false })}
-                      className="w-4 h-4"
+                      className="w-5 h-5"
                     />
-                    <span>{bg.carKeysNo}</span>
+                    <span className="text-base">{bg.carKeysNo}</span>
                   </label>
                 </div>
               </div>
 
               {formData.carKeys && (
                 <div>
-                  <Label htmlFor="carKeysNotes">{bg.carKeysNotes}</Label>
+                  <Label htmlFor="carKeysNotes" className="text-base font-semibold">{bg.carKeysNotes}</Label>
                   <textarea
                     id="carKeysNotes"
                     value={formData.carKeysNotes || ""}
                     onChange={(e) => setFormData({ ...formData, carKeysNotes: e.target.value })}
                     placeholder={bg.carKeysNotesPlaceholder}
-                    className="w-full h-20 px-3 py-2 border rounded-md resize-none"
+                    className="w-full h-24 px-4 py-3 text-base border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                     maxLength={500}
                   />
-                  <div className="text-xs text-gray-500 mt-1">
+                  <div className="text-sm text-gray-500 mt-1">
                     {(formData.carKeysNotes || "").length}/500
                   </div>
                 </div>
@@ -1597,110 +1744,110 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
             </div>
 
             {/* Invoice Section */}
-            <div className="border-t pt-4">
+            <div className="border-t pt-6 mt-2">
               <div className="mb-4">
-                <Label>{bg.needsInvoice}</Label>
-                <div className="flex gap-4 mt-2">
+                <Label className="text-base font-semibold">{bg.needsInvoice}</Label>
+                <div className="flex gap-6 mt-3">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="radio"
                       checked={formData.needsInvoice === true}
                       onChange={() => setFormData({ ...formData, needsInvoice: true })}
-                      className="w-4 h-4"
+                      className="w-5 h-5"
                     />
-                    <span>{bg.yes}</span>
+                    <span className="text-base">{bg.yes}</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="radio"
                       checked={formData.needsInvoice === false || formData.needsInvoice === undefined}
                       onChange={() => setFormData({ ...formData, needsInvoice: false })}
-                      className="w-4 h-4"
+                      className="w-5 h-5"
                     />
-                    <span>{bg.no}</span>
+                    <span className="text-base">{bg.no}</span>
                   </label>
                 </div>
               </div>
 
               {formData.needsInvoice && (
-                <div className="space-y-4 bg-blue-50 p-4 rounded-lg border border-blue-200">
-                  <h4 className="font-semibold text-blue-900 flex items-center gap-2">
-                    <FileText className="h-4 w-4" />
+                <div className="space-y-6 bg-blue-50 p-6 rounded-lg border border-blue-200">
+                  <h4 className="font-semibold text-lg text-blue-900 flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
                     {bg.invoiceDetails}
                   </h4>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-6">
                     <div>
-                      <Label htmlFor="companyName">{bg.companyName}</Label>
+                      <Label htmlFor="companyName" className="text-base font-semibold">{bg.companyName}</Label>
                       <Input
                         id="companyName"
                         value={formData.companyName || ""}
                         onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                        className="bg-white"
+                        className="bg-white h-12 text-base"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="companyOwner">{bg.companyOwner}</Label>
+                      <Label htmlFor="companyOwner" className="text-base font-semibold">{bg.companyOwner}</Label>
                       <Input
                         id="companyOwner"
                         value={formData.companyOwner || ""}
                         onChange={(e) => setFormData({ ...formData, companyOwner: e.target.value })}
-                        className="bg-white"
+                        className="bg-white h-12 text-base"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-6">
                     <div>
-                      <Label htmlFor="taxNumber">{bg.taxNumber}</Label>
+                      <Label htmlFor="taxNumber" className="text-base font-semibold">{bg.taxNumber}</Label>
                       <Input
                         id="taxNumber"
                         value={formData.taxNumber || ""}
                         onChange={(e) => setFormData({ ...formData, taxNumber: e.target.value })}
-                        className="bg-white"
+                        className="bg-white h-12 text-base"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="city">{bg.city}</Label>
+                      <Label htmlFor="city" className="text-base font-semibold">{bg.city}</Label>
                       <Input
                         id="city"
                         value={formData.city || ""}
                         onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                        className="bg-white"
+                        className="bg-white h-12 text-base"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <Label htmlFor="address">{bg.address}</Label>
+                    <Label htmlFor="address" className="text-base font-semibold">{bg.address}</Label>
                     <Input
                       id="address"
                       value={formData.address || ""}
                       onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                      className="bg-white"
+                      className="bg-white h-12 text-base"
                     />
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={formData.isVAT || false}
                         onChange={(e) => setFormData({ ...formData, isVAT: e.target.checked })}
-                        className="w-4 h-4"
+                        className="w-5 h-5"
                       />
-                      <span className="font-medium">{bg.vatRegistered}</span>
+                      <span className="font-medium text-base">{bg.vatRegistered}</span>
                     </label>
 
                     {formData.isVAT && (
                       <div>
-                        <Label htmlFor="vatNumber">{bg.vatNumber}</Label>
+                        <Label htmlFor="vatNumber" className="text-base font-semibold">{bg.vatNumber}</Label>
                         <Input
                           id="vatNumber"
                           value={formData.vatNumber || ""}
                           onChange={(e) => setFormData({ ...formData, vatNumber: e.target.value })}
                           placeholder="e.g., BG123456789"
-                          className="bg-white"
+                          className="bg-white h-12 text-base"
                         />
                       </div>
                     )}
@@ -1710,15 +1857,22 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
             </div>
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setEditingBooking(null);
-              setIsAddingNew(false);
-              setFormData({});
-            }}>
+          <DialogFooter className="gap-3">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setEditingBooking(null);
+                setIsAddingNew(false);
+                setFormData({});
+              }}
+              className="h-12 px-6 text-base"
+            >
               {bg.cancel}
             </Button>
-            <Button onClick={saveBooking}>
+            <Button 
+              onClick={saveBooking}
+              className="h-12 px-6 text-base"
+            >
               {editingBooking ? bg.update : bg.create}
             </Button>
           </DialogFooter>
@@ -1856,7 +2010,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                     <tbody>
                       {capacityWarning.dailyBreakdown.map((day, idx) => (
                         <tr key={idx} className={day.wouldFit ? "bg-white" : "bg-red-50"}>
-                          <td className="p-3 font-medium">{day.date}</td>
+                          <td className="p-3 font-medium">{formatDateDisplay(day.date)}</td>
                           <td className="text-center p-3">
                             {day.nonKeysCount}
                             {day.isOverNonKeysLimit && <span className="text-red-600 ml-1">⚠</span>}

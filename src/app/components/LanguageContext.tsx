@@ -11,10 +11,10 @@ interface LanguageContextType {
 const translations = {
   bg: {
     // Hero Section
-    heroTitle: "SkyParking - София Аеропорт",
-    heroSubtitle: "Сигурен и достъпен паркинг на минути от Летище София. Резервирайте сега и пътувайте със спокойствие.",
+    heroTitle: "SkyParking - Паркинг Летище София",
+    heroSubtitle: "Сигурен и достъпен паркинг на 5 минути от Терминал 1 и 2. Резервирайте сега и пътувайте със спокойствие.",
     bookNow: "Резервирай сега",
-    callButton: "Обади се +359 888 123 456",
+    callButton: "Обади се +359 886 616 991",
     
     // Navigation
     navFeatures: "Предимства",
@@ -24,25 +24,39 @@ const translations = {
     callNow: "Обади се",
     
     // Features
-    whyChooseUs: "Защо да изберете нас?",
+    whyChooseUs: "Защо да изберете SkyParking?",
     whyChooseUsDesc: "Предлагаме най-надеждното и удобно решение за паркиране за пътници от Летище София",
-    secureParking: "Сигурен паркинг",
-    secureParkingDesc: "24/7 видеонаблюдение и охрана на вашия автомобил",
-    flexibleHours: "Гъвкави часове",
-    flexibleHoursDesc: "Оставяне и вземане по всяко време, денонощно",
-    airportShuttle: "Трансфер до летището",
-    airportShuttleDesc: "Безплатен трансфер от и до терминала",
+    secureParking: "Охраняем паркинг 24/7",
+    secureParkingDesc: "Видеонаблюдение и физическа охрана",
+    flexibleHours: "Без предплащане",
+    flexibleHoursDesc: "Плащате при пристигане",
+    airportShuttle: "Безплатен трансфер",
+    airportShuttleDesc: "5 минути до терминала",
     allVehicles: "Всички превозни средства",
     allVehiclesDesc: "Приемаме автомобили, ванове и джипове",
+    lowPricesEasyBooking: "Ниски цени",
+    lowPricesEasyBookingDesc: "От 5€ на ден",
     
     // Booking Form
+    bookYourSpot: "Запазете Вашето Място",
+    reservation: "Резервация",
+    reservationSubtitle: "Без предплащане · Потвърждение по телефон",
     bookYourParking: "Резервирайте вашия паркинг",
+    datesAndTimes: "Дати и часове",
+    yourParkingCost: "Вашата цена за паркинг",
+    reservationSummary: "Обобщение на резервацията",
+    duration: "Продължителност",
+    totalCost: "Обща сума",
+    noPrePayment: "Без предплащане – плащате при пристигане",
+    processing: "Обработка...",
     fillDetails: "Попълнете данните по-долу и осигурете вашето място за паркиране",
     arrivalDate: "Дата на пристигане",
     arrivalTime: "Час на пристигане",
     departureDate: "Дата на заминаване",
     departureTime: "Час на заминаване",
     estimatedTotal: "Очаквана сума",
+    finalTotal: "Крайна сума",
+    priceIncludesTransfers: "Цена с включени безплатни трансфери",
     days: "дни",
     personalInfo: "Лична информация",
     fullName: "Пълно име",
@@ -59,6 +73,11 @@ const translations = {
     passenger: "пътник",
     passengersLabel: "пътници",
     selectTime: "Изберете час",
+    timesApproximateHelp: "ℹ️ Часовете са ориентировъчни.\nАко пристигнете по-рано или по-късно, няма проблем – просто ни се обадете.",
+    termsAndConditions: "Общи условия",
+    termsAndConditionsLink: "Общите условия",
+    agreeToTerms: "Съгласявам се с",
+    termsRequired: "Трябва да се съгласите с общите условия",
     
     // Form Placeholders
     namePlaceholder: "Иван Петров",
@@ -125,21 +144,36 @@ const translations = {
     inquirySuccess: "Благодарим за вашето запитване! Ще се свържем с вас скоро.",
     
     // Footer
-    footerTagline: "Сигурни, достъпни и удобни паркинг решения",
-    footerLocation: "📍 Летище София, България",
-    footerRights: "© 2024 Паркинг София Аеропорт. Всички права запазени.",
+    footerTagline: "Сигурни, достъпни и удобни паркин решения",
+    footerLocation: "📍 Улица Неделчо Бончев 30",
+    footerRights: "© 2026 SkyParking - Паркинг Летище София. Всички права запазени.",
     
     // Map Section
     ourLocation: "Нашата локация",
     findUs: "Намерете ни лесно до Терминал 2 на Летище София",
     takeMeThere: "Навигирай ме",
+    howToFindUs: "Как да ни откриете",
+    
+    // How It Works Section
+    howItWorks: "Как работи?",
+    onlineTelephoneBooking: "Онлайн / Телефонна резервция",
+    onlineTelephoneBookingText1: "Можете да направите резервация като ни се обадите на",
+    onlineTelephoneBookingText2: "или като попълните",
+    onlineTelephoneBookingText3: ". След като завършите резервацията, ще получите обаждане от нас, за да потвърдим всички ваши данни.",
+    bookingForm: "формата за резервация",
+    arrivalAndTransfer: "Пристигане на паркинга и трансфер до летището",
+    arrivalAndTransferDesc: "При пристигане ще бъдете посрещнати от нашия персонал, който ще ви помогне с багажа и паркирането на вашето превозно средство. След това ще вземете включения безплатен трансфер до Летище София на терминала по ваш избор - и двата са на 5 минути от нашия паркинг.",
+    returnAndPickup: "Връщане и вземане на превозното средство",
+    returnAndPickupText1: "Веднага щом кацнете и вземете багажа си,",
+    returnAndPickupText2: "и един от нашите трансферни автобуси ще дойде да ви вземе. Ще ви отведем до паркинга, където вашето превозно средство ще ви очаква - в безопасност и готово да тръгне.",
+    callUs: "обадете ни се",
   },
   en: {
     // Hero Section
-    heroTitle: "SkyParking - Sofia Airport",
-    heroSubtitle: "Secure, affordable parking just minutes from Sofia Airport. Book now and travel with peace of mind.",
+    heroTitle: "SkyParking - Sofia Airport Parking",
+    heroSubtitle: "Secure, affordable parking 5 minutes from Terminal 1 and 2. Book now and travel with peace of mind.",
     bookNow: "Book Now",
-    callButton: "Call +359 888 123 456",
+    callButton: "Call +359 886 616 991",
     
     // Navigation
     navFeatures: "Features",
@@ -149,25 +183,39 @@ const translations = {
     callNow: "Call Now",
     
     // Features
-    whyChooseUs: "Why Choose Us?",
+    whyChooseUs: "Why Choose SkyParking?",
     whyChooseUsDesc: "We provide the most reliable and convenient parking solution for Sofia Airport travelers",
-    secureParking: "Secure Parking",
-    secureParkingDesc: "24/7 surveillance and security for your vehicle",
-    flexibleHours: "Flexible Hours",
-    flexibleHoursDesc: "Drop-off and pick-up anytime, day or night",
-    airportShuttle: "Airport Shuttle",
-    airportShuttleDesc: "Free shuttle service to and from the terminal",
+    secureParking: "24/7 Secure Parking",
+    secureParkingDesc: "CCTV and physical security",
+    flexibleHours: "No Prepayment",
+    flexibleHoursDesc: "Pay on arrival",
+    airportShuttle: "Free Shuttle",
+    airportShuttleDesc: "5 minutes to terminal",
     allVehicles: "All Vehicles",
     allVehiclesDesc: "We accommodate cars, vans, and SUVs",
+    lowPricesEasyBooking: "Low Prices",
+    lowPricesEasyBookingDesc: "From €5 per day",
     
     // Booking Form
+    bookYourSpot: "Book Now",
+    reservation: "Reservation",
+    reservationSubtitle: "No Prepayment · Confirmation by Phone",
     bookYourParking: "Book Your Parking",
+    datesAndTimes: "Dates and Times",
+    yourParkingCost: "Your Parking Cost",
+    reservationSummary: "Reservation Summary",
+    duration: "Duration",
+    totalCost: "Total Cost",
+    noPrePayment: "No Prepayment – Pay on Arrival",
+    processing: "Processing...",
     fillDetails: "Fill in your details below and secure your parking spot",
     arrivalDate: "Arrival Date",
     arrivalTime: "Arrival Time",
     departureDate: "Departure Date",
     departureTime: "Departure Time",
     estimatedTotal: "Estimated Total",
+    finalTotal: "Final Total",
+    priceIncludesTransfers: "Price includes free shuttles",
     days: "days",
     personalInfo: "Personal Information",
     fullName: "Full Name",
@@ -184,6 +232,11 @@ const translations = {
     passenger: "passenger",
     passengersLabel: "passengers",
     selectTime: "Select time",
+    timesApproximateHelp: "ℹ️ Times are approximate.\nIf you arrive earlier or later, no problem – just call us.",
+    termsAndConditions: "Terms and Conditions",
+    termsAndConditionsLink: "Terms and Conditions",
+    agreeToTerms: "I agree to the",
+    termsRequired: "You must agree to the terms and conditions",
     
     // Form Placeholders
     namePlaceholder: "John Doe",
@@ -251,13 +304,28 @@ const translations = {
     
     // Footer
     footerTagline: "Secure, affordable, and convenient parking solutions",
-    footerLocation: "📍 Sofia Airport, Bulgaria",
-    footerRights: "© 2024 Sofia Airport Parking. All rights reserved.",
+    footerLocation: "📍 Ulitsa Nedelcho Bonchev 30",
+    footerRights: "© 2026 SkyParking - Sofia Airport Parking. All rights reserved.",
     
     // Map Section
     ourLocation: "Our Location",
     findUs: "Find us easily near Terminal 2 at Sofia Airport",
     takeMeThere: "Take Me There",
+    howToFindUs: "How to Find Us",
+    
+    // How It Works Section
+    howItWorks: "How It Works?",
+    onlineTelephoneBooking: "Online / Telephone Booking",
+    onlineTelephoneBookingText1: "You can make a reservation by calling us at",
+    onlineTelephoneBookingText2: "or by filling out",
+    onlineTelephoneBookingText3: ". After completing the reservation, we will call you to confirm all your details.",
+    bookingForm: "the booking form",
+    arrivalAndTransfer: "Arrival at the parking and transfer to the airport",
+    arrivalAndTransferDesc: "Upon arrival, you will be greeted by our staff who will help you with your luggage and parking your vehicle. Then you will take the included free shuttle to Sofia Airport at the terminal of your choice - both are 5 minutes from our parking.",
+    returnAndPickup: "Return and pickup of the vehicle",
+    returnAndPickupText1: "As soon as you land and collect your luggage,",
+    returnAndPickupText2: "one of our transfer buses will come to pick you up. We will take you to the parking where your vehicle will be waiting for you - safely and ready to go.",
+    callUs: "call us",
   }
 };
 

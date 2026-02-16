@@ -27,14 +27,12 @@ export function ContactForm() {
   };
 
   return (
-    <section id="contact" className="py-16 bg-gray-50">
+    <section id="contact" className="py-16 bg-white">
       <div className="container mx-auto px-4">
         <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-10">
-            <h2 className="mb-4">{t("haveQuestions")}</h2>
-            <p className="text-gray-600">
-              {t("inquiryDesc")}
-            </p>
+          <div className="text-center mb-12">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">{t("contactUs")}</h2>
+            <p className="text-gray-700 text-xl">{t("contactSubtitle")}</p>
           </div>
 
           <Card className="p-8">
@@ -85,39 +83,25 @@ export function ContactForm() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="message">{t("message")}</Label>
+                <Label htmlFor="contact-message">{t("message")}</Label>
                 <Textarea
-                  id="message"
+                  id="contact-message"
                   {...register("message", { required: t("messageRequired") })}
                   placeholder={t("messagePlaceholder")}
-                  rows={5}
                   className={errors.message ? "border-red-500" : ""}
+                  rows={5}
                 />
                 {errors.message && (
                   <p className="text-sm text-red-500">{errors.message.message}</p>
                 )}
               </div>
 
-              <Button type="submit" size="lg" className="w-full bg-[#ffd700] text-[#1a1a2e] hover:bg-[#ffed4e] font-bold">
+              <Button type="submit" size="lg" className="w-full bg-[#f1c933] hover:bg-[#f5d54a] font-bold text-[#073590]">
                 <MessageSquare className="mr-2 h-5 w-5" />
                 {t("sendInquiry")}
               </Button>
             </form>
           </Card>
-
-          <div className="mt-8 text-center">
-            <p className="text-gray-600 mb-4">{t("orContactDirectly")}</p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <a href="tel:+359888123456" className="flex items-center text-blue-600 hover:text-blue-700">
-                <Mail className="h-5 w-5 mr-2" />
-                +359 888 123 456
-              </a>
-              <a href="mailto:info@sofiaairportparking.com" className="flex items-center text-blue-600 hover:text-blue-700">
-                <Mail className="h-5 w-5 mr-2" />
-                info@sofiaairportparking.com
-              </a>
-            </div>
-          </div>
         </div>
       </div>
     </section>

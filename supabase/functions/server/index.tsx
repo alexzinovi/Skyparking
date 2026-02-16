@@ -4,6 +4,7 @@ import { logger } from "npm:hono/logger";
 import * as kv from "./kv_store.tsx";
 import * as users from "./users.tsx";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { sendConfirmationEmail } from "./email-service.tsx";
 
 const app = new Hono();
 
@@ -17,14 +18,62 @@ const MAX_SPOTS = 200;
 const KEYS_OVERFLOW_SPOTS = 20;
 const MAX_TOTAL_SPOTS = MAX_SPOTS + KEYS_OVERFLOW_SPOTS; // 220
 
+// Default pricing configuration
+const DEFAULT_PRICING = {
+  dailyPrices: {
+    1: 15,
+    2: 20,
+    3: 25,
+    4: 28,
+    5: 30,
+    6: 35,
+    7: 38,
+    8: 40,
+    9: 42,
+    10: 46
+  },
+  midRangeRate: 5,      // Days 11-30
+  midRangeMaxDay: 30,    // Last day of mid-range pricing
+  longTermRate: 2.8      // Days 31+
+};
+
+// Get pricing configuration
+async function getPricingConfig() {
+  const config = await kv.get("pricing:config");
+  return config || DEFAULT_PRICING;
+}
+
+// Calculate price based on number of days
+async function calculatePrice(days: number): Promise<number> {
+  const pricing = await getPricingConfig();
+  
+  // Days 1-10: Use specific daily prices
+  if (days <= 10 && pricing.dailyPrices[days]) {
+    return pricing.dailyPrices[days];
+  }
+  
+  // Days 11-30: Base price from day 10 + midRangeRate per additional day
+  if (days <= pricing.midRangeMaxDay) {
+    const basePrice = pricing.dailyPrices[10];
+    const additionalDays = days - 10;
+    return basePrice + (additionalDays * pricing.midRangeRate);
+  }
+  
+  // Days 31+: Price at day 30 + longTermRate per additional day
+  const day30Price = pricing.dailyPrices[10] + ((pricing.midRangeMaxDay - 10) * pricing.midRangeRate);
+  const additionalDays = days - pricing.midRangeMaxDay;
+  return day30Price + (additionalDays * pricing.longTermRate);
+}
+
 // Status transition rules
 const ALLOWED_TRANSITIONS: Record<string, string[]> = {
-  'new': ['confirmed', 'cancelled'],
-  'confirmed': ['arrived', 'no-show', 'cancelled'],
+  'new': ['confirmed', 'cancelled', 'declined'],
+  'confirmed': ['arrived', 'no-show', 'cancelled', 'declined'],
   'arrived': ['checked-out'],
   'checked-out': [],
   'no-show': [],
-  'cancelled': []
+  'cancelled': [],
+  'declined': []
 };
 
 // Validate status transition
@@ -301,6 +350,9 @@ app.post("/make-server-47a4914e/admin/setup-password", async (c) => {
 app.post("/make-server-47a4914e/bookings", async (c) => {
   try {
     const booking = await c.req.json();
+    console.log("Received booking data:", booking);
+    console.log("needsInvoice value:", booking.needsInvoice);
+    
     const bookingId = `booking:${Date.now()}:${Math.random().toString(36).substring(7)}`;
     
     const bookingData = {
@@ -311,6 +363,8 @@ app.post("/make-server-47a4914e/bookings", async (c) => {
       status: booking.status || "new", // Use provided status, default to "new"
       statusHistory: []
     };
+    
+    console.log("Saving booking with needsInvoice:", bookingData.needsInvoice);
     
     // If booking is created as "confirmed" (manual booking), assign parking spots immediately
     if (bookingData.status === "confirmed") {
@@ -356,6 +410,35 @@ app.get("/make-server-47a4914e/bookings", async (c) => {
   } catch (error) {
     console.log("Get bookings error:", error);
     return c.json({ success: false, message: "Failed to fetch bookings" }, 500);
+  }
+});
+
+// Delete all bookings (for testing purposes) - MUST BE BEFORE /bookings/:id routes
+app.delete("/make-server-47a4914e/bookings/delete-all", async (c) => {
+  try {
+    const { operator } = await c.req.json();
+    
+    // Get all bookings
+    const allBookings = await kv.getByPrefix("booking:");
+    
+    if (!allBookings || allBookings.length === 0) {
+      return c.json({ success: true, deletedCount: 0, message: "No bookings to delete" });
+    }
+    
+    // Delete all bookings
+    const bookingIds = allBookings.map(b => b.id);
+    await kv.mdel(bookingIds);
+    
+    console.log(`All bookings deleted by ${operator}. Total deleted: ${bookingIds.length}`);
+    
+    return c.json({ 
+      success: true, 
+      deletedCount: bookingIds.length,
+      message: `Successfully deleted ${bookingIds.length} bookings`
+    });
+  } catch (error) {
+    console.log("Delete all bookings error:", error);
+    return c.json({ success: false, message: "Failed to delete all bookings" }, 500);
   }
 });
 
@@ -660,10 +743,81 @@ app.put("/make-server-47a4914e/bookings/:id/accept", async (c) => {
     
     await kv.set(id, updated);
     
+    // Send confirmation email
+    try {
+      console.log(`Attempting to send confirmation email for booking ${id}...`);
+      const emailResult = await sendConfirmationEmail({
+        name: updated.name,
+        email: updated.email,
+        phone: updated.phone,
+        licensePlate: updated.licensePlate,
+        arrivalDate: updated.arrivalDate,
+        arrivalTime: updated.arrivalTime,
+        departureDate: updated.departureDate,
+        departureTime: updated.departureTime,
+        numberOfCars: updated.numberOfCars || 1,
+        passengers: updated.passengers || 0,
+        totalPrice: updated.totalPrice,
+        bookingId: id,
+        parkingSpots: updated.parkingSpots,
+        carKeys: updated.carKeys,
+        needsInvoice: updated.needsInvoice,
+        companyName: updated.companyName,
+        language: updated.language || 'bg', // Default to Bulgarian
+      });
+      
+      if (emailResult.success) {
+        console.log(`✅ Confirmation email sent successfully to ${updated.email}`);
+      } else {
+        console.error(`❌ Failed to send confirmation email: ${emailResult.error}`);
+        // Don't fail the request - email is secondary to booking confirmation
+      }
+    } catch (emailError) {
+      console.error(`❌ Error sending confirmation email:`, emailError);
+      // Don't fail the request - email is secondary to booking confirmation
+    }
+    
     return c.json({ success: true, booking: updated });
   } catch (error) {
     console.log("Accept booking error:", error);
     return c.json({ success: false, message: "Failed to accept booking" }, 500);
+  }
+});
+
+// Action: Decline reservation
+app.put("/make-server-47a4914e/bookings/:id/decline", async (c) => {
+  try {
+    const id = c.req.param("id");
+    const { operator, reason } = await c.req.json();
+    
+    const booking = await kv.get(id);
+    if (!booking) {
+      return c.json({ success: false, message: "Booking not found" }, 404);
+    }
+    
+    if (!isValidTransition(booking.status, 'declined')) {
+      return c.json({ 
+        success: false, 
+        message: `Cannot decline booking with status "${booking.status}". Valid transitions: ${ALLOWED_TRANSITIONS[booking.status]?.join(', ') || 'none'}` 
+      }, 400);
+    }
+    
+    const statusHistory = addStatusChange(booking, 'declined', 'decline', operator || 'system', reason);
+    
+    const updated = {
+      ...booking,
+      status: 'declined',
+      declineReason: reason,
+      statusHistory,
+      updatedAt: new Date().toISOString(),
+    };
+    
+    await kv.set(id, updated);
+    
+    return c.json({ success: true, booking: updated });
+  } catch (error) {
+    console.log("Decline booking error:", error);
+    return c.json({ success: false, message: "Failed to decline booking" }, 500);
   }
 });
 
@@ -781,11 +935,70 @@ app.put("/make-server-47a4914e/bookings/:id/mark-no-show", async (c) => {
   }
 });
 
+// Action: Mark as late (for customers who haven't left on time)
+app.put("/make-server-47a4914e/bookings/:id/mark-late", async (c) => {
+  try {
+    const id = c.req.param("id");
+    const { operator } = await c.req.json();
+    
+    const booking = await kv.get(id);
+    if (!booking) {
+      return c.json({ success: false, message: "Booking not found" }, 404);
+    }
+    
+    // Can only mark as late if status is 'arrived'
+    if (booking.status !== 'arrived') {
+      return c.json({ 
+        success: false, 
+        message: `Cannot mark as late with status "${booking.status}". Must be "arrived"` 
+      }, 400);
+    }
+    
+    // Calculate late surcharge (5 EUR per day past original departure date)
+    const now = new Date();
+    const originalDeparture = new Date(booking.departureDate);
+    
+    // Set both to midnight for accurate day calculation
+    now.setHours(0, 0, 0, 0);
+    originalDeparture.setHours(0, 0, 0, 0);
+    
+    const daysLate = Math.floor((now.getTime() - originalDeparture.getTime()) / (1000 * 60 * 60 * 24));
+    const lateSurcharge = daysLate > 0 ? daysLate * 5 : 0;
+    
+    const statusHistory = booking.statusHistory || [];
+    statusHistory.push({
+      from: booking.status,
+      to: booking.status, // Status remains 'arrived'
+      action: 'mark-late',
+      timestamp: new Date().toISOString(),
+      operator: operator || 'system',
+      lateSurcharge,
+    });
+    
+    const updated = {
+      ...booking,
+      isLate: true,
+      lateSurcharge,
+      originalDepartureDate: booking.originalDepartureDate || booking.departureDate,
+      originalDepartureTime: booking.originalDepartureTime || booking.departureTime,
+      statusHistory,
+      updatedAt: new Date().toISOString(),
+    };
+    
+    await kv.set(id, updated);
+    
+    return c.json({ success: true, booking: updated });
+  } catch (error) {
+    console.log("Mark late error:", error);
+    return c.json({ success: false, message: "Failed to mark as late" }, 500);
+  }
+});
+
 // Action: Checkout (arrived → checked-out)
 app.put("/make-server-47a4914e/bookings/:id/checkout", async (c) => {
   try {
     const id = c.req.param("id");
-    const { operator, paymentMethod, finalPrice } = await c.req.json();
+    const { operator, paymentMethod, finalPrice, confirmedLateFee } = await c.req.json();
     
     const booking = await kv.get(id);
     if (!booking) {
@@ -804,6 +1017,18 @@ app.put("/make-server-47a4914e/bookings/:id/checkout", async (c) => {
     // Handle payment on departure if applicable
     const shouldUpdatePayment = booking.paymentMethod === 'pay-on-leave' && paymentMethod;
     
+    // Calculate final price including late surcharge if applicable
+    let calculatedFinalPrice = finalPrice || booking.totalPrice;
+    let finalLateSurcharge = booking.lateSurcharge || 0;
+    
+    // Use confirmed late fee if provided by operator
+    if (booking.isLate && confirmedLateFee !== undefined) {
+      finalLateSurcharge = confirmedLateFee;
+      calculatedFinalPrice = booking.totalPrice + confirmedLateFee;
+    } else if (booking.isLate && booking.lateSurcharge) {
+      calculatedFinalPrice = booking.totalPrice + booking.lateSurcharge;
+    }
+    
     const updated = {
       ...booking,
       status: 'checked-out',
@@ -811,7 +1036,8 @@ app.put("/make-server-47a4914e/bookings/:id/checkout", async (c) => {
       paymentMethod: shouldUpdatePayment ? paymentMethod : booking.paymentMethod,
       paymentStatus: shouldUpdatePayment ? 'paid' : booking.paymentStatus,
       paidAt: shouldUpdatePayment ? new Date().toISOString() : booking.paidAt,
-      finalPrice: finalPrice || booking.totalPrice, // Allow price adjustment at checkout
+      finalPrice: calculatedFinalPrice, // Include late surcharge in final price
+      lateSurcharge: finalLateSurcharge, // Store the confirmed late surcharge
       statusHistory,
       updatedAt: new Date().toISOString(),
     };
@@ -822,6 +1048,113 @@ app.put("/make-server-47a4914e/bookings/:id/checkout", async (c) => {
   } catch (error) {
     console.log("Checkout error:", error);
     return c.json({ success: false, message: "Failed to checkout" }, 500);
+  }
+});
+
+// Action: Undo previous action
+app.put("/make-server-47a4914e/bookings/:id/undo", async (c) => {
+  try {
+    const id = c.req.param("id");
+    const { operator, previousState, action } = await c.req.json();
+    
+    const booking = await kv.get(id);
+    if (!booking) {
+      return c.json({ success: false, message: "Booking not found" }, 404);
+    }
+    
+    // Restore previous state
+    const statusHistory = booking.statusHistory || [];
+    statusHistory.push({
+      from: booking.status,
+      to: previousState.status || booking.status,
+      action: `undo-${action}`,
+      timestamp: new Date().toISOString(),
+      operator,
+      reason: `Undo: ${action}`
+    });
+    
+    const updated = {
+      ...booking,
+      ...previousState,
+      statusHistory,
+      updatedAt: new Date().toISOString(),
+    };
+    
+    await kv.set(id, updated);
+    
+    return c.json({ success: true, booking: updated });
+  } catch (error) {
+    console.log("Undo error:", error);
+    return c.json({ success: false, message: "Failed to undo action" }, 500);
+  }
+});
+
+// ============= PRICING MANAGEMENT ENDPOINTS =============
+
+// Get pricing configuration
+app.get("/make-server-47a4914e/pricing", async (c) => {
+  try {
+    const pricing = await getPricingConfig();
+    return c.json({ success: true, pricing });
+  } catch (error) {
+    console.log("Get pricing error:", error);
+    return c.json({ success: false, message: "Failed to fetch pricing" }, 500);
+  }
+});
+
+// Update pricing configuration (admin only)
+app.put("/make-server-47a4914e/pricing", async (c) => {
+  try {
+    const sessionToken = c.req.header("X-Session-Token");
+    if (!sessionToken) {
+      return c.json({ success: false, message: "Unauthorized" }, 401);
+    }
+    
+    const currentUser = await users.verifySessionToken(sessionToken);
+    
+    if (!currentUser || !users.hasPermission(currentUser, "manage_users")) {
+      return c.json({ success: false, message: "Insufficient permissions" }, 403);
+    }
+    
+    const newPricing = await c.req.json();
+    
+    // Validate pricing structure
+    if (!newPricing.dailyPrices || typeof newPricing.dailyPrices !== 'object') {
+      return c.json({ success: false, message: "Invalid pricing structure: dailyPrices required" }, 400);
+    }
+    
+    if (typeof newPricing.midRangeRate !== 'number' || 
+        typeof newPricing.midRangeMaxDay !== 'number' || 
+        typeof newPricing.longTermRate !== 'number') {
+      return c.json({ success: false, message: "Invalid pricing structure: rates must be numbers" }, 400);
+    }
+    
+    await kv.set("pricing:config", newPricing);
+    
+    console.log(`Pricing updated by ${currentUser.fullName}`);
+    
+    return c.json({ success: true, pricing: newPricing });
+  } catch (error) {
+    console.log("Update pricing error:", error);
+    return c.json({ success: false, message: "Failed to update pricing" }, 500);
+  }
+});
+
+// Calculate price for a given number of days (public endpoint)
+app.get("/make-server-47a4914e/pricing/calculate", async (c) => {
+  try {
+    const days = parseInt(c.req.query("days") || "1");
+    
+    if (isNaN(days) || days < 1) {
+      return c.json({ success: false, message: "Invalid days parameter" }, 400);
+    }
+    
+    const price = await calculatePrice(days);
+    
+    return c.json({ success: true, days, price });
+  } catch (error) {
+    console.log("Calculate price error:", error);
+    return c.json({ success: false, message: "Failed to calculate price" }, 500);
   }
 });
 
@@ -1002,6 +1335,52 @@ app.delete("/make-server-47a4914e/users/:id", async (c) => {
   } catch (error) {
     console.log("Delete user error:", error);
     return c.json({ success: false, message: "Failed to delete user" }, 500);
+  }
+});
+
+// Background job: Update late surcharges for all late bookings
+app.post("/make-server-47a4914e/update-late-surcharges", async (c) => {
+  try {
+    // Get all bookings
+    const allBookings = await kv.getByPrefix("booking:");
+    
+    let updatedCount = 0;
+    
+    for (const booking of allBookings) {
+      if (booking.isLate && booking.status === 'arrived') {
+        // Recalculate late surcharge
+        const now = new Date();
+        const originalDeparture = new Date(booking.originalDepartureDate || booking.departureDate);
+        
+        // Set both to midnight for accurate day calculation
+        now.setHours(0, 0, 0, 0);
+        originalDeparture.setHours(0, 0, 0, 0);
+        
+        const daysLate = Math.floor((now.getTime() - originalDeparture.getTime()) / (1000 * 60 * 60 * 24));
+        const newSurcharge = daysLate > 0 ? daysLate * 5 : 0;
+        
+        // Only update if surcharge changed
+        if (newSurcharge !== booking.lateSurcharge) {
+          const updated = {
+            ...booking,
+            lateSurcharge: newSurcharge,
+            updatedAt: new Date().toISOString(),
+          };
+          
+          await kv.set(booking.id, updated);
+          updatedCount++;
+        }
+      }
+    }
+    
+    return c.json({ 
+      success: true, 
+      message: `Updated ${updatedCount} late bookings`,
+      updatedCount 
+    });
+  } catch (error) {
+    console.log("Update late surcharges error:", error);
+    return c.json({ success: false, message: "Failed to update late surcharges" }, 500);
   }
 });
 

@@ -21,7 +21,7 @@ export function Header() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 bg-[#1a1a2e] shadow-lg">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-[#073590] shadow-lg">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-20 md:h-[110px]">
             {/* Hamburger Menu Button - Left */}
@@ -81,16 +81,16 @@ export function Header() {
                 variant="outline"
                 size="sm"
                 onClick={() => setLanguage(language === "bg" ? "en" : "bg")}
-                className="bg-transparent text-white border-white/30 hover:bg-white/10 hover:border-white text-xs px-2 min-w-[2.5rem]"
+                className="bg-transparent text-white border-white/30 hover:bg-white/10 hover:border-white px-2 min-w-[2.5rem] text-[13px]"
               >
                 {language === "bg" ? "EN" : "БГ"}
               </Button>
               <a
-                href="tel:+359888123456"
-                className="bg-[#ffd700] text-[#1a1a2e] px-3 py-2 md:px-4 md:py-2 rounded-full font-semibold text-sm whitespace-nowrap flex items-center gap-2"
+                href="tel:+359886616991"
+                className="bg-[#f1c933] text-[#1a1a2e] px-3 py-2 md:px-4 md:py-2 rounded-full font-semibold text-sm whitespace-nowrap flex items-center gap-2"
               >
-                <span className="text-lg">📞</span>
-                <span className="hidden md:inline">{t("callNow")}</span>
+                <span className="text-[13px]">📞</span>
+                <span className="hidden md:inline text-[15px]">{t("callNow")}</span>
               </a>
             </div>
           </div>
@@ -107,7 +107,7 @@ export function Header() {
 
       {/* Drawer Menu */}
       <div
-        className={`fixed top-0 left-0 h-full w-72 bg-[#1a1a2e] z-50 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 left-0 h-full w-72 bg-[#073590] z-50 transform transition-transform duration-300 ease-in-out ${
           isMenuOpen ? "translate-x-0" : "-translate-x-full"
         } shadow-2xl`}
       >

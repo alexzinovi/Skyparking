@@ -1,7 +1,7 @@
 import { Star, ChevronLeft, ChevronRight } from "lucide-react";
 import { useLanguage } from "./LanguageContext";
 import { Card } from "./ui/card";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 interface Review {
   id: number;
@@ -94,7 +94,10 @@ const reviews: Review[] = [
 export function Reviews() {
   const { language, t } = useLanguage();
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [mobileIndex, setMobileIndex] = useState(0);
   const reviewsPerPage = 3;
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const isScrollingRef = useRef(false);
 
   const nextReview = () => {
     setCurrentIndex((prev) => 
@@ -109,6 +112,48 @@ export function Reviews() {
   };
 
   const visibleReviews = reviews.slice(currentIndex, currentIndex + reviewsPerPage);
+
+  // Create triple array for infinite loop effect
+  const loopedReviews = [...reviews, ...reviews, ...reviews];
+
+  // Handle mobile scroll for tracking current review and looping
+  useEffect(() => {
+    const scrollContainer = scrollRef.current;
+    if (!scrollContainer) return;
+
+    // Start at the middle set of reviews
+    const initialScroll = (scrollContainer.scrollWidth / 3);
+    scrollContainer.scrollLeft = initialScroll;
+
+    const handleScroll = () => {
+      if (isScrollingRef.current) return;
+      
+      const scrollLeft = scrollContainer.scrollLeft;
+      const itemWidth = scrollContainer.scrollWidth / loopedReviews.length;
+      const currentScrollIndex = Math.round(scrollLeft / itemWidth);
+      
+      // Calculate actual review index (mod reviews.length)
+      const actualIndex = currentScrollIndex % reviews.length;
+      setMobileIndex(actualIndex);
+
+      // Reset scroll position when reaching boundaries for infinite loop
+      const reviewsLength = reviews.length;
+      if (currentScrollIndex < reviewsLength * 0.5) {
+        // Near start, jump to middle set
+        isScrollingRef.current = true;
+        scrollContainer.scrollLeft = scrollLeft + (itemWidth * reviewsLength);
+        setTimeout(() => { isScrollingRef.current = false; }, 50);
+      } else if (currentScrollIndex >= reviewsLength * 2.5) {
+        // Near end, jump to middle set
+        isScrollingRef.current = true;
+        scrollContainer.scrollLeft = scrollLeft - (itemWidth * reviewsLength);
+        setTimeout(() => { isScrollingRef.current = false; }, 50);
+      }
+    };
+
+    scrollContainer.addEventListener('scroll', handleScroll);
+    return () => scrollContainer.removeEventListener('scroll', handleScroll);
+  }, [loopedReviews.length]);
 
   return (
     <section className="py-20 bg-gradient-to-b from-white to-gray-50">
@@ -128,26 +173,23 @@ export function Reviews() {
                 <Star key={star} className="h-6 w-6 fill-[#ffd700] text-[#ffd700]" />
               ))}
             </div>
-            <span className="text-2xl font-bold text-[#1a1a2e]">5.0</span>
-            <span className="text-gray-600">
-              {language === "bg" ? "(500+ отзива)" : "(500+ reviews)"}
-            </span>
+            <span className="text-xl font-bold text-gray-700">5.0</span>
           </div>
         </div>
 
         <div className="relative">
-          {/* Left Arrow */}
+          {/* Desktop: Left Arrow */}
           <button
             onClick={prevReview}
-            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 bg-[#ffd700] hover:bg-[#ffed4e] text-[#1a1a2e] rounded-full p-3 shadow-lg transition-all hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="hidden md:block absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 bg-[#f1c933] hover:bg-[#f5d54a] text-[#1a1a2e] rounded-full p-3 shadow-lg transition-all hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={currentIndex === 0}
             aria-label="Previous reviews"
           >
             <ChevronLeft className="h-6 w-6" />
           </button>
 
-          {/* Reviews Grid */}
-          <div className="grid md:grid-cols-3 gap-6 px-8">
+          {/* Desktop Reviews Grid */}
+          <div className="hidden md:grid md:grid-cols-3 gap-6 px-8">
             {visibleReviews.map((review) => (
               <Card key={review.id} className="p-6 hover:shadow-xl transition-shadow duration-300 border-2 border-transparent hover:border-[#ffd700]">
                 <div className="flex items-center gap-4 mb-4">
@@ -181,10 +223,67 @@ export function Reviews() {
             ))}
           </div>
 
-          {/* Right Arrow */}
+          {/* Mobile: Horizontal Scroll */}
+          <div 
+            ref={scrollRef}
+            className="md:hidden flex overflow-x-auto snap-x snap-mandatory scrollbar-hide gap-4 px-4"
+            style={{
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+              WebkitOverflowScrolling: 'touch'
+            }}
+          >
+            {loopedReviews.map((review, index) => (
+              <div key={`review-${index}`} className="snap-center flex-shrink-0 w-full">
+                <Card className="p-6 border-2 border-transparent">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#1a1a2e] to-[#ffd700] flex items-center justify-center text-white font-bold text-lg">
+                      {(language === "bg" ? review.nameBg : review.name).charAt(0)}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-[#1a1a2e]">
+                        {language === "bg" ? review.nameBg : review.name}
+                      </h3>
+                      <p className="text-sm text-gray-500">
+                        {language === "bg" ? review.locationBg : review.location}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex mb-3">
+                    {[...Array(review.rating)].map((_, i) => (
+                      <Star key={i} className="h-4 w-4 fill-[#ffd700] text-[#ffd700]" />
+                    ))}
+                  </div>
+
+                  <p className="text-gray-700 mb-4 leading-relaxed">
+                    "{language === "bg" ? review.textBg : review.text}"
+                  </p>
+
+                  <p className="text-sm text-gray-400">
+                    {language === "bg" ? review.dateBg : review.date}
+                  </p>
+                </Card>
+              </div>
+            ))}
+          </div>
+
+          {/* Mobile: Dot Indicators */}
+          <div className="md:hidden flex justify-center gap-2 mt-6">
+            {reviews.map((_, index) => (
+              <div
+                key={index}
+                className={`h-2 w-2 rounded-full transition-all ${
+                  index === mobileIndex ? 'bg-[#f1c933] w-4' : 'bg-gray-300'
+                }`}
+              />
+            ))}
+          </div>
+
+          {/* Desktop: Right Arrow */}
           <button
             onClick={nextReview}
-            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 bg-[#ffd700] hover:bg-[#ffed4e] text-[#1a1a2e] rounded-full p-3 shadow-lg transition-all hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="hidden md:block absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 bg-[#f1c933] hover:bg-[#f5d54a] text-[#1a1a2e] rounded-full p-3 shadow-lg transition-all hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={currentIndex + reviewsPerPage >= reviews.length}
             aria-label="Next reviews"
           >
