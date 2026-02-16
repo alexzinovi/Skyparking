@@ -41,12 +41,14 @@ export function Features() {
             const Icon = feature.icon;
             const isBookingCard = feature.titleKey === "lowPricesEasyBooking";
             return (
-              <Card key={index} className="p-6 md:p-8 text-center hover:shadow-2xl transition-all duration-300 border-2 border-transparent hover:border-[#f1c933] hover:-translate-y-2 flex flex-col items-center">
-                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-[#f1c933] text-white mb-5 shadow-lg flex-shrink-0">
-                  <Icon className="h-10 w-10 text-[#073590]" />
+              <Card key={index} className="p-6 md:p-8 hover:shadow-2xl transition-all duration-300 border-2 border-transparent hover:border-[#f1c933] hover:-translate-y-2 flex flex-col">
+                <div className="flex items-center justify-center w-16 h-16 rounded-full bg-[#f1c933] text-white mb-6 shadow-lg flex-shrink-0 mx-auto">
+                  <Icon className="h-8 w-8 text-[#073590]" />
                 </div>
-                <h3 className="mb-4 text-xl font-bold text-gray-900 leading-tight">{t(feature.titleKey)}</h3>
-                <p className="leading-relaxed text-gray-700 text-[15px]">{t(feature.descKey)}</p>
+                <div className="flex-1 flex flex-col">
+                  <h3 className="mb-4 text-xl font-bold text-gray-900 leading-snug text-center">{t(feature.titleKey)}</h3>
+                  <p className="text-gray-700 leading-relaxed text-center">{t(feature.descKey)}</p>
+                </div>
               </Card>
             );
           })}
