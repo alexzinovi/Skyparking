@@ -204,6 +204,13 @@ function getDatesInRange(startDate: string, startTime: string, endDate: string, 
   return dates;
 }
 
+// Generate readable booking code (e.g., SP-12345678)
+function generateBookingCode(): string {
+  // Use timestamp (last 8 digits) for uniqueness
+  const timestamp = Date.now().toString().slice(-8);
+  return `SP-${timestamp}`;
+}
+
 // Check if two date ranges overlap on a specific day
 function overlapsOnDay(
   day: string,
@@ -353,11 +360,16 @@ app.post("/make-server-47a4914e/bookings", async (c) => {
     console.log("Received booking data:", booking);
     console.log("needsInvoice value:", booking.needsInvoice);
     
+    // Generate internal ID for database key
     const bookingId = `booking:${Date.now()}:${Math.random().toString(36).substring(7)}`;
+    
+    // Generate user-friendly booking code
+    const bookingCode = generateBookingCode();
     
     const bookingData = {
       ...booking,
       id: bookingId,
+      bookingCode, // Add the readable booking code
       createdAt: new Date().toISOString(),
       paymentStatus: booking.paymentStatus || "pending",
       status: booking.status || "new", // Use provided status, default to "new"
@@ -365,6 +377,7 @@ app.post("/make-server-47a4914e/bookings", async (c) => {
     };
     
     console.log("Saving booking with needsInvoice:", bookingData.needsInvoice);
+    console.log("Generated booking code:", bookingCode);
     
     // If booking is created as "confirmed" (manual booking), assign parking spots immediately
     if (bookingData.status === "confirmed") {
@@ -758,7 +771,7 @@ app.put("/make-server-47a4914e/bookings/:id/accept", async (c) => {
         numberOfCars: updated.numberOfCars || 1,
         passengers: updated.passengers || 0,
         totalPrice: updated.totalPrice,
-        bookingId: id,
+        bookingId: updated.bookingCode || id, // Use bookingCode for display
         parkingSpots: updated.parkingSpots,
         carKeys: updated.carKeys,
         needsInvoice: updated.needsInvoice,

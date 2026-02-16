@@ -118,7 +118,7 @@ export function BookingForm() {
 
       // Show success message with reservation details
       toast.success(t("bookingConfirmed") + " €" + totalPrice);
-      toast.info("Reservation ID: " + result.booking.id.substring(8, 16).toUpperCase());
+      toast.info("Reservation ID: " + (result.booking.bookingCode || result.booking.id)); // Use bookingCode
       
       // Optionally reset the form or show confirmation
       console.log("Reservation created:", result.booking);

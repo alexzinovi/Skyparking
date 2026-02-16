@@ -14,7 +14,7 @@ interface BookingEmailData {
   numberOfCars: number;
   passengers: number;
   totalPrice: number;
-  bookingId: string;
+  bookingId: string; // This will now be the bookingCode (e.g., SP-12345678)
   parkingSpots?: number[];
   carKeys?: boolean;
   needsInvoice?: boolean;
