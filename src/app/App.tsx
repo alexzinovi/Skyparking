@@ -189,7 +189,7 @@ function MainSite() {
           {/* Social Media and Messaging Buttons */}
           <div className="flex gap-4 justify-center items-center mt-6">
             <a
-              href="viber://contact?number=%2B359886616991"
+              href="viber://chat?number=%2B359886616991"
               onClick={(e) => {
                 // Fallback for desktop - open in new tab with viber public account link
                 if (!/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
@@ -199,12 +199,15 @@ function MainSite() {
               }}
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-[#7360f2] hover:bg-[#5a4bc9] p-3 rounded-full transition-colors"
+              className="bg-[#7360f2] hover:bg-[#5a4bc9] p-3 rounded-full transition-colors flex items-center justify-center"
               aria-label="Viber"
             >
-              <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M11.4 0C9.473.028 5.333.344 3.02 2.467 1.302 4.187.696 6.7.633 9.817.57 12.933.488 18.776 6.12 20.36h.003l-.004 2.644s-.037.977.61 1.177c.777.242 1.234-.5 1.98-1.302.407-.44.972-1.084 1.397-1.58 3.851.322 6.812-.416 7.152-.526.79-.255 5.25-.822 5.984-6.697.755-6.034-.419-9.85-2.432-11.517C18.629.793 14.865.015 11.4 0zm.058 1.693c3.084.011 6.461.716 8.126 2.174 1.72 1.415 2.694 4.827 2.03 10.216-.617 5.015-4.27 5.384-4.953 5.604-.294.095-2.99.743-6.461.48 0 0-2.554 3.08-3.357 3.884-.127.128-.266.186-.378.157-.158-.042-.2-.256-.197-.566l.015-4.32c-4.77-1.287-4.477-6.29-4.422-8.97.055-2.68.543-4.774 1.996-6.35 1.934-1.72 5.495-2.32 7.601-2.309z"/>
-              </svg>
+              <img 
+                src="https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/viberlogo.png" 
+                alt="Viber" 
+                className="w-7 h-7"
+                style={{ mixBlendMode: 'multiply' }}
+              />
             </a>
             
             <a
