@@ -27,15 +27,15 @@ const translations = {
     whyChooseUs: "Защо да изберете SkyParking?",
     whyChooseUsDesc: "Предлагаме най-надеждното и удобно решение за паркиране за пътници от Летище София",
     secureParking: "Охраняем паркинг 24/7",
-    secureParkingDesc: "Видеонаблюдение + физическа охрана — автомобилът ви е в безопасност по всяко време.",
+    secureParkingDesc: "Видеонаблюдение + жива охрана - автомобилът Ви е в сигурни ръце",
     flexibleHours: "Лесна резервация, без предплащане",
     flexibleHoursDesc: "Плащате при пристигане — без допълнителни такси или скрити изненади.",
     airportShuttle: "Безплатен трансфер до и от Летище София",
     airportShuttleDesc: "Бърз и удобен — само 5 минути до Терминал 1 и 2.",
     allVehicles: "Всички превозни средства",
     allVehiclesDesc: "Приемаме автомобили, ванове и джипове",
-    lowPricesEasyBooking: "Достъпен паркинг",
-    lowPricesEasyBookingDesc: "Отлично съотношение цена-качество за краткосрочни и дългосрочни престои.",
+    lowPricesEasyBooking: "Ниски цени",
+    lowPricesEasyBookingDesc: "Достъпни цени за краткосрочен и дългосрочен престой",
     
     // Booking Form
     bookYourSpot: "Запазете Вашето Място",
@@ -197,8 +197,8 @@ const translations = {
     airportShuttleDesc: "Fast and convenient — just 5 minutes to Terminal 1 and 2.",
     allVehicles: "All Vehicles",
     allVehiclesDesc: "We accommodate cars, vans, and SUVs",
-    lowPricesEasyBooking: "Affordable parking",
-    lowPricesEasyBookingDesc: "Great value for both short and long stays.",
+    lowPricesEasyBooking: "Low Prices",
+    lowPricesEasyBookingDesc: "Affordable rates for short and long stays.",
     
     // Booking Form
     bookYourSpot: "Book Now",
