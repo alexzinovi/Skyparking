@@ -34,8 +34,8 @@ const translations = {
     airportShuttleDesc: "Бърз и удобен — само 5 минути до Терминал 1 и 2.",
     allVehicles: "Всички превозни средства",
     allVehiclesDesc: "Приемаме автомобили, ванове и джипове",
-    lowPricesEasyBooking: "Най-добра цена",
-    lowPricesEasyBookingDesc: "От само €2.8/ден — значително по-евтино от официалния летищен паркинг.",
+    lowPricesEasyBooking: "Достъпен паркинг",
+    lowPricesEasyBookingDesc: "Отлично съотношение цена-качество за краткосрочни и дългосрочни престои.",
     
     // Booking Form
     bookYourSpot: "Запазете Вашето Място",
@@ -197,8 +197,8 @@ const translations = {
     airportShuttleDesc: "Fast and convenient — just 5 minutes to Terminal 1 and 2.",
     allVehicles: "All Vehicles",
     allVehiclesDesc: "We accommodate cars, vans, and SUVs",
-    lowPricesEasyBooking: "Best price",
-    lowPricesEasyBookingDesc: "From only €2.8/day — significantly cheaper than official airport parking.",
+    lowPricesEasyBooking: "Affordable parking",
+    lowPricesEasyBookingDesc: "Great value for both short and long stays.",
     
     // Booking Form
     bookYourSpot: "Book Now",
