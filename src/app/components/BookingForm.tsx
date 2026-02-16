@@ -41,7 +41,7 @@ interface BookingFormData {
 }
 
 export function BookingForm() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [totalPrice, setTotalPrice] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [numberOfCars, setNumberOfCars] = useState(1);
@@ -94,6 +94,7 @@ export function BookingForm() {
         totalPrice,
         numberOfCars,
         needsInvoice,
+        language, // Add the current language to the booking
         paymentStatus: "unpaid",
         status: "new", // All new bookings start as "new"
       };
