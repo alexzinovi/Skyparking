@@ -33,7 +33,16 @@ export function HeroSection() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12 md:mb-0">
             <Button 
               size="lg" 
-              onClick={() => document.getElementById('booking')?.scrollIntoView({ behavior: 'smooth' })}
+              onClick={() => {
+                const element = document.getElementById('booking');
+                if (element) {
+                  // Get header height (80px on mobile, 110px on desktop)
+                  const headerHeight = window.innerWidth >= 768 ? 110 : 80;
+                  const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
+                  // Scroll so the header aligns with the top of the booking section
+                  window.scrollTo({ top: elementPosition - headerHeight, behavior: 'smooth' });
+                }
+              }}
               className="bg-[#f1c933] text-[#1a1a2e] hover:bg-[#f5d54a] px-8 py-6 font-bold shadow-2xl transform hover:scale-105 transition-all text-[16px]"
             >
               {t("bookNow")}

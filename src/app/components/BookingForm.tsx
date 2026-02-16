@@ -123,6 +123,15 @@ export function BookingForm() {
       toast.success(t("bookingConfirmed") + " €" + totalPrice);
       toast.info("Reservation ID: " + (result.booking.bookingCode || result.booking.id)); // Use bookingCode
       
+      // Scroll to the beginning of the booking summary (header aligns with booking section)
+      const bookingElement = document.getElementById('booking');
+      if (bookingElement) {
+        // Get header height (80px on mobile, 110px on desktop)
+        const headerHeight = window.innerWidth >= 768 ? 110 : 80;
+        const elementPosition = bookingElement.getBoundingClientRect().top + window.pageYOffset;
+        window.scrollTo({ top: elementPosition - headerHeight, behavior: 'smooth' });
+      }
+      
       // Optionally reset the form or show confirmation
       console.log("Reservation created:", result.booking);
       setConfirmedBooking(result.booking);
@@ -137,7 +146,16 @@ export function BookingForm() {
 
   const handleBackToHome = () => {
     setConfirmedBooking(null);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Scroll to the beginning of the booking section (header aligns with booking section)
+    setTimeout(() => {
+      const bookingElement = document.getElementById('booking');
+      if (bookingElement) {
+        // Get header height (80px on mobile, 110px on desktop)
+        const headerHeight = window.innerWidth >= 768 ? 110 : 80;
+        const elementPosition = bookingElement.getBoundingClientRect().top + window.pageYOffset;
+        window.scrollTo({ top: elementPosition - headerHeight, behavior: 'smooth' });
+      }
+    }, 100); // Small delay to ensure DOM is updated
   };
 
   // If we have a confirmed booking, show the confirmation screen
