@@ -29,24 +29,24 @@ export function Features() {
   ];
 
   return (
-    <section id="features" className="py-8 md:py-20 bg-gray-50">
+    <section id="features" className="py-12 md:py-20 bg-gray-50">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
+        <div className="text-center mb-12 md:mb-16">
           <h2 className="font-bold text-gray-900 mb-6 text-[27px]">{t("whyChooseUs")}</h2>
           
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
           {features.map((feature, index) => {
             const Icon = feature.icon;
             const isBookingCard = feature.titleKey === "lowPricesEasyBooking";
             return (
-              <Card key={index} className="p-8 text-center hover:shadow-2xl transition-all duration-300 border-2 border-transparent hover:border-[#f1c933] hover:-translate-y-2 -mt-8 md:mt-0">
-                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-[#f1c933] text-white mb-6 mx-auto shadow-lg">
+              <Card key={index} className="p-6 md:p-8 text-center hover:shadow-2xl transition-all duration-300 border-2 border-transparent hover:border-[#f1c933] hover:-translate-y-2 flex flex-col items-center">
+                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-[#f1c933] text-white mb-5 shadow-lg flex-shrink-0">
                   <Icon className="h-10 w-10 text-[#073590]" />
                 </div>
-                <h3 className="mb-3 text-xl font-bold text-gray-900">{t(feature.titleKey)}</h3>
-                <p className="leading-relaxed text-gray-700">{t(feature.descKey)}</p>
+                <h3 className="mb-4 text-xl font-bold text-gray-900 leading-tight">{t(feature.titleKey)}</h3>
+                <p className="leading-relaxed text-gray-700 text-[15px]">{t(feature.descKey)}</p>
               </Card>
             );
           })}
