@@ -153,6 +153,9 @@ const translations = {
     ourLocation: "Нашата локация",
     findUs: "Намерете ни лесно до Терминал 2 на Летище София",
     takeMeThere: "Навигирай ме",
+    takeMeThereWaze: "Навигирай ме с Waze",
+    googleMaps: "Google Maps",
+    waze: "Waze",
     howToFindUs: "Как да ни откриете",
     
     // How It Works Section
@@ -164,7 +167,7 @@ const translations = {
     bookingForm: "формата за резервация",
     arrivalAndTransfer: "Пристигане на паркинга и трансфер до летището",
     arrivalAndTransferDesc: "При пристигане ще бъдете посрещнати от нашия персонал, който ще ви помогне с багажа и паркирането на вашето превозно средство. След това ще вземете включения безплатен трансфер до Летище София на терминала по ваш избор - и двата са на 5 минути от нашия паркинг.",
-    returnAndPickup: "Връщане и вземане на превозното средство",
+    returnAndPickup: "��ръщане и вземане на превозното средство",
     returnAndPickupText1: "Веднага щом кацнете и вземете багажа си,",
     returnAndPickupText2: "и един от нашите трансферни автобуси ще дойде да ви вземе. Ще ви отведем до паркинга, където вашето превозно средство ще ви очаква - в безопасност и готово да тръгне.",
     callUs: "обадете ни се",
@@ -313,6 +316,9 @@ const translations = {
     ourLocation: "Our Location",
     findUs: "Find us easily near Terminal 2 at Sofia Airport",
     takeMeThere: "Take Me There",
+    takeMeThereWaze: "Navigate with Waze",
+    googleMaps: "Google Maps",
+    waze: "Waze",
     howToFindUs: "How to Find Us",
     
     // How It Works Section
