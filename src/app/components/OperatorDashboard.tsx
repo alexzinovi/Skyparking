@@ -2352,6 +2352,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                 <Label className="text-base font-semibold">Дата на пристигане *</Label>
                 <Input
                   type="date"
+                  min={new Date().toISOString().split('T')[0]}
                   value={bookingForm.arrivalDate}
                   onChange={(e) => setBookingForm({...bookingForm, arrivalDate: e.target.value})}
                   className="h-12 text-base"
