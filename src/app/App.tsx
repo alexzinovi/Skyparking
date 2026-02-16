@@ -129,7 +129,7 @@ export default function App() {
   // Render main site with LanguageProvider - wrap everything here
   return (
     <LanguageProvider>
-      <div className="min-h-screen">
+      <div className="min-h-screen bg-white">
         <Toaster />
         <MainSite />
       </div>

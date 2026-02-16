@@ -50,13 +50,19 @@ export function BookingForm() {
   const [isVAT, setIsVAT] = useState(false);
   const [autoVatNumber, setAutoVatNumber] = useState("");
   const [confirmedBooking, setConfirmedBooking] = useState<any>(null);
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<BookingFormData>();
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<BookingFormData>({
+    mode: "onBlur", // Validate on blur (when user leaves field)
+    reValidateMode: "onChange" // Re-validate on change after first validation
+  });
 
   const arrivalDate = watch("arrivalDate");
   const arrivalTime = watch("arrivalTime");
   const departureDate = watch("departureDate");
   const departureTime = watch("departureTime");
   const taxNumber = watch("taxNumber");
+  
+  // Get today's date in YYYY-MM-DD format for min date validation
+  const today = new Date().toISOString().split('T')[0];
 
   // Auto-calculate price when dates change
   useEffect(() => {
@@ -217,6 +223,7 @@ export function BookingForm() {
                     <Input
                       id="arrivalDate"
                       type="date"
+                      min={today}
                       {...register("arrivalDate", { required: t("arrivalDateRequired") })}
                       className={`h-11 md:h-12 text-sm md:text-base [&::-webkit-date-and-time-value]:leading-none ${errors.arrivalDate ? "border-red-500" : "border-gray-300"}`}
                       style={{ WebkitAppearance: 'none', lineHeight: 'normal' } as any}
@@ -299,6 +306,7 @@ export function BookingForm() {
                     <Input
                       id="departureDate"
                       type="date"
+                      min={today}
                       {...register("departureDate", { required: t("departureDateRequired") })}
                       className={`h-11 md:h-12 text-sm md:text-base [&::-webkit-date-and-time-value]:leading-none ${errors.departureDate ? "border-red-500" : "border-gray-300"}`}
                       style={{ WebkitAppearance: 'none', lineHeight: 'normal' } as any}
@@ -459,7 +467,13 @@ export function BookingForm() {
                     <Input
                       id="phone"
                       type="tel"
-                      {...register("phone", { required: t("phoneRequired") })}
+                      {...register("phone", { 
+                        required: t("phoneRequired"),
+                        pattern: {
+                          value: /^[+\d]{1,15}$/,
+                          message: t("phoneInvalid")
+                        }
+                      })}
                       placeholder={t("phonePlaceholder")}
                       className={`h-12 text-base bg-white ${errors.phone ? "border-red-500" : "border-gray-300"}`}
                       autoComplete="tel"

@@ -30,18 +30,6 @@ const reviews: Review[] = [
     dateBg: "Януари 2025"
   },
   {
-    id: 2,
-    name: "John Anderson",
-    nameBg: "Джон Андерсън",
-    location: "London, UK",
-    locationBg: "Лондон, Великобритания",
-    rating: 5,
-    text: "Best parking option near Sofia Airport! Professional staff, easy booking process, and great prices. Highly recommend!",
-    textBg: "Най-добрата опция за паркинг близо до Летище София! Професионален персонал, лесен процес на резервация и чудесни цени. Горещо препоръчвам!",
-    date: "December 2024",
-    dateBg: "Декември 2024"
-  },
-  {
     id: 3,
     name: "Elena Dimitrova",
     nameBg: "Елена Димитрова",
@@ -66,18 +54,6 @@ const reviews: Review[] = [
     dateBg: "Януари 2025"
   },
   {
-    id: 5,
-    name: "Anna Schmidt",
-    nameBg: "Ана Шмит",
-    location: "Munich, Germany",
-    locationBg: "Мюнхен, Германия",
-    rating: 5,
-    text: "Perfect location and service! Staff was very friendly and helpful. The shuttle runs frequently which is very convenient.",
-    textBg: "Перфектна локация и обслужване! Персоналът беше много приветлив и полезен. Шатълът курсира често, което е много удобно.",
-    date: "November 2024",
-    dateBg: "Ноември 2024"
-  },
-  {
     id: 6,
     name: "Georgi Todorov",
     nameBg: "Георги Тодоров",
@@ -100,18 +76,27 @@ export function Reviews() {
   const isScrollingRef = useRef(false);
 
   const nextReview = () => {
-    setCurrentIndex((prev) => 
-      prev + reviewsPerPage >= reviews.length ? 0 : prev + reviewsPerPage
-    );
+    setCurrentIndex((prev) => {
+      const next = prev + 1;
+      return next >= reviews.length ? 0 : next;
+    });
   };
 
   const prevReview = () => {
-    setCurrentIndex((prev) => 
-      prev === 0 ? Math.max(0, reviews.length - reviewsPerPage) : Math.max(0, prev - reviewsPerPage)
-    );
+    setCurrentIndex((prev) => {
+      if (prev === 0) {
+        return reviews.length - 1;
+      }
+      return prev - 1;
+    });
   };
 
-  const visibleReviews = reviews.slice(currentIndex, currentIndex + reviewsPerPage);
+  // Create looped array for infinite effect
+  const extendedReviews = [...reviews, ...reviews, ...reviews];
+  const visibleReviews = extendedReviews.slice(
+    currentIndex + reviews.length, 
+    currentIndex + reviews.length + reviewsPerPage
+  );
 
   // Create triple array for infinite loop effect
   const loopedReviews = [...reviews, ...reviews, ...reviews];
@@ -181,8 +166,7 @@ export function Reviews() {
           {/* Desktop: Left Arrow */}
           <button
             onClick={prevReview}
-            className="hidden md:block absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 bg-[#f1c933] hover:bg-[#f5d54a] text-[#1a1a2e] rounded-full p-3 shadow-lg transition-all hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={currentIndex === 0}
+            className="hidden md:block absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 bg-[#f1c933] hover:bg-[#f5d54a] text-[#1a1a2e] rounded-full p-3 shadow-lg transition-all hover:scale-110"
             aria-label="Previous reviews"
           >
             <ChevronLeft className="h-6 w-6" />
@@ -283,8 +267,7 @@ export function Reviews() {
           {/* Desktop: Right Arrow */}
           <button
             onClick={nextReview}
-            className="hidden md:block absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 bg-[#f1c933] hover:bg-[#f5d54a] text-[#1a1a2e] rounded-full p-3 shadow-lg transition-all hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={currentIndex + reviewsPerPage >= reviews.length}
+            className="hidden md:block absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 bg-[#f1c933] hover:bg-[#f5d54a] text-[#1a1a2e] rounded-full p-3 shadow-lg transition-all hover:scale-110"
             aria-label="Next reviews"
           >
             <ChevronRight className="h-6 w-6" />

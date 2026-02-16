@@ -2323,12 +2323,26 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
               
               <div className="space-y-2">
                 <Label className="text-base font-semibold">Регистрационен номер *</Label>
-                <Input
-                  value={bookingForm.licensePlate}
-                  onChange={(e) => setBookingForm({...bookingForm, licensePlate: e.target.value.toUpperCase()})}
-                  placeholder="CA 1234 AB"
-                  className="h-12 text-base"
-                />
+                {Array.from({ length: bookingForm.numberOfCars || 1 }).map((_, index) => {
+                  const licensePlates = bookingForm.licensePlate.split(',').map(lp => lp.trim());
+                  return (
+                    <Input
+                      key={index}
+                      value={licensePlates[index] || ''}
+                      onChange={(e) => {
+                        const newPlates = [...licensePlates];
+                        newPlates[index] = e.target.value.toUpperCase();
+                        // Pad array with empty strings if needed
+                        while (newPlates.length < (bookingForm.numberOfCars || 1)) {
+                          newPlates.push('');
+                        }
+                        setBookingForm({...bookingForm, licensePlate: newPlates.join(',')});
+                      }}
+                      placeholder={`CA 1234 AB${(bookingForm.numberOfCars || 1) > 1 ? ` (Кола ${index + 1})` : ''}`}
+                      className="h-12 text-base mb-2"
+                    />
+                  );
+                })}
               </div>
             </div>
 
@@ -2499,66 +2513,11 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-base font-semibold">МОЛ (Управител) *</Label>
-                    <Input
-                      value={bookingForm.companyOwner}
-                      onChange={(e) => setBookingForm({...bookingForm, companyOwner: e.target.value})}
-                      placeholder="Име на управител"
-                      className="bg-white h-12 text-base"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
                     <Label className="text-base font-semibold">ЕИК / Булстат *</Label>
                     <Input
                       value={bookingForm.taxNumber}
                       onChange={(e) => setBookingForm({...bookingForm, taxNumber: e.target.value})}
                       placeholder="123456789"
-                      className="bg-white h-12 text-base"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        id="isVAT"
-                        checked={bookingForm.isVAT}
-                        onChange={(e) => setBookingForm({...bookingForm, isVAT: e.target.checked})}
-                        className="w-5 h-5"
-                      />
-                      <Label htmlFor="isVAT" className="text-base font-semibold cursor-pointer">Регистрирано по ДДС</Label>
-                    </div>
-                  </div>
-
-                  {bookingForm.isVAT && (
-                    <div className="space-y-2">
-                      <Label className="text-base font-semibold">ДДС номер</Label>
-                      <Input
-                        value={bookingForm.vatNumber}
-                        onChange={(e) => setBookingForm({...bookingForm, vatNumber: e.target.value})}
-                        placeholder="BG123456789"
-                        className="bg-white h-12 text-base"
-                      />
-                    </div>
-                  )}
-
-                  <div className="space-y-2">
-                    <Label className="text-base font-semibold">Град *</Label>
-                    <Input
-                      value={bookingForm.city}
-                      onChange={(e) => setBookingForm({...bookingForm, city: e.target.value})}
-                      placeholder="София"
-                      className="bg-white h-12 text-base"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-base font-semibold">Адрес *</Label>
-                    <Input
-                      value={bookingForm.address}
-                      onChange={(e) => setBookingForm({...bookingForm, address: e.target.value})}
-                      placeholder="Улица, номер"
                       className="bg-white h-12 text-base"
                     />
                   </div>
