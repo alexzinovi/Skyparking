@@ -142,7 +142,7 @@ function MainSite() {
   const { t } = useLanguage();
   const path = window.location.pathname;
   
-  // Show Terms and Conditions page
+  // Show Terms and Conditions page (wrapped in LanguageProvider already)
   if (path === "/terms") {
     return <TermsAndConditions />;
   }
@@ -189,7 +189,14 @@ function MainSite() {
           {/* Social Media and Messaging Buttons */}
           <div className="flex gap-4 justify-center items-center mt-6">
             <a
-              href="viber://chat?number=359886616991"
+              href="viber://contact?number=%2B359886616991"
+              onClick={(e) => {
+                // Fallback for desktop - open in new tab with viber public account link
+                if (!/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+                  e.preventDefault();
+                  window.open('https://invite.viber.com/?g2=AQBf3RxYEuuFaKrb%2BUXLQwLh3kOwxYCYXhV6hWtS0XNx1RDV0Lhk9oXx9KFRm9aT', '_blank');
+                }
+              }}
               target="_blank"
               rel="noopener noreferrer"
               className="bg-[#7360f2] hover:bg-[#5a4bc9] p-3 rounded-full transition-colors"

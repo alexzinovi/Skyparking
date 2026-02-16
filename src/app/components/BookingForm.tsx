@@ -8,6 +8,7 @@ import { CalendarIcon, CreditCard, Loader2, ChevronDown, Clock } from "lucide-re
 import { toast } from "sonner";
 import { useLanguage } from "./LanguageContext";
 import { calculatePrice } from "@/app/utils/pricing";
+import { ReservationConfirmation } from "./ReservationConfirmation";
 
 const projectId = "dbybybmjjeeocoecaewv";
 const publicAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRieWJ5Ym1qamVlb2NvZWNhZXd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODgxMzAsImV4cCI6MjA4MjA2NDEzMH0.fMZ3Yi5gZpE6kBBz-y1x0FKZcGczxSJZ9jL-Zeau340";
@@ -48,6 +49,7 @@ export function BookingForm() {
   const [needsInvoice, setNeedsInvoice] = useState(false);
   const [isVAT, setIsVAT] = useState(false);
   const [autoVatNumber, setAutoVatNumber] = useState("");
+  const [confirmedBooking, setConfirmedBooking] = useState<any>(null);
   const { register, handleSubmit, watch, formState: { errors } } = useForm<BookingFormData>();
 
   const arrivalDate = watch("arrivalDate");
@@ -123,6 +125,7 @@ export function BookingForm() {
       
       // Optionally reset the form or show confirmation
       console.log("Reservation created:", result.booking);
+      setConfirmedBooking(result.booking);
       
     } catch (error: any) {
       console.error("Reservation error:", error);
@@ -131,6 +134,21 @@ export function BookingForm() {
       setIsSubmitting(false);
     }
   };
+
+  const handleBackToHome = () => {
+    setConfirmedBooking(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // If we have a confirmed booking, show the confirmation screen
+  if (confirmedBooking) {
+    return (
+      <ReservationConfirmation 
+        booking={confirmedBooking} 
+        onBackToHome={handleBackToHome}
+      />
+    );
+  }
 
   return (
     <section id="booking" className="py-16 bg-gray-100">
@@ -341,22 +359,35 @@ export function BookingForm() {
 
               {/* Price Display */}
               {totalPrice && arrivalDate && departureDate && arrivalTime && departureTime && (
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1">{t("yourParkingCost")}</p>
-                      <p className="text-4xl font-bold text-blue-600">€{totalPrice}</p>
-                      <p className="text-sm text-gray-600 mt-2">{t("priceIncludesTransfers")}</p>
+                <div className="bg-white border-2 border-[#073590] rounded-xl p-6 shadow-lg">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                    {/* Left Side - Price */}
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-2">
+                        {language === 'bg' ? 'Обща цена' : 'Total Price'}
+                      </p>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-5xl font-bold text-[#073590]">€{totalPrice}</span>
+                        {numberOfCars > 1 && (
+                          <span className="text-xl text-gray-500">(€{(totalPrice / numberOfCars).toFixed(2)} {t("perCar")})</span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600 mt-3">
+                        {language === 'bg' ? 'Крайна цена за престоя с включени трансфери' : 'Final price for the stay with transfers included'}
+                      </p>
                     </div>
-                    <div className="text-left md:text-right">
-                      <p className="text-2xl font-semibold text-gray-700">
+                    
+                    {/* Divider */}
+                    <div className="hidden md:block w-px h-24 bg-gray-300"></div>
+                    
+                    {/* Right Side - Duration */}
+                    <div className="flex-1 md:text-right">
+                      <p className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-2">
+                        {language === 'bg' ? 'Продължителност' : 'Duration'}
+                      </p>
+                      <p className="text-4xl font-bold text-gray-800">
                         {Math.ceil((new Date(`${departureDate}T${departureTime}`).getTime() - new Date(`${arrivalDate}T${arrivalTime}`).getTime()) / (1000 * 60 * 60 * 24))} {t("days")}
                       </p>
-                      {numberOfCars > 1 && (
-                        <p className="text-sm text-gray-600 mt-1">
-                          €{totalPrice / numberOfCars} × {numberOfCars} {numberOfCars === 1 ? t("car") : t("cars")}
-                        </p>
-                      )}
                     </div>
                   </div>
                 </div>
