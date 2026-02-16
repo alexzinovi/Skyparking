@@ -15,7 +15,6 @@ interface BookingEmailData {
   passengers: number;
   totalPrice: number;
   bookingId: string; // This will now be the bookingCode (e.g., SP-12345678)
-  parkingSpots?: number[];
   carKeys?: boolean;
   needsInvoice?: boolean;
   companyName?: string;
@@ -32,10 +31,6 @@ function formatDateDisplay(dateStr: string): string {
 
 // Generate confirmation email HTML in Bulgarian
 function generateConfirmationEmailHTML_BG(data: BookingEmailData): string {
-  const parkingSpotsText = data.parkingSpots && data.parkingSpots.length > 0 
-    ? `<p style="margin: 10px 0; font-size: 16px;"><strong>🅿️ Паркинг места:</strong> ${data.parkingSpots.join(', ')}</p>`
-    : '';
-
   const carKeysText = data.carKeys 
     ? `<p style="margin: 10px 0; font-size: 16px; color: #7c3aed;"><strong>🔑 С предаване на ключове</strong></p>`
     : '';
@@ -86,7 +81,6 @@ function generateConfirmationEmailHTML_BG(data: BookingEmailData): string {
         <p style="margin: 10px 0; font-size: 16px;"><strong>🚗 Рег. номер:</strong> ${data.licensePlate}</p>
         <p style="margin: 10px 0; font-size: 16px;"><strong>🚙 Брой коли:</strong> ${data.numberOfCars}</p>
         <p style="margin: 10px 0; font-size: 16px;"><strong>👥 Пътници:</strong> ${data.passengers}</p>
-        ${parkingSpotsText}
         ${carKeysText}
         ${invoiceText}
         
@@ -135,10 +129,6 @@ function generateConfirmationEmailHTML_BG(data: BookingEmailData): string {
 
 // Generate confirmation email HTML in English
 function generateConfirmationEmailHTML_EN(data: BookingEmailData): string {
-  const parkingSpotsText = data.parkingSpots && data.parkingSpots.length > 0 
-    ? `<p style="margin: 10px 0; font-size: 16px;"><strong>🅿️ Parking Spots:</strong> ${data.parkingSpots.join(', ')}</p>`
-    : '';
-
   const carKeysText = data.carKeys 
     ? `<p style="margin: 10px 0; font-size: 16px; color: #7c3aed;"><strong>🔑 With car key handover</strong></p>`
     : '';
@@ -189,7 +179,6 @@ function generateConfirmationEmailHTML_EN(data: BookingEmailData): string {
         <p style="margin: 10px 0; font-size: 16px;"><strong>🚗 License Plate:</strong> ${data.licensePlate}</p>
         <p style="margin: 10px 0; font-size: 16px;"><strong>🚙 Number of Cars:</strong> ${data.numberOfCars}</p>
         <p style="margin: 10px 0; font-size: 16px;"><strong>👥 Passengers:</strong> ${data.passengers}</p>
-        ${parkingSpotsText}
         ${carKeysText}
         ${invoiceText}
         

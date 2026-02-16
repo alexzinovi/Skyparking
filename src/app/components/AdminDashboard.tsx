@@ -45,7 +45,7 @@ const bg = {
   logout: "Изход",
   
   // Actions
-  search: "Търсене по име, имейл, рег. номер или телефон...",
+  search: "Търсене по име, имейл, рег. номер, телефон или код (SP-XXXXXXXX)...",
   addManualBooking: "Добави Ръчна Резервация",
   
   // Tabs
@@ -218,6 +218,7 @@ interface StatusChange {
 
 interface Booking {
   id: string;
+  bookingCode?: string; // User-friendly booking code (e.g., SP-12345678)
   arrivalDate: string;
   arrivalTime: string;
   departureDate: string;
@@ -513,7 +514,8 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
         booking.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         booking.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         booking.licensePlate.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        booking.phone.includes(searchTerm)
+        booking.phone.includes(searchTerm) ||
+        booking.bookingCode?.toLowerCase().includes(searchTerm.toLowerCase()) // Add bookingCode search
       );
     }
 
@@ -1271,6 +1273,13 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
             {filteredBookings.map((booking) => (
               <Card key={booking.id} className="p-6">
                 <div className="space-y-4">
+                  {/* Booking Code at the very top */}
+                  {booking.bookingCode && (
+                    <div className="mb-2 inline-block bg-[#f1c933] text-[#073590] font-bold text-lg px-4 py-2 rounded-lg">
+                      📋 {booking.bookingCode}
+                    </div>
+                  )}
+                  
                   {/* Top row - Status and Actions */}
                   <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b">
                     <div className="flex items-center gap-3">

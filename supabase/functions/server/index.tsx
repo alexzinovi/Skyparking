@@ -14,9 +14,9 @@ const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // Capacity configuration
-const MAX_SPOTS = 200;
+const MAX_SPOTS = 180;
 const KEYS_OVERFLOW_SPOTS = 20;
-const MAX_TOTAL_SPOTS = MAX_SPOTS + KEYS_OVERFLOW_SPOTS; // 220
+const MAX_TOTAL_SPOTS = MAX_SPOTS + KEYS_OVERFLOW_SPOTS; // 200
 
 // Default pricing configuration
 const DEFAULT_PRICING = {
@@ -379,27 +379,6 @@ app.post("/make-server-47a4914e/bookings", async (c) => {
     console.log("Saving booking with needsInvoice:", bookingData.needsInvoice);
     console.log("Generated booking code:", bookingCode);
     
-    // If booking is created as "confirmed" (manual booking), assign parking spots immediately
-    if (bookingData.status === "confirmed") {
-      const numberOfCars = bookingData.numberOfCars || 1;
-      const parkingSpots = await findAvailableParkingSpots(
-        bookingData.arrivalDate,
-        bookingData.departureDate,
-        numberOfCars,
-        bookingData.carKeys || false,
-        bookingId
-      );
-      
-      if (!parkingSpots) {
-        return c.json({
-          success: false,
-          message: "No parking spots available for the requested period"
-        }, 400);
-      }
-      
-      bookingData.parkingSpots = parkingSpots;
-    }
-    
     await kv.set(bookingId, bookingData);
     
     return c.json({ success: true, booking: bookingData });
@@ -488,34 +467,6 @@ app.put("/make-server-47a4914e/bookings/:id", async (c) => {
       ...updates,
       updatedAt: new Date().toISOString(),
     };
-    
-    // If confirmed booking and dates/numberOfCars changed, reassign parking spots
-    if (updated.status === "confirmed" || updated.status === "arrived") {
-      const datesChanged = 
-        updates.arrivalDate !== undefined || 
-        updates.departureDate !== undefined ||
-        updates.numberOfCars !== undefined;
-        
-      if (datesChanged) {
-        const numberOfCars = updated.numberOfCars || 1;
-        const parkingSpots = await findAvailableParkingSpots(
-          updated.arrivalDate,
-          updated.departureDate,
-          numberOfCars,
-          updated.carKeys || false,
-          id
-        );
-        
-        if (!parkingSpots) {
-          return c.json({
-            success: false,
-            message: "No parking spots available for the updated dates/car count"
-          }, 400);
-        }
-        
-        updated.parkingSpots = parkingSpots;
-      }
-    }
     
     await kv.set(id, updated);
     
@@ -719,23 +670,6 @@ app.put("/make-server-47a4914e/bookings/:id/accept", async (c) => {
       }
     }
     
-    // Assign parking spots
-    const numberOfCars = booking.numberOfCars || 1;
-    const parkingSpots = await findAvailableParkingSpots(
-      booking.arrivalDate,
-      booking.departureDate,
-      numberOfCars,
-      booking.carKeys || false,
-      id
-    );
-    
-    if (!parkingSpots) {
-      return c.json({
-        success: false,
-        message: "No parking spots available for the requested period"
-      }, 400);
-    }
-    
     // Log capacity override if forced
     const statusHistory = addStatusChange(
       booking, 
@@ -748,7 +682,6 @@ app.put("/make-server-47a4914e/bookings/:id/accept", async (c) => {
     const updated = {
       ...booking,
       status: 'confirmed',
-      parkingSpots,
       statusHistory,
       updatedAt: new Date().toISOString(),
       capacityOverride: force || undefined
@@ -772,7 +705,6 @@ app.put("/make-server-47a4914e/bookings/:id/accept", async (c) => {
         passengers: updated.passengers || 0,
         totalPrice: updated.totalPrice,
         bookingId: updated.bookingCode || id, // Use bookingCode for display
-        parkingSpots: updated.parkingSpots,
         carKeys: updated.carKeys,
         needsInvoice: updated.needsInvoice,
         companyName: updated.companyName,

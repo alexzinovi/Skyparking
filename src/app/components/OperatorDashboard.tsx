@@ -49,12 +49,13 @@ const SHIFT_CONFIG = {
 };
 
 // Parking capacity configuration
-const BASE_CAPACITY = 200;
+const BASE_CAPACITY = 180;
 const OVERFLOW_CAPACITY = 20;
 const TOTAL_CAPACITY = BASE_CAPACITY + OVERFLOW_CAPACITY;
 
 interface Booking {
   id: string;
+  bookingCode?: string; // User-friendly booking code (e.g., SP-12345678)
   name: string;
   email: string;
   phone: string;
@@ -65,7 +66,6 @@ interface Booking {
   departureTime: string;
   passengers: number;
   numberOfCars?: number;
-  parkingSpots?: number[]; // Array of assigned spot numbers
   totalPrice: number;
   carKeys?: boolean;
   needsInvoice?: boolean;
@@ -581,7 +581,8 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
       booking.phone.toLowerCase().includes(query) ||
       booking.licensePlate.toLowerCase().includes(query) ||
       booking.email?.toLowerCase().includes(query) ||
-      booking.id.toLowerCase().includes(query)
+      booking.id.toLowerCase().includes(query) ||
+      booking.bookingCode?.toLowerCase().includes(query) // Add bookingCode search
     );
   };
   
@@ -1268,17 +1269,19 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
     <Card key={booking.id} className="p-4 sm:p-6">
       <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
         <div className="flex-1 w-full">
+          {/* Booking Code at the top */}
+          {booking.bookingCode && (
+            <div className="mb-3 inline-block bg-[#f1c933] text-[#073590] font-bold text-lg px-4 py-2 rounded-lg">
+              📋 {booking.bookingCode}
+            </div>
+          )}
+          
           <div className="flex flex-wrap items-center gap-3 mb-4">
             <User className="w-6 h-6 text-gray-500" />
             <span className="font-bold text-2xl">{booking.name}</span>
             {booking.carKeys && (
               <Badge variant="secondary" className="text-base py-1 px-3">
                 🔑 С ключове
-              </Badge>
-            )}
-            {booking.parkingSpots && booking.parkingSpots.length > 0 && (
-              <Badge variant="outline" className="text-base py-1 px-3 bg-blue-50">
-                🅿️ {booking.parkingSpots.join(", ")}
               </Badge>
             )}
             {booking.needsInvoice && (
@@ -1531,7 +1534,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
           <div className="relative">
             <input
               type="text"
-              placeholder="🔍 Търсене по име, телефон, регистрационен номер..."
+              placeholder="🔍 Търсене по име, телефон, рег. номер или код (SP-XXXXXXXX)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full h-16 text-xl px-6 pl-14 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
@@ -1614,14 +1617,16 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                     <Card key={booking.id} className="p-6">
                       <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
                         <div className="flex-1 w-full">
+                          {/* Booking Code at the top */}
+                          {booking.bookingCode && (
+                            <div className="mb-3 inline-block bg-[#f1c933] text-[#073590] font-bold text-lg px-4 py-2 rounded-lg">
+                              📋 {booking.bookingCode}
+                            </div>
+                          )}
+                          
                           <div className="flex flex-wrap items-center gap-3 mb-4">
                             <User className="w-6 h-6 text-gray-500" />
                             <span className="font-bold text-2xl">{booking.name}</span>
-                            {booking.parkingSpots && booking.parkingSpots.length > 0 && (
-                              <Badge variant="outline" className="text-base py-1 px-3 bg-blue-50">
-                                🅿️ {booking.parkingSpots.join(", ")}
-                              </Badge>
-                            )}
                             {booking.needsInvoice && (
                               <Badge variant="outline" className="text-base py-1 px-3 bg-yellow-50 border-yellow-300">
                                 <FileText className="w-5 h-5 inline mr-1" />
@@ -1749,17 +1754,19 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                     <Card key={booking.id} className="p-6">
                       <div className="flex flex-col sm:flex-row items-start justify-between gap-5">
                         <div className="flex-1 w-full">
+                          {/* Booking Code at the top */}
+                          {booking.bookingCode && (
+                            <div className="mb-3 inline-block bg-[#f1c933] text-[#073590] font-bold text-lg px-4 py-2 rounded-lg">
+                              📋 {booking.bookingCode}
+                            </div>
+                          )}
+                          
                           <div className="flex flex-wrap items-center gap-3 mb-4">
                             <User className="w-6 h-6 text-gray-500" />
                             <span className="font-bold text-2xl">{booking.name}</span>
                             {booking.carKeys && (
                               <Badge variant="secondary" className="text-base py-1 px-3">
                                 🔑 С ключове
-                              </Badge>
-                            )}
-                            {booking.parkingSpots && booking.parkingSpots.length > 0 && (
-                              <Badge variant="outline" className="text-base py-1 px-3 bg-blue-50">
-                                🅿️ {booking.parkingSpots.join(", ")}
                               </Badge>
                             )}
                             {booking.needsInvoice && (
@@ -2041,6 +2048,13 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                     <Card key={booking.id} className="p-6">
                       <div className="flex flex-col sm:flex-row items-start justify-between gap-5">
                         <div className="flex-1 w-full">
+                          {/* Booking Code at the top */}
+                          {booking.bookingCode && (
+                            <div className="mb-3 inline-block bg-[#f1c933] text-[#073590] font-bold text-lg px-4 py-2 rounded-lg">
+                              📋 {booking.bookingCode}
+                            </div>
+                          )}
+                          
                           <div className="flex flex-wrap items-center gap-3 mb-4">
                             <User className="w-6 h-6 text-gray-500" />
                             <span className="font-bold text-2xl">{booking.name}</span>
