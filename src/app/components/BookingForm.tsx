@@ -306,7 +306,7 @@ export function BookingForm() {
                     <Input
                       id="departureDate"
                       type="date"
-                      min={today}
+                      min={arrivalDate || today}
                       {...register("departureDate", { required: t("departureDateRequired") })}
                       className={`h-11 md:h-12 text-sm md:text-base [&::-webkit-date-and-time-value]:leading-none ${errors.departureDate ? "border-red-500" : "border-gray-300"}`}
                       style={{ WebkitAppearance: 'none', lineHeight: 'normal' } as any}

@@ -317,3 +317,153 @@ Email: bookings@skyparking.bg
     };
   }
 }
+
+// Generate admin notification email HTML
+function generateAdminNotificationEmailHTML(data: BookingEmailData): string {
+  const carKeysText = data.carKeys 
+    ? `<p style=\"margin: 10px 0; font-size: 16px; color: #7c3aed;\"><strong>🔑 С предаване на ключове</strong></p>`
+    : '';
+
+  const invoiceText = data.needsInvoice 
+    ? `<p style=\"margin: 10px 0; font-size: 16px;\"><strong>📄 Фактура за:</strong> ${data.companyName || 'фирма'}</p>`
+    : '';
+
+  return `
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Нова резервация - SkyParking</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+  <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 0;">
+    
+    <!-- Header -->
+    <div style="background-color: #073590; padding: 30px; text-align: center;">
+      <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">🔔 Нова резервация</h1>
+      <p style="margin: 5px 0 0 0; color: #f1c933; font-size: 16px;">SkyParking Admin Notification</p>
+    </div>
+
+    <!-- Content -->
+    <div style="padding: 30px;">
+      
+      <p style="font-size: 18px; color: #333333; margin-bottom: 20px;">
+        Нова резервация е направена през сайта:
+      </p>
+
+      <!-- Booking Details -->
+      <div style="background-color: #f9f9f9; border-left: 4px solid #073590; padding: 20px; margin: 25px 0; border-radius: 4px;">
+        <h2 style="margin: 0 0 15px 0; font-size: 20px; color: #333333;">📋 Детайли на резервацията</h2>
+        
+        <p style="margin: 10px 0; font-size: 16px;"><strong>📌 Номер:</strong> ${data.bookingId}</p>
+        
+        <div style="margin: 20px 0; padding: 15px; background-color: #ffffff; border-radius: 4px;">
+          <p style="margin: 5px 0; font-size: 16px;"><strong>📅 Пристигане:</strong> ${formatDateDisplay(data.arrivalDate)} в ${data.arrivalTime}</p>
+          <p style="margin: 5px 0; font-size: 16px;"><strong>📅 Заминаване:</strong> ${formatDateDisplay(data.departureDate)} в ${data.departureTime}</p>
+        </div>
+
+        <div style="margin-top: 20px; padding: 15px; background-color: #f1c933; border-radius: 4px; text-align: center;">
+          <p style="margin: 0; font-size: 24px; font-weight: bold; color: #000000;">💶 Цена: €${data.totalPrice}</p>
+        </div>
+      </div>
+
+      <!-- Customer Details -->
+      <div style="background-color: #e8f4fd; border-left: 4px solid #073590; padding: 20px; margin: 25px 0; border-radius: 4px;">
+        <h3 style="margin: 0 0 15px 0; font-size: 18px; color: #333333;">👤 Клиент</h3>
+        <p style="margin: 10px 0; font-size: 16px;"><strong>Име:</strong> ${data.name}</p>
+        <p style="margin: 10px 0; font-size: 16px;"><strong>📧 Email:</strong> ${data.email}</p>
+        <p style="margin: 10px 0; font-size: 16px;"><strong>📞 Телефон:</strong> ${data.phone}</p>
+      </div>
+
+      <!-- Vehicle Details -->
+      <div style="background-color: #f0f0f0; border-left: 4px solid #f1c933; padding: 20px; margin: 25px 0; border-radius: 4px;">
+        <h3 style="margin: 0 0 15px 0; font-size: 18px; color: #333333;">🚗 Превозно средство</h3>
+        <p style="margin: 10px 0; font-size: 16px;"><strong>Рег. номер:</strong> ${data.licensePlate}</p>
+        <p style="margin: 10px 0; font-size: 16px;"><strong>Брой коли:</strong> ${data.numberOfCars}</p>
+        <p style="margin: 10px 0; font-size: 16px;"><strong>Пътници:</strong> ${data.passengers}</p>
+        ${carKeysText}
+        ${invoiceText}
+      </div>
+
+      <!-- Action Button -->
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="https://dbybybmjjeeocoecaewv.supabase.co/functions/v1/make-server-47a4914e" 
+           style="display: inline-block; background-color: #073590; color: #ffffff; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold;">
+          Виж в админ панела
+        </a>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div style="background-color: #333333; color: #ffffff; padding: 20px; text-align: center; font-size: 14px;">
+      <p style="margin: 0;">© 2026 SkyParking - Admin Notification System</p>
+    </div>
+
+  </div>
+</body>
+</html>
+  `.trim();
+}
+
+// Send admin notification email
+export async function sendAdminNotificationEmail(data: BookingEmailData): Promise<{ success: boolean; error?: string }> {
+  try {
+    const apiKey = Deno.env.get('RESEND_API_KEY');
+    
+    if (!apiKey) {
+      console.error('RESEND_API_KEY not configured');
+      return { success: false, error: 'Email service not configured' };
+    }
+
+    const fromEmail = 'SkyParking <reservations@skyparking.bg>';
+    const adminEmail = 'reservations@skyparking.bg';
+    
+    const emailHTML = generateAdminNotificationEmailHTML(data);
+
+    const subject = `🔔 Нова резервация ${data.bookingId} - €${data.totalPrice}`;
+
+    const plainText = `
+Нова резервация - SkyParking
+
+Номер: ${data.bookingId}
+Пристигане: ${formatDateDisplay(data.arrivalDate)} в ${data.arrivalTime}
+Заминаване: ${formatDateDisplay(data.departureDate)} в ${data.departureTime}
+
+КЛИЕНТ:
+Име: ${data.name}
+Email: ${data.email}
+Телефон: ${data.phone}
+
+ПРЕВОЗНО СРЕДСТВО:
+Рег. номер: ${data.licensePlate}
+Брой коли: ${data.numberOfCars}
+Пътници: ${data.passengers}
+${data.carKeys ? 'С предаване на ключове: ДА' : ''}
+${data.needsInvoice ? `Фактура за: ${data.companyName || 'фирма'}` : ''}
+
+Цена: €${data.totalPrice}
+    `.trim();
+
+    console.log(`Sending admin notification email to ${adminEmail} for booking ${data.bookingId}`);
+
+    const result = await resend.emails.send({
+      from: fromEmail,
+      to: adminEmail,
+      subject: subject,
+      html: emailHTML,
+      text: plainText,
+    });
+
+    console.log('Admin notification email sent successfully:', result);
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Failed to send admin notification email:', error);
+    return { 
+      success: false, 
+      error: error.message || 'Failed to send admin notification' 
+    };
+  }
+}

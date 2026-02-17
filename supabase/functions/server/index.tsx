@@ -4,7 +4,7 @@ import { logger } from "npm:hono/logger";
 import * as kv from "./kv_store.tsx";
 import * as users from "./users.tsx";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { sendConfirmationEmail } from "./email-service.tsx";
+import { sendConfirmationEmail, sendAdminNotificationEmail } from "./email-service.tsx";
 
 const app = new Hono();
 
@@ -381,6 +381,68 @@ app.post("/make-server-47a4914e/bookings", async (c) => {
     
     await kv.set(bookingId, bookingData);
     
+    // Send confirmation email to customer
+    try {
+      console.log(`📧 Sending customer confirmation email to ${bookingData.email}...`);
+      const customerEmailResult = await sendConfirmationEmail({
+        name: bookingData.name,
+        email: bookingData.email,
+        phone: bookingData.phone,
+        licensePlate: bookingData.licensePlate,
+        arrivalDate: bookingData.arrivalDate,
+        arrivalTime: bookingData.arrivalTime,
+        departureDate: bookingData.departureDate,
+        departureTime: bookingData.departureTime,
+        numberOfCars: bookingData.numberOfCars || 1,
+        passengers: bookingData.passengers || 0,
+        totalPrice: bookingData.totalPrice,
+        bookingId: bookingData.bookingCode || bookingId,
+        carKeys: bookingData.carKeys,
+        needsInvoice: bookingData.needsInvoice,
+        companyName: bookingData.companyName,
+        language: bookingData.language || 'bg',
+      });
+      
+      if (customerEmailResult.success) {
+        console.log(`✅ Customer confirmation email sent successfully to ${bookingData.email}`);
+      } else {
+        console.error(`❌ Failed to send customer confirmation email: ${customerEmailResult.error}`);
+      }
+    } catch (emailError) {
+      console.error(`❌ Error sending customer confirmation email:`, emailError);
+    }
+    
+    // Send admin notification email
+    try {
+      console.log(`📧 Sending admin notification email to reservations@skyparking.bg...`);
+      const adminEmailResult = await sendAdminNotificationEmail({
+        name: bookingData.name,
+        email: bookingData.email,
+        phone: bookingData.phone,
+        licensePlate: bookingData.licensePlate,
+        arrivalDate: bookingData.arrivalDate,
+        arrivalTime: bookingData.arrivalTime,
+        departureDate: bookingData.departureDate,
+        departureTime: bookingData.departureTime,
+        numberOfCars: bookingData.numberOfCars || 1,
+        passengers: bookingData.passengers || 0,
+        totalPrice: bookingData.totalPrice,
+        bookingId: bookingData.bookingCode || bookingId,
+        carKeys: bookingData.carKeys,
+        needsInvoice: bookingData.needsInvoice,
+        companyName: bookingData.companyName,
+        language: bookingData.language || 'bg',
+      });
+      
+      if (adminEmailResult.success) {
+        console.log(`✅ Admin notification email sent successfully to reservations@skyparking.bg`);
+      } else {
+        console.error(`❌ Failed to send admin notification email: ${adminEmailResult.error}`);
+      }
+    } catch (emailError) {
+      console.error(`❌ Error sending admin notification email:`, emailError);
+    }
+    
     return c.json({ success: true, booking: bookingData });
   } catch (error) {
     console.log("Create booking error:", error);
@@ -688,39 +750,6 @@ app.put("/make-server-47a4914e/bookings/:id/accept", async (c) => {
     };
     
     await kv.set(id, updated);
-    
-    // Send confirmation email
-    try {
-      console.log(`Attempting to send confirmation email for booking ${id}...`);
-      const emailResult = await sendConfirmationEmail({
-        name: updated.name,
-        email: updated.email,
-        phone: updated.phone,
-        licensePlate: updated.licensePlate,
-        arrivalDate: updated.arrivalDate,
-        arrivalTime: updated.arrivalTime,
-        departureDate: updated.departureDate,
-        departureTime: updated.departureTime,
-        numberOfCars: updated.numberOfCars || 1,
-        passengers: updated.passengers || 0,
-        totalPrice: updated.totalPrice,
-        bookingId: updated.bookingCode || id, // Use bookingCode for display
-        carKeys: updated.carKeys,
-        needsInvoice: updated.needsInvoice,
-        companyName: updated.companyName,
-        language: updated.language || 'bg', // Default to Bulgarian
-      });
-      
-      if (emailResult.success) {
-        console.log(`✅ Confirmation email sent successfully to ${updated.email}`);
-      } else {
-        console.error(`❌ Failed to send confirmation email: ${emailResult.error}`);
-        // Don't fail the request - email is secondary to booking confirmation
-      }
-    } catch (emailError) {
-      console.error(`❌ Error sending confirmation email:`, emailError);
-      // Don't fail the request - email is secondary to booking confirmation
-    }
     
     return c.json({ success: true, booking: updated });
   } catch (error) {
