@@ -10,6 +10,8 @@ import { useLanguage } from "./LanguageContext";
 import { calculatePrice } from "@/app/utils/pricing";
 import { ReservationConfirmation } from "./ReservationConfirmation";
 import { ErrorBoundary } from "./ErrorBoundary";
+import { DatePicker } from "./DatePicker";
+import { TimePicker } from "./TimePicker";
 
 const projectId = "dbybybmjjeeocoecaewv";
 const publicAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRieWJ5Ym1qamVlb2NvZWNhZXd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODgxMzAsImV4cCI6MjA4MjA2NDEzMH0.fMZ3Yi5gZpE6kBBz-y1x0FKZcGczxSJZ9jL-Zeau340";
@@ -52,6 +54,10 @@ export function BookingForm() {
   const [autoVatNumber, setAutoVatNumber] = useState("");
   const [confirmedBooking, setConfirmedBooking] = useState<any>(null);
   
+  // Date states - using Date objects for DatePicker
+  const [arrivalDateObj, setArrivalDateObj] = useState<Date | undefined>();
+  const [departureDateObj, setDepartureDateObj] = useState<Date | undefined>();
+  
   // Anti-spam measures
   const [formLoadTime] = useState(Date.now());
   const [lastSubmitTime, setLastSubmitTime] = useState(0);
@@ -67,8 +73,13 @@ export function BookingForm() {
   const departureTime = watch("departureTime");
   const taxNumber = watch("taxNumber");
   
-  // Get today's date in YYYY-MM-DD format for min date validation
-  const today = new Date().toISOString().split('T')[0];
+  // Register date fields for validation
+  useEffect(() => {
+    register("arrivalDate", { required: t("arrivalDateRequired") });
+    register("departureDate", { required: t("departureDateRequired") });
+    register("arrivalTime", { required: t("arrivalTimeRequired") });
+    register("departureTime", { required: t("departureTimeRequired") });
+  }, [register, t]);
 
   // Handle autofill detection for key fields
   useEffect(() => {
@@ -249,171 +260,61 @@ export function BookingForm() {
                 </p>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                  <div className="space-y-2 md:space-y-3">
-                    <Label className="text-sm md:text-base font-medium text-gray-700" htmlFor="arrivalDate">
-                      <CalendarIcon className="inline h-4 w-4 mr-2" />
-                      {t("arrivalDate")}
-                    </Label>
-                    <Input
-                      id="arrivalDate"
-                      type="date"
-                      min={today}
-                      {...register("arrivalDate", { required: t("arrivalDateRequired") })}
-                      className={`h-11 md:h-12 text-sm md:text-base [&::-webkit-date-and-time-value]:leading-none ${errors.arrivalDate ? "border-red-500" : "border-gray-300"}`}
-                      style={{ WebkitAppearance: 'none', lineHeight: 'normal' } as any}
-                    />
-                    {errors.arrivalDate && (
-                      <p className="text-sm text-red-500">{errors.arrivalDate.message}</p>
-                    )}
-                  </div>
+                  <DatePicker
+                    id="arrivalDate"
+                    label={t("arrivalDate")}
+                    value={arrivalDateObj}
+                    onChange={(date) => {
+                      setArrivalDateObj(date);
+                      if (date) {
+                        // Convert to YYYY-MM-DD format for form
+                        const dateStr = date.toISOString().split('T')[0];
+                        setValue('arrivalDate', dateStr, { shouldValidate: true });
+                      } else {
+                        setValue('arrivalDate', '', { shouldValidate: true });
+                      }
+                    }}
+                    minDate={new Date()}
+                    error={errors.arrivalDate?.message}
+                  />
 
-                  <div className="space-y-2 md:space-y-3">
-                    <Label className="text-sm md:text-base font-medium text-gray-700" htmlFor="arrivalTime">
-                      <Clock className="inline h-4 w-4 mr-2" />
-                      {t("arrivalTime")}
-                    </Label>
-                    <select
-                      id="arrivalTime"
-                      {...register("arrivalTime", { required: t("arrivalTimeRequired") })}
-                      className={`w-full h-11 md:h-12 px-3 md:px-4 text-sm md:text-base border rounded-lg bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors ${errors.arrivalTime ? "border-red-500" : "border-gray-300"}`}
-                    >
-                      <option value="">{t("selectTime")}</option>
-                      <option value="00:00">00:00</option>
-                      <option value="00:30">00:30</option>
-                      <option value="01:00">01:00</option>
-                      <option value="01:30">01:30</option>
-                      <option value="02:00">02:00</option>
-                      <option value="02:30">02:30</option>
-                      <option value="03:00">03:00</option>
-                      <option value="03:30">03:30</option>
-                      <option value="04:00">04:00</option>
-                      <option value="04:30">04:30</option>
-                      <option value="05:00">05:00</option>
-                      <option value="05:30">05:30</option>
-                      <option value="06:00">06:00</option>
-                      <option value="06:30">06:30</option>
-                      <option value="07:00">07:00</option>
-                      <option value="07:30">07:30</option>
-                      <option value="08:00">08:00</option>
-                      <option value="08:30">08:30</option>
-                      <option value="09:00">09:00</option>
-                      <option value="09:30">09:30</option>
-                      <option value="10:00">10:00</option>
-                      <option value="10:30">10:30</option>
-                      <option value="11:00">11:00</option>
-                      <option value="11:30">11:30</option>
-                      <option value="12:00">12:00</option>
-                      <option value="12:30">12:30</option>
-                      <option value="13:00">13:00</option>
-                      <option value="13:30">13:30</option>
-                      <option value="14:00">14:00</option>
-                      <option value="14:30">14:30</option>
-                      <option value="15:00">15:00</option>
-                      <option value="15:30">15:30</option>
-                      <option value="16:00">16:00</option>
-                      <option value="16:30">16:30</option>
-                      <option value="17:00">17:00</option>
-                      <option value="17:30">17:30</option>
-                      <option value="18:00">18:00</option>
-                      <option value="18:30">18:30</option>
-                      <option value="19:00">19:00</option>
-                      <option value="19:30">19:30</option>
-                      <option value="20:00">20:00</option>
-                      <option value="20:30">20:30</option>
-                      <option value="21:00">21:00</option>
-                      <option value="21:30">21:30</option>
-                      <option value="22:00">22:00</option>
-                      <option value="22:30">22:30</option>
-                      <option value="23:00">23:00</option>
-                      <option value="23:30">23:30</option>
-                    </select>
-                    {errors.arrivalTime && (
-                      <p className="text-sm text-red-500">{errors.arrivalTime.message}</p>
-                    )}
-                  </div>
+                  <TimePicker
+                    id="arrivalTime"
+                    label={t("arrivalTime")}
+                    value={arrivalTime}
+                    onChange={(time) => {
+                      setValue('arrivalTime', time, { shouldValidate: true });
+                    }}
+                    error={errors.arrivalTime?.message}
+                  />
 
-                  <div className="space-y-2 md:space-y-3">
-                    <Label className="text-sm md:text-base font-medium text-gray-700" htmlFor="departureDate">
-                      <CalendarIcon className="inline h-4 w-4 mr-2" />
-                      {t("departureDate")}
-                    </Label>
-                    <Input
-                      id="departureDate"
-                      type="date"
-                      min={arrivalDate || today}
-                      {...register("departureDate", { required: t("departureDateRequired") })}
-                      className={`h-11 md:h-12 text-sm md:text-base [&::-webkit-date-and-time-value]:leading-none ${errors.departureDate ? "border-red-500" : "border-gray-300"}`}
-                      style={{ WebkitAppearance: 'none', lineHeight: 'normal' } as any}
-                    />
-                    {errors.departureDate && (
-                      <p className="text-sm text-red-500">{errors.departureDate.message}</p>
-                    )}
-                  </div>
+                  <DatePicker
+                    id="departureDate"
+                    label={t("departureDate")}
+                    value={departureDateObj}
+                    onChange={(date) => {
+                      setDepartureDateObj(date);
+                      if (date) {
+                        // Convert to YYYY-MM-DD format for form
+                        const dateStr = date.toISOString().split('T')[0];
+                        setValue('departureDate', dateStr, { shouldValidate: true });
+                      } else {
+                        setValue('departureDate', '', { shouldValidate: true });
+                      }
+                    }}
+                    minDate={arrivalDateObj || new Date()}
+                    error={errors.departureDate?.message}
+                  />
 
-                  <div className="space-y-2 md:space-y-3">
-                    <Label className="text-sm md:text-base font-medium text-gray-700" htmlFor="departureTime">
-                      <Clock className="inline h-4 w-4 mr-2" />
-                      {t("departureTime")}
-                    </Label>
-                    <select
-                      id="departureTime"
-                      {...register("departureTime", { required: t("departureTimeRequired") })}
-                      className={`w-full h-11 md:h-12 px-3 md:px-4 text-sm md:text-base border rounded-lg bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors ${errors.departureTime ? "border-red-500" : "border-gray-300"}`}
-                    >
-                      <option value="">{t("selectTime")}</option>
-                      <option value="00:00">00:00</option>
-                      <option value="00:30">00:30</option>
-                      <option value="01:00">01:00</option>
-                      <option value="01:30">01:30</option>
-                      <option value="02:00">02:00</option>
-                      <option value="02:30">02:30</option>
-                      <option value="03:00">03:00</option>
-                      <option value="03:30">03:30</option>
-                      <option value="04:00">04:00</option>
-                      <option value="04:30">04:30</option>
-                      <option value="05:00">05:00</option>
-                      <option value="05:30">05:30</option>
-                      <option value="06:00">06:00</option>
-                      <option value="06:30">06:30</option>
-                      <option value="07:00">07:00</option>
-                      <option value="07:30">07:30</option>
-                      <option value="08:00">08:00</option>
-                      <option value="08:30">08:30</option>
-                      <option value="09:00">09:00</option>
-                      <option value="09:30">09:30</option>
-                      <option value="10:00">10:00</option>
-                      <option value="10:30">10:30</option>
-                      <option value="11:00">11:00</option>
-                      <option value="11:30">11:30</option>
-                      <option value="12:00">12:00</option>
-                      <option value="12:30">12:30</option>
-                      <option value="13:00">13:00</option>
-                      <option value="13:30">13:30</option>
-                      <option value="14:00">14:00</option>
-                      <option value="14:30">14:30</option>
-                      <option value="15:00">15:00</option>
-                      <option value="15:30">15:30</option>
-                      <option value="16:00">16:00</option>
-                      <option value="16:30">16:30</option>
-                      <option value="17:00">17:00</option>
-                      <option value="17:30">17:30</option>
-                      <option value="18:00">18:00</option>
-                      <option value="18:30">18:30</option>
-                      <option value="19:00">19:00</option>
-                      <option value="19:30">19:30</option>
-                      <option value="20:00">20:00</option>
-                      <option value="20:30">20:30</option>
-                      <option value="21:00">21:00</option>
-                      <option value="21:30">21:30</option>
-                      <option value="22:00">22:00</option>
-                      <option value="22:30">22:30</option>
-                      <option value="23:00">23:00</option>
-                      <option value="23:30">23:30</option>
-                    </select>
-                    {errors.departureTime && (
-                      <p className="text-sm text-red-500">{errors.departureTime.message}</p>
-                    )}
-                  </div>
+                  <TimePicker
+                    id="departureTime"
+                    label={t("departureTime")}
+                    value={departureTime}
+                    onChange={(time) => {
+                      setValue('departureTime', time, { shouldValidate: true });
+                    }}
+                    error={errors.departureTime?.message}
+                  />
                 </div>
               </div>
 
