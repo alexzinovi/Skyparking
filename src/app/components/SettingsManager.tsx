@@ -47,6 +47,9 @@ export function SettingsManager() {
     setIsSaving(true);
     try {
       const token = localStorage.getItem("skyparking-token");
+      console.log("Saving settings with token:", token ? "Token exists" : "No token");
+      console.log("Email notifications setting:", emailNotificationsEnabled);
+      
       const response = await fetch(
         `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/settings`,
         {
@@ -61,10 +64,14 @@ export function SettingsManager() {
         }
       );
 
+      console.log("Response status:", response.status);
+      const responseData = await response.json();
+      console.log("Response data:", responseData);
+
       if (response.ok) {
         toast.success("Настройките са запазени");
       } else {
-        throw new Error("Failed to save settings");
+        toast.error(`Неуспешно запазване: ${responseData.error || responseData.message || "Неизвестна грешка"}`);
       }
     } catch (error) {
       console.error("Error saving settings:", error);
