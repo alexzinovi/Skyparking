@@ -88,8 +88,12 @@ export function BookingForm() {
   }, [isVAT, taxNumber]);
 
   const onSubmit = async (data: BookingFormData) => {
+    console.log("=== FORM SUBMITTED ===");
+    alert("Form submitted! Check console."); // Visual confirmation on Android
+    
     if (!totalPrice) {
       toast.error(t("checkDates"));
+      alert("No price calculated");
       return;
     }
 
@@ -110,6 +114,8 @@ export function BookingForm() {
       console.log("Submitting booking with needsInvoice:", needsInvoice);
       console.log("Full booking data:", bookingData);
 
+      alert("About to send request...");
+
       const response = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/bookings`, {
         method: "POST",
         headers: {
@@ -119,15 +125,19 @@ export function BookingForm() {
         body: JSON.stringify(bookingData),
       });
 
+      alert("Request sent, got response");
+
       // Check if response is ok
       if (!response.ok) {
         const errorText = await response.text();
         console.error("Server error response:", errorText);
+        alert("Server error: " + response.status);
         throw new Error(`Server error: ${response.status} - ${errorText}`);
       }
 
       const result = await response.json();
       console.log("Server response:", result);
+      alert("Got result: " + JSON.stringify(result).substring(0, 100));
 
       if (!result.success) {
         throw new Error(result.message || "Failed to create reservation");
@@ -139,7 +149,11 @@ export function BookingForm() {
       
       // Set confirmed booking to show confirmation screen
       console.log("Setting confirmed booking:", result.booking);
+      alert("About to set confirmed booking state");
+      
       setConfirmedBooking(result.booking);
+      
+      alert("State set! Should show confirmation now");
       
       // Scroll to top after a short delay to ensure state is updated
       setTimeout(() => {
@@ -148,7 +162,8 @@ export function BookingForm() {
       
     } catch (error: any) {
       console.error("Reservation error:", error);
-      toast.error(t("Failed to create reservation") + ": " + (error.message || error.toString()));
+      alert("ERROR: " + error.message);
+      toast.error("Failed to create reservation: " + (error.message || error.toString()));
     } finally {
       setIsSubmitting(false);
     }
