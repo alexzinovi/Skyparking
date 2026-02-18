@@ -43,7 +43,7 @@ export function MapSection() {
                 <p className="font-semibold text-gray-900">SkyParking</p>
                 <p className="text-sm text-gray-600">Ulitsa Nedelcho Bonchev 30, Sofia, Bulgaria</p>
               </div>
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex flex-row gap-3">
                 <Button 
                   onClick={handleGoogleMaps}
                   size="lg"

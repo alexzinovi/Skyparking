@@ -338,14 +338,15 @@ app.get("/make-server-47a4914e/health", (c) => {
 // Admin login endpoint
 app.post("/make-server-47a4914e/admin/login", async (c) => {
   try {
-    const { password } = await c.req.json();
-    const adminPassword = await kv.get("admin:password") || "skyparking2024";
+    const { username, password } = await c.req.json();
+    const adminUsername = "sandeparking";
+    const adminPassword = "Sashoepichaga98!";
     
-    if (password === adminPassword) {
+    if (username === adminUsername && password === adminPassword) {
       return c.json({ success: true, token: "admin-authenticated" });
     }
     
-    return c.json({ success: false, message: "Invalid password" }, 401);
+    return c.json({ success: false, message: "Invalid credentials" }, 401);
   } catch (error) {
     console.log("Admin login error:", error);
     return c.json({ success: false, message: "Login error" }, 500);

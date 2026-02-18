@@ -10,14 +10,15 @@ const projectId = "dbybybmjjeeocoecaewv";
 const publicAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRieWJ5Ym1qamVlb2NvZWNhZXd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODgxMzAsImV4cCI6MjA4MjA2NDEzMH0.fMZ3Yi5gZpE6kBBz-y1x0FKZcGczxSJZ9jL-Zeau340";
 
 export function AdminLogin({ onLogin }: { onLogin: () => void }) {
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!password) {
-      toast.error("Please enter a password");
+    if (!username || !password) {
+      toast.error("Please enter username and password");
       return;
     }
 
@@ -32,7 +33,7 @@ export function AdminLogin({ onLogin }: { onLogin: () => void }) {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${publicAnonKey}`,
           },
-          body: JSON.stringify({ password }),
+          body: JSON.stringify({ username, password }),
         }
       );
 
@@ -43,7 +44,7 @@ export function AdminLogin({ onLogin }: { onLogin: () => void }) {
         localStorage.setItem("admin-token", data.token);
         onLogin();
       } else {
-        toast.error(data.message || "Invalid password");
+        toast.error(data.message || "Invalid credentials");
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -65,6 +66,18 @@ export function AdminLogin({ onLogin }: { onLogin: () => void }) {
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
+          <div>
+            <Label htmlFor="username">Admin Username</Label>
+            <Input
+              id="username"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Enter admin username"
+              disabled={isLoading}
+            />
+          </div>
+
           <div>
             <Label htmlFor="password">Admin Password</Label>
             <Input

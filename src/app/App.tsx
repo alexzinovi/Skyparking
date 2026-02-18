@@ -197,9 +197,9 @@ function MainSite() {
           <div className="flex flex-col sm:flex-row gap-2 justify-center items-center text-sm text-gray-300">
             <span>{t("footerLocation")}</span>
             <span className="hidden sm:inline">•</span>
-            <span>📞 +359 886 616 991</span>
+            <span>📞 <a href="tel:+359886616991" className="hover:underline">+359 886 616 991</a></span>
             <span className="hidden sm:inline">•</span>
-            <span>✉️ info@sofiaairportparking.com</span>
+            <span>✉️ <a href="mailto:info@skyparking.bg" className="hover:underline">info@skyparking.bg</a></span>
           </div>
           
           {/* Social Media and Messaging Buttons */}
