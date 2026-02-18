@@ -163,29 +163,29 @@ function MainSite() {
     // Set page title
     document.title = t("heroTitle");
     
-    // AGGRESSIVE favicon clearing and setting
+    // Set favicon using Supabase image with cross-browser compatibility
     // Remove ALL existing favicon-related links first
     const existingIcons = document.querySelectorAll('link[rel*="icon"]');
     existingIcons.forEach(icon => icon.remove());
     
-    // Create unique cache-busting parameter (changes every second)
-    const cacheBuster = `v=${Date.now()}`;
-    const faviconUrl = `https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/favicon.png?${cacheBuster}`;
+    // Use your uploaded favicon from Supabase with cache-busting
+    const cacheBuster = `?v=${Date.now()}`;
+    const faviconUrl = `https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/favicon.png${cacheBuster}`;
     
-    // Add multiple favicon formats for maximum compatibility
+    // Add multiple favicon formats for cross-browser compatibility
     const iconTypes = [
-      { rel: 'icon', type: 'image/png', sizes: '' },
-      { rel: 'shortcut icon', type: 'image/png', sizes: '' },
-      { rel: 'apple-touch-icon', type: 'image/png', sizes: '180x180' },
       { rel: 'icon', type: 'image/png', sizes: '32x32' },
-      { rel: 'icon', type: 'image/png', sizes: '16x16' }
+      { rel: 'icon', type: 'image/png', sizes: '16x16' },
+      { rel: 'shortcut icon', type: 'image/png' },
+      { rel: 'apple-touch-icon', sizes: '180x180' },
+      { rel: 'icon' } // Generic fallback for older browsers
     ];
     
     iconTypes.forEach(({ rel, type, sizes }) => {
       const link = document.createElement('link');
       link.rel = rel;
-      link.type = type;
-      if (sizes) link.sizes = sizes;
+      if (type) link.type = type;
+      if (sizes) link.setAttribute('sizes', sizes);
       link.href = faviconUrl;
       document.head.appendChild(link);
     });
@@ -208,7 +208,7 @@ function MainSite() {
     // Set or update meta keywords
     const metaKeywords = document.querySelector('meta[name="keywords"]');
     const keywordsText = language === 'bg'
-      ? 'паркинг летище софия, skyparking, паркинг софия аеропорт, паркинг летище, паркинг аеропорт софия, евтин паркинг летище, охраняем паркинг летище сфия'
+      ? 'паркинг летище софия, skyparking, паркинг с��фия аеропорт, паркинг летище, паркинг аеропорт софия, евтин паркинг летище, охраняем паркинг летище сфия'
       : 'sofia airport parking, skyparking, sofia airport parking lot, airport parking bulgaria, cheap airport parking sofia, secure airport parking';
     
     if (metaKeywords) {
