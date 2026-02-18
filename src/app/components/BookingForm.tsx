@@ -156,11 +156,10 @@ export function BookingForm() {
       toast.success(t("bookingConfirmed") + " €" + totalPrice);
       
       // Set confirmed booking to show confirmation screen
-      // Use requestAnimationFrame to ensure DOM is ready before state update
-      // This helps prevent Samsung browser from treating the screen change as a popup
-      requestAnimationFrame(() => {
-        setConfirmedBooking(result.booking);
-      });
+      setConfirmedBooking(result.booking);
+      
+      // Force scroll to top immediately for all browsers
+      window.scrollTo(0, 0);
       
     } catch (error: any) {
       console.error("Reservation error:", error);
