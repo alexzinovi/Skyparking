@@ -119,7 +119,15 @@ export function BookingForm() {
         body: JSON.stringify(bookingData),
       });
 
+      // Check if response is ok
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Server error response:", errorText);
+        throw new Error(`Server error: ${response.status} - ${errorText}`);
+      }
+
       const result = await response.json();
+      console.log("Server response:", result);
 
       if (!result.success) {
         throw new Error(result.message || "Failed to create reservation");
@@ -129,22 +137,18 @@ export function BookingForm() {
       toast.success(t("bookingConfirmed") + " €" + totalPrice);
       toast.info("Reservation ID: " + (result.booking.bookingCode || result.booking.id)); // Use bookingCode
       
-      // Scroll to the beginning of the booking summary (header aligns with booking section)
-      const bookingElement = document.getElementById('booking');
-      if (bookingElement) {
-        // Get header height (80px on mobile, 110px on desktop)
-        const headerHeight = window.innerWidth >= 768 ? 110 : 80;
-        const elementPosition = bookingElement.getBoundingClientRect().top + window.pageYOffset;
-        window.scrollTo({ top: elementPosition - headerHeight, behavior: 'smooth' });
-      }
-      
-      // Optionally reset the form or show confirmation
-      console.log("Reservation created:", result.booking);
+      // Set confirmed booking to show confirmation screen
+      console.log("Setting confirmed booking:", result.booking);
       setConfirmedBooking(result.booking);
+      
+      // Scroll to top after a short delay to ensure state is updated
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 100);
       
     } catch (error: any) {
       console.error("Reservation error:", error);
-      toast.error("Failed to create reservation: " + error.message);
+      toast.error(t("Failed to create reservation") + ": " + (error.message || error.toString()));
     } finally {
       setIsSubmitting(false);
     }
