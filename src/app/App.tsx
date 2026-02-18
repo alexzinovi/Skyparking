@@ -155,13 +155,76 @@ export default function App() {
 
 // MainSite component - uses language context
 function MainSite() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const path = window.location.pathname;
   
-  // Update document title based on language
+  // Update document title and meta tags based on language
   useEffect(() => {
+    // Set page title
     document.title = t("heroTitle");
-  }, [t]);
+    
+    // Set or update meta description
+    const metaDescription = document.querySelector('meta[name="description"]');
+    const descriptionText = language === 'bg' 
+      ? 'Сигурен и достъпен паркинг на 5 минути от Летище София Терминал 1 и 2. Безплатен трансфер, видеонаблюдение 24/7, онлайн резервация. SkyParking - вашето доверено решение за паркиране.'
+      : 'Secure and affordable parking 5 minutes from Sofia Airport Terminal 1 and 2. Free transfer, 24/7 video surveillance, online booking. SkyParking - your trusted parking solution.';
+    
+    if (metaDescription) {
+      metaDescription.setAttribute('content', descriptionText);
+    } else {
+      const meta = document.createElement('meta');
+      meta.name = 'description';
+      meta.content = descriptionText;
+      document.head.appendChild(meta);
+    }
+    
+    // Set or update meta keywords
+    const metaKeywords = document.querySelector('meta[name="keywords"]');
+    const keywordsText = language === 'bg'
+      ? 'паркинг летище софия, skyparking, паркинг софия аеропорт, паркинг летище, паркинг аеропорт софия, евтин паркинг летище, охраняем паркинг летище с��фия'
+      : 'sofia airport parking, skyparking, sofia airport parking lot, airport parking bulgaria, cheap airport parking sofia, secure airport parking';
+    
+    if (metaKeywords) {
+      metaKeywords.setAttribute('content', keywordsText);
+    } else {
+      const meta = document.createElement('meta');
+      meta.name = 'keywords';
+      meta.content = keywordsText;
+      document.head.appendChild(meta);
+    }
+    
+    // Open Graph tags for social media
+    const ogTitle = document.querySelector('meta[property="og:title"]');
+    if (ogTitle) {
+      ogTitle.setAttribute('content', t("heroTitle"));
+    } else {
+      const meta = document.createElement('meta');
+      meta.setAttribute('property', 'og:title');
+      meta.content = t("heroTitle");
+      document.head.appendChild(meta);
+    }
+    
+    const ogDescription = document.querySelector('meta[property="og:description"]');
+    if (ogDescription) {
+      ogDescription.setAttribute('content', descriptionText);
+    } else {
+      const meta = document.createElement('meta');
+      meta.setAttribute('property', 'og:description');
+      meta.content = descriptionText;
+      document.head.appendChild(meta);
+    }
+    
+    const ogType = document.querySelector('meta[property="og:type"]');
+    if (!ogType) {
+      const meta = document.createElement('meta');
+      meta.setAttribute('property', 'og:type');
+      meta.content = 'website';
+      document.head.appendChild(meta);
+    }
+    
+    // Set language attribute on html element
+    document.documentElement.lang = language;
+  }, [t, language]);
   
   // Show Terms and Conditions page (wrapped in LanguageProvider already)
   if (path === "/terms") {
