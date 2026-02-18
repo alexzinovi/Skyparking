@@ -70,16 +70,16 @@ function generateConfirmationEmailHTML_BG(data: BookingEmailData): string {
     @media only screen and (max-width: 600px) {
       .mobile-padding { padding: 20px !important; }
       .mobile-text-large { font-size: 32px !important; }
-      .mobile-button { width: 100% !important; display: block !important; }
+      .nav-button-container { max-width: 100% !important; }
     }
   </style>
 </head>
 <body style="margin: 0; padding: 0; background-color: #f5f5f5;">
   <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
     
-    <!-- Header - Compact Blue Background -->
-    <div style="background-color: #053790; padding: 28px 20px; text-align: center;">
-      <img src="https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/email.png" alt="SkyParking" style="max-width: 170px; height: auto; display: inline-block;" />
+    <!-- Header - Compact with Solid Brand Blue -->
+    <div style="background-color: #053790; padding: 18px 20px; text-align: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+      <img src="https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/email.png" alt="SkyParking" style="max-width: 160px; height: auto; display: inline-block;" />
     </div>
 
     <!-- Confirmation Statement -->
@@ -96,14 +96,17 @@ function generateConfirmationEmailHTML_BG(data: BookingEmailData): string {
     <div class="mobile-padding" style="padding: 0 20px 32px;">
       <div style="background-color: #fafafa; border-radius: 12px; padding: 0; border: 1px solid #e5e7eb; overflow: hidden;">
         
-        <!-- Price Row (Refined - Top of Card) -->
+        <!-- Price Row with Free Transfer -->
         <div style="background-color: #ffffff; padding: 24px 24px 20px; border-bottom: 2px solid #f1c933;">
           <div style="text-align: center;">
             <div style="font-size: 11px; color: #9ca3af; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px;">
               Обща цена
             </div>
-            <div class="mobile-text-large" style="font-size: 36px; font-weight: 700; color: #f1c933; letter-spacing: -1px; line-height: 1;">
+            <div class="mobile-text-large" style="font-size: 36px; font-weight: 700; color: #f1c933; letter-spacing: -1px; line-height: 1; margin-bottom: 8px;">
               €${data.totalPrice}
+            </div>
+            <div style="font-size: 14px; color: #d4a929; font-weight: 500;">
+              Безплатен трансфер
             </div>
           </div>
         </div>
@@ -199,25 +202,29 @@ function generateConfirmationEmailHTML_BG(data: BookingEmailData): string {
           Ulitsa Nedelcho Bonchev 30
         </p>
         
-        <!-- Navigation Buttons -->
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-          <tr>
-            <td style="padding-bottom: 12px;">
-              <a href="https://ul.waze.com/ul?ll=42.67683570,23.40003810&navigate=yes" class="mobile-button" style="display: block; text-align: center; background-color: #053790; color: #ffffff; padding: 13px 20px; text-decoration: none; border-radius: 10px; font-size: 14px; font-weight: 600;">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/0/01/Waze_Icon.png" alt="" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;" />
-                Навигация с Waze
-              </a>
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <a href="https://www.google.com/maps?q=42.6768423,23.4002030&entry=gps" class="mobile-button" style="display: block; text-align: center; background-color: #ffffff; color: #053790; padding: 13px 20px; text-decoration: none; border-radius: 10px; font-size: 14px; font-weight: 600; border: 2px solid #053790;">
-                <img src="https://maps.gstatic.com/mapfiles/api-3/images/google4.png" alt="" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;" />
-                Навигация с Google Maps
-              </a>
-            </td>
-          </tr>
-        </table>
+        <!-- Navigation Buttons - Centered, Not Full Width -->
+        <div style="text-align: center;">
+          <div class="nav-button-container" style="display: inline-block; max-width: 340px; width: 100%;">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+              <tr>
+                <td style="padding-bottom: 12px;">
+                  <a href="https://ul.waze.com/ul?ll=42.67683570,23.40003810&navigate=yes" style="display: block; text-align: center; background-color: #053790; color: #ffffff; padding: 14px 20px; text-decoration: none; border-radius: 10px; font-size: 14px; font-weight: 600; height: 48px; line-height: 20px; box-sizing: border-box;">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/0/01/Waze_Icon.png" alt="Waze" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;" />
+                    Навигация с Waze
+                  </a>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <a href="https://www.google.com/maps?q=42.6768423,23.4002030&entry=gps" style="display: block; text-align: center; background-color: #ffffff; color: #053790; padding: 14px 20px; text-decoration: none; border-radius: 10px; font-size: 14px; font-weight: 600; border: 2px solid #053790; height: 48px; line-height: 20px; box-sizing: border-box;">
+                    <img src="https://maps.gstatic.com/mapfiles/api-3/images/google4.png" alt="Google Maps" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;" />
+                    Навигация с Google Maps
+                  </a>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -257,17 +264,17 @@ function generateConfirmationEmailHTML_BG(data: BookingEmailData): string {
       </div>
     </div>
 
-    <!-- Footer -->
-    <div style="background-color: #f9fafb; padding: 24px 20px; text-align: center; border-top: 1px solid #e5e7eb;">
-      <div style="font-size: 15px; font-weight: 600; color: #053790; margin-bottom: 6px;">
+    <!-- Footer - Restored -->
+    <div style="background-color: #f3f4f6; padding: 24px 20px; text-align: center; border-top: 1px solid #e5e7eb;">
+      <div style="font-size: 15px; font-weight: 600; color: #053790; margin-bottom: 8px;">
         SkyParking
       </div>
-      <div style="font-size: 13px; color: #6b7280; margin-bottom: 3px;">
+      <div style="font-size: 13px; color: #6b7280; margin-bottom: 4px;">
         <a href="tel:+359886616991" style="color: #6b7280; text-decoration: none;">+359 886 616 991</a>
         <span style="margin: 0 6px; color: #d1d5db;">•</span>
         <a href="mailto:info@skyparking.bg" style="color: #6b7280; text-decoration: none;">info@skyparking.bg</a>
       </div>
-      <div style="font-size: 12px; color: #9ca3af; margin-top: 14px; padding-top: 14px; border-top: 1px solid #e5e7eb;">
+      <div style="font-size: 12px; color: #9ca3af; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb;">
         Това е автоматично генериран имейл. Моля, не отговаряйте на него.
       </div>
     </div>
@@ -319,16 +326,16 @@ function generateConfirmationEmailHTML_EN(data: BookingEmailData): string {
     @media only screen and (max-width: 600px) {
       .mobile-padding { padding: 20px !important; }
       .mobile-text-large { font-size: 32px !important; }
-      .mobile-button { width: 100% !important; display: block !important; }
+      .nav-button-container { max-width: 100% !important; }
     }
   </style>
 </head>
 <body style="margin: 0; padding: 0; background-color: #f5f5f5;">
   <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
     
-    <!-- Header - Compact Blue Background -->
-    <div style="background-color: #053790; padding: 28px 20px; text-align: center;">
-      <img src="https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/email.png" alt="SkyParking" style="max-width: 170px; height: auto; display: inline-block;" />
+    <!-- Header - Compact with Solid Brand Blue -->
+    <div style="background-color: #053790; padding: 18px 20px; text-align: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+      <img src="https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/email.png" alt="SkyParking" style="max-width: 160px; height: auto; display: inline-block;" />
     </div>
 
     <!-- Confirmation Statement -->
@@ -345,14 +352,17 @@ function generateConfirmationEmailHTML_EN(data: BookingEmailData): string {
     <div class="mobile-padding" style="padding: 0 20px 32px;">
       <div style="background-color: #fafafa; border-radius: 12px; padding: 0; border: 1px solid #e5e7eb; overflow: hidden;">
         
-        <!-- Price Row (Refined - Top of Card) -->
+        <!-- Price Row with Free Transfer -->
         <div style="background-color: #ffffff; padding: 24px 24px 20px; border-bottom: 2px solid #f1c933;">
           <div style="text-align: center;">
             <div style="font-size: 11px; color: #9ca3af; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px;">
               Total Price
             </div>
-            <div class="mobile-text-large" style="font-size: 36px; font-weight: 700; color: #f1c933; letter-spacing: -1px; line-height: 1;">
+            <div class="mobile-text-large" style="font-size: 36px; font-weight: 700; color: #f1c933; letter-spacing: -1px; line-height: 1; margin-bottom: 8px;">
               €${data.totalPrice}
+            </div>
+            <div style="font-size: 14px; color: #d4a929; font-weight: 500;">
+              Free Transfer
             </div>
           </div>
         </div>
@@ -448,25 +458,29 @@ function generateConfirmationEmailHTML_EN(data: BookingEmailData): string {
           Ulitsa Nedelcho Bonchev 30
         </p>
         
-        <!-- Navigation Buttons -->
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-          <tr>
-            <td style="padding-bottom: 12px;">
-              <a href="https://ul.waze.com/ul?ll=42.67683570,23.40003810&navigate=yes" class="mobile-button" style="display: block; text-align: center; background-color: #053790; color: #ffffff; padding: 13px 20px; text-decoration: none; border-radius: 10px; font-size: 14px; font-weight: 600;">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/0/01/Waze_Icon.png" alt="" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;" />
-                Navigate with Waze
-              </a>
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <a href="https://www.google.com/maps?q=42.6768423,23.4002030&entry=gps" class="mobile-button" style="display: block; text-align: center; background-color: #ffffff; color: #053790; padding: 13px 20px; text-decoration: none; border-radius: 10px; font-size: 14px; font-weight: 600; border: 2px solid #053790;">
-                <img src="https://maps.gstatic.com/mapfiles/api-3/images/google4.png" alt="" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;" />
-                Navigate with Google Maps
-              </a>
-            </td>
-          </tr>
-        </table>
+        <!-- Navigation Buttons - Centered, Not Full Width -->
+        <div style="text-align: center;">
+          <div class="nav-button-container" style="display: inline-block; max-width: 340px; width: 100%;">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+              <tr>
+                <td style="padding-bottom: 12px;">
+                  <a href="https://ul.waze.com/ul?ll=42.67683570,23.40003810&navigate=yes" style="display: block; text-align: center; background-color: #053790; color: #ffffff; padding: 14px 20px; text-decoration: none; border-radius: 10px; font-size: 14px; font-weight: 600; height: 48px; line-height: 20px; box-sizing: border-box;">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/0/01/Waze_Icon.png" alt="Waze" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;" />
+                    Navigate with Waze
+                  </a>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <a href="https://www.google.com/maps?q=42.6768423,23.4002030&entry=gps" style="display: block; text-align: center; background-color: #ffffff; color: #053790; padding: 14px 20px; text-decoration: none; border-radius: 10px; font-size: 14px; font-weight: 600; border: 2px solid #053790; height: 48px; line-height: 20px; box-sizing: border-box;">
+                    <img src="https://maps.gstatic.com/mapfiles/api-3/images/google4.png" alt="Google Maps" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;" />
+                    Navigate with Google Maps
+                  </a>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -506,17 +520,17 @@ function generateConfirmationEmailHTML_EN(data: BookingEmailData): string {
       </div>
     </div>
 
-    <!-- Footer -->
-    <div style="background-color: #f9fafb; padding: 24px 20px; text-align: center; border-top: 1px solid #e5e7eb;">
-      <div style="font-size: 15px; font-weight: 600; color: #053790; margin-bottom: 6px;">
+    <!-- Footer - Restored -->
+    <div style="background-color: #f3f4f6; padding: 24px 20px; text-align: center; border-top: 1px solid #e5e7eb;">
+      <div style="font-size: 15px; font-weight: 600; color: #053790; margin-bottom: 8px;">
         SkyParking
       </div>
-      <div style="font-size: 13px; color: #6b7280; margin-bottom: 3px;">
+      <div style="font-size: 13px; color: #6b7280; margin-bottom: 4px;">
         <a href="tel:+359886616991" style="color: #6b7280; text-decoration: none;">+359 886 616 991</a>
         <span style="margin: 0 6px; color: #d1d5db;">•</span>
         <a href="mailto:info@skyparking.bg" style="color: #6b7280; text-decoration: none;">info@skyparking.bg</a>
       </div>
-      <div style="font-size: 12px; color: #9ca3af; margin-top: 14px; padding-top: 14px; border-top: 1px solid #e5e7eb;">
+      <div style="font-size: 12px; color: #9ca3af; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb;">
         This is an automatically generated email. Please do not reply to it.
       </div>
     </div>
