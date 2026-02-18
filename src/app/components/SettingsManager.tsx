@@ -26,7 +26,7 @@ export function SettingsManager() {
         `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/settings`,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            "X-Session-Token": token || "",
           },
         }
       );
@@ -53,7 +53,7 @@ export function SettingsManager() {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            "X-Session-Token": token || "",
           },
           body: JSON.stringify({
             emailNotificationsEnabled,

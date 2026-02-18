@@ -1743,10 +1743,14 @@ app.post("/make-server-47a4914e/update-late-surcharges", async (c) => {
 app.get("/make-server-47a4914e/settings", async (c) => {
   try {
     // Verify admin token
-    const token = c.req.header("Authorization")?.replace("Bearer ", "");
-    const isValid = await users.verifyToken(token || "");
+    const sessionToken = c.req.header("X-Session-Token");
+    if (!sessionToken) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
     
-    if (!isValid) {
+    const currentUser = await users.verifySessionToken(sessionToken);
+    
+    if (!currentUser) {
       return c.json({ error: "Unauthorized" }, 401);
     }
 
@@ -1766,10 +1770,14 @@ app.get("/make-server-47a4914e/settings", async (c) => {
 app.put("/make-server-47a4914e/settings", async (c) => {
   try {
     // Verify admin token
-    const token = c.req.header("Authorization")?.replace("Bearer ", "");
-    const user = await users.verifyToken(token || "");
+    const sessionToken = c.req.header("X-Session-Token");
+    if (!sessionToken) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
     
-    if (!user || (user.role !== "admin" && user.role !== "manager")) {
+    const currentUser = await users.verifySessionToken(sessionToken);
+    
+    if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "manager")) {
       return c.json({ error: "Unauthorized" }, 401);
     }
 
