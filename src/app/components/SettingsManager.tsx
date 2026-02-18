@@ -25,6 +25,8 @@ export function SettingsManager() {
       const response = await fetch(
         `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/settings`,
         {
+          mode: "cors",
+          credentials: "include",
           headers: {
             "X-Session-Token": token || "",
           },
@@ -54,6 +56,8 @@ export function SettingsManager() {
         `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/settings`,
         {
           method: "PUT",
+          mode: "cors",
+          credentials: "include",
           headers: {
             "Content-Type": "application/json",
             "X-Session-Token": token || "",

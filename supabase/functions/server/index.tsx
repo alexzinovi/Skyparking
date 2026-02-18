@@ -323,10 +323,11 @@ app.use(
   "/*",
   cors({
     origin: "*",
-    allowHeaders: ["Content-Type", "Authorization", "X-Session-Token"],
+    allowHeaders: ["Content-Type", "Authorization", "X-Session-Token", "x-session-token"],
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    exposeHeaders: ["Content-Length"],
+    exposeHeaders: ["Content-Length", "X-Session-Token"],
     maxAge: 600,
+    credentials: true,
   }),
 );
 
