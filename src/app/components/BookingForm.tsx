@@ -51,6 +51,11 @@ export function BookingForm() {
   const [isVAT, setIsVAT] = useState(false);
   const [autoVatNumber, setAutoVatNumber] = useState("");
   const [confirmedBooking, setConfirmedBooking] = useState<any>(null);
+  
+  // Anti-spam measures
+  const [formLoadTime] = useState(Date.now());
+  const [lastSubmitTime, setLastSubmitTime] = useState(0);
+  
   const { register, handleSubmit, watch, formState: { errors }, setValue, trigger } = useForm<BookingFormData>({
     mode: "onBlur",
     reValidateMode: "onChange"
@@ -116,6 +121,16 @@ export function BookingForm() {
       return;
     }
 
+    // Anti-spam check: Ensure the form is not submitted too quickly
+    const currentTime = Date.now();
+    const timeSinceLoad = currentTime - formLoadTime;
+    const timeSinceLastSubmit = currentTime - lastSubmitTime;
+    
+    if (timeSinceLoad < 5000 || timeSinceLastSubmit < 5000) {
+      toast.error(t("spamProtection"));
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
@@ -163,6 +178,7 @@ export function BookingForm() {
       toast.error("Failed to create reservation: " + (error.message || error.toString()));
     } finally {
       setIsSubmitting(false);
+      setLastSubmitTime(Date.now()); // Update last submit time
     }
   };
 

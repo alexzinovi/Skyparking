@@ -140,10 +140,11 @@ const translations = {
     orContactDirectly: "Или се свържете с нас директно:",
     
     // Toast Messages
-    checkDates: "Моля, проверете датите и часовете",
+    checkDates: "Моля, проверете д��тите и часовете",
     bookingConfirmed: "Резервация потвърдена! Сума: €",
     paymentProcessing: ". Обработка на плащането...",
     inquirySuccess: "Благодарим за вашето запитване! Ще се свържем с вас скоро.",
+    spamProtection: "Моля, изчакайте малко преди да изпратите формата отново.",
     
     // Footer
     footerTagline: "Сигурно и достъпно паркинг решение за вашия автомобил",
@@ -308,6 +309,7 @@ const translations = {
     bookingConfirmed: "Booking confirmed! Total: €",
     paymentProcessing: ". Payment processing...",
     inquirySuccess: "Thank you for your inquiry! We'll get back to you shortly.",
+    spamProtection: "Please wait a moment before submitting the form again.",
     
     // Footer
     footerTagline: "Secure, affordable, and convenient parking solutions",

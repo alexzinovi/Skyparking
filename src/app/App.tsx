@@ -50,12 +50,12 @@ export default function App() {
   useEffect(() => {
     try {
       const path = window.location.pathname;
-      setIsAdmin(path === "/admin" || path.startsWith("/admin/"));
+      setIsAdmin(path === "/admin-panel-2026" || path.startsWith("/admin-panel-2026/"));
 
       // Verify existing token
       const verifyToken = async () => {
         const token = localStorage.getItem("skyparking-token");
-        if (token && (path === "/admin" || path.startsWith("/admin/"))) {
+        if (token && (path === "/admin-panel-2026" || path.startsWith("/admin-panel-2026/"))) {
           try {
             const response = await fetch(
               `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/auth/verify`,
@@ -181,7 +181,7 @@ function MainSite() {
     // Set or update meta keywords
     const metaKeywords = document.querySelector('meta[name="keywords"]');
     const keywordsText = language === 'bg'
-      ? 'паркинг летище софия, skyparking, паркинг софия аеропорт, паркинг летище, паркинг аеропорт софия, евтин паркинг летище, охраняем паркинг летище с��фия'
+      ? 'паркинг летище софия, skyparking, паркинг софия аеропорт, паркинг летище, паркинг аеропорт софия, евтин паркинг летище, охраняем паркинг летище сфия'
       : 'sofia airport parking, skyparking, sofia airport parking lot, airport parking bulgaria, cheap airport parking sofia, secure airport parking';
     
     if (metaKeywords) {

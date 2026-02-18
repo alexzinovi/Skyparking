@@ -28,6 +28,8 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
+  const [lockoutMessage, setLockoutMessage] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,9 +58,19 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
 
       if (data.success) {
         toast.success(`Добре дошли, ${data.user.fullName}!`);
+        setIsLocked(false);
+        setLockoutMessage("");
         onLogin(data.user, data.token, data.permissions);
       } else {
-        toast.error(data.message || "Грешка при вход");
+        // Check if account is locked
+        if (data.locked) {
+          setIsLocked(true);
+          setLockoutMessage(data.message);
+          toast.error(data.message, { duration: 5000 });
+        } else {
+          // Show remaining attempts or error message
+          toast.error(data.message || "Грешка при вход", { duration: 4000 });
+        }
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -79,6 +91,17 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           <p className="text-gray-600 mt-2">Система за управление на резервации</p>
         </div>
 
+        {isLocked && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-800 text-sm font-medium flex items-center gap-2">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              {lockoutMessage}
+            </p>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <Label htmlFor="username">Потребителско име</Label>
@@ -89,7 +112,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
               onChange={(e) => setUsername(e.target.value)}
               placeholder="username"
               autoComplete="username"
-              disabled={isLoading}
+              disabled={isLoading || isLocked}
               className="mt-1"
             />
           </div>
@@ -103,7 +126,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               autoComplete="current-password"
-              disabled={isLoading}
+              disabled={isLoading || isLocked}
               className="mt-1"
             />
           </div>
@@ -111,7 +134,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           <Button
             type="submit"
             className="w-full bg-blue-600 hover:bg-blue-700"
-            disabled={isLoading}
+            disabled={isLoading || isLocked}
           >
             {isLoading ? (
               <>
@@ -126,6 +149,11 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             )}
           </Button>
         </form>
+
+        <div className="mt-6 text-center text-xs text-gray-500">
+          <p>Защита: Максимум 5 неуспешни опита</p>
+          <p>Време на блокиране: 15 минути</p>
+        </div>
       </Card>
     </div>
   );

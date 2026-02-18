@@ -335,19 +335,83 @@ app.get("/make-server-47a4914e/health", (c) => {
   return c.json({ status: "ok" });
 });
 
-// Admin login endpoint
+// Admin login endpoint with security
 app.post("/make-server-47a4914e/admin/login", async (c) => {
   try {
     const { username, password } = await c.req.json();
+    
+    // Get client IP for rate limiting
+    const clientIp = c.req.header('x-forwarded-for') || 
+                     c.req.header('x-real-ip') || 
+                     'unknown';
+    
+    const lockoutKey = `admin:lockout:${username}:${clientIp}`;
+    const attemptsKey = `admin:attempts:${username}:${clientIp}`;
+    
+    // Check if account is locked
+    const lockoutData = await kv.get(lockoutKey);
+    if (lockoutData) {
+      const lockoutUntil = new Date(lockoutData.value);
+      const now = new Date();
+      
+      if (now < lockoutUntil) {
+        const minutesLeft = Math.ceil((lockoutUntil.getTime() - now.getTime()) / 60000);
+        return c.json({ 
+          success: false, 
+          message: `Too many failed attempts. Try again in ${minutesLeft} minute${minutesLeft > 1 ? 's' : ''}.`,
+          locked: true,
+          lockoutUntil: lockoutUntil.toISOString()
+        }, 429);
+      } else {
+        // Lockout expired, clear it
+        await kv.del(lockoutKey);
+        await kv.del(attemptsKey);
+      }
+    }
+    
     // Updated credentials
     const adminUsername = "sandeparking";
     const adminPassword = "Sashoepichaga98!";
     
     if (username === adminUsername && password === adminPassword) {
+      // Successful login - clear any failed attempts
+      await kv.del(attemptsKey);
+      await kv.del(lockoutKey);
+      
       return c.json({ success: true, token: "admin-authenticated" });
     }
     
-    return c.json({ success: false, message: "Invalid credentials" }, 401);
+    // Failed login - increment attempts
+    const attemptsData = await kv.get(attemptsKey);
+    const currentAttempts = attemptsData ? parseInt(attemptsData.value) : 0;
+    const newAttempts = currentAttempts + 1;
+    
+    const MAX_ATTEMPTS = 5;
+    const LOCKOUT_MINUTES = 15;
+    
+    if (newAttempts >= MAX_ATTEMPTS) {
+      // Lock the account
+      const lockoutUntil = new Date(Date.now() + LOCKOUT_MINUTES * 60000);
+      await kv.set(lockoutKey, lockoutUntil.toISOString());
+      await kv.del(attemptsKey);
+      
+      return c.json({ 
+        success: false, 
+        message: `Too many failed attempts. Account locked for ${LOCKOUT_MINUTES} minutes.`,
+        locked: true,
+        lockoutUntil: lockoutUntil.toISOString()
+      }, 429);
+    }
+    
+    // Store failed attempt with 1 hour expiry
+    await kv.set(attemptsKey, newAttempts.toString());
+    
+    const remainingAttempts = MAX_ATTEMPTS - newAttempts;
+    return c.json({ 
+      success: false, 
+      message: `Invalid credentials. ${remainingAttempts} attempt${remainingAttempts > 1 ? 's' : ''} remaining.`,
+      remainingAttempts
+    }, 401);
   } catch (error) {
     console.log("Admin login error:", error);
     return c.json({ success: false, message: "Login error" }, 500);
@@ -369,6 +433,36 @@ app.post("/make-server-47a4914e/admin/setup-password", async (c) => {
 // Create a new booking
 app.post("/make-server-47a4914e/bookings", async (c) => {
   try {
+    // Rate limiting: Check IP address
+    const clientIP = c.req.header('x-forwarded-for') || c.req.header('x-real-ip') || 'unknown';
+    const rateLimitKey = `ratelimit:booking:${clientIP}`;
+    
+    // Get the last submission timestamps for this IP
+    const rateLimitData = await kv.get(rateLimitKey);
+    const now = Date.now();
+    
+    if (rateLimitData) {
+      const submissions = rateLimitData.submissions || [];
+      // Filter submissions from the last hour
+      const recentSubmissions = submissions.filter((timestamp: number) => now - timestamp < 3600000);
+      
+      // Allow max 3 submissions per hour per IP
+      if (recentSubmissions.length >= 3) {
+        console.log(`⚠️ Rate limit exceeded for IP: ${clientIP}`);
+        return c.json({ 
+          success: false, 
+          message: "Too many reservation attempts. Please try again later." 
+        }, 429);
+      }
+      
+      // Update with new submission
+      recentSubmissions.push(now);
+      await kv.set(rateLimitKey, { submissions: recentSubmissions });
+    } else {
+      // First submission from this IP
+      await kv.set(rateLimitKey, { submissions: [now] });
+    }
+    
     const booking = await c.req.json();
     console.log("Received booking data:", booking);
     console.log("needsInvoice value:", booking.needsInvoice);
@@ -1148,15 +1242,78 @@ app.get("/make-server-47a4914e/pricing/calculate", async (c) => {
 // Ensure admin user exists on startup
 await users.ensureAdminUser();
 
-// User login endpoint
+// User login endpoint with security
 app.post("/make-server-47a4914e/auth/login", async (c) => {
   try {
     const { username, password } = await c.req.json();
     
+    // Get client IP for rate limiting
+    const clientIp = c.req.header('x-forwarded-for') || 
+                     c.req.header('x-real-ip') || 
+                     'unknown';
+    
+    const lockoutKey = `user:lockout:${username}:${clientIp}`;
+    const attemptsKey = `user:attempts:${username}:${clientIp}`;
+    
+    // Check if account is locked
+    const lockoutData = await kv.get(lockoutKey);
+    if (lockoutData) {
+      const lockoutUntil = new Date(lockoutData.value);
+      const now = new Date();
+      
+      if (now < lockoutUntil) {
+        const minutesLeft = Math.ceil((lockoutUntil.getTime() - now.getTime()) / 60000);
+        return c.json({ 
+          success: false, 
+          message: `Твърде много неуспешни опити. Опитайте отново след ${minutesLeft} минути.`,
+          locked: true,
+          lockoutUntil: lockoutUntil.toISOString()
+        }, 429);
+      } else {
+        // Lockout expired, clear it
+        await kv.del(lockoutKey);
+        await kv.del(attemptsKey);
+      }
+    }
+    
     const user = await users.authenticateUser(username, password);
     if (!user) {
-      return c.json({ success: false, message: "Невалидно потребителско име или парола" }, 401);
+      // Failed login - increment attempts
+      const attemptsData = await kv.get(attemptsKey);
+      const currentAttempts = attemptsData ? parseInt(attemptsData.value) : 0;
+      const newAttempts = currentAttempts + 1;
+      
+      const MAX_ATTEMPTS = 5;
+      const LOCKOUT_MINUTES = 15;
+      
+      if (newAttempts >= MAX_ATTEMPTS) {
+        // Lock the account
+        const lockoutUntil = new Date(Date.now() + LOCKOUT_MINUTES * 60000);
+        await kv.set(lockoutKey, lockoutUntil.toISOString());
+        await kv.del(attemptsKey);
+        
+        return c.json({ 
+          success: false, 
+          message: `Твърде много неуспешни опити. Акаунтът е блокиран за ${LOCKOUT_MINUTES} минути.`,
+          locked: true,
+          lockoutUntil: lockoutUntil.toISOString()
+        }, 429);
+      }
+      
+      // Store failed attempt
+      await kv.set(attemptsKey, newAttempts.toString());
+      
+      const remainingAttempts = MAX_ATTEMPTS - newAttempts;
+      return c.json({ 
+        success: false, 
+        message: `Невалидно потребителско име или парола. Остават ${remainingAttempts} опита.`,
+        remainingAttempts
+      }, 401);
     }
+    
+    // Successful login - clear any failed attempts
+    await kv.del(attemptsKey);
+    await kv.del(lockoutKey);
     
     const token = users.createSessionToken(user);
     

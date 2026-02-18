@@ -13,6 +13,8 @@ export function AdminLogin({ onLogin }: { onLogin: () => void }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
+  const [lockoutMessage, setLockoutMessage] = useState("");
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,9 +44,21 @@ export function AdminLogin({ onLogin }: { onLogin: () => void }) {
       if (data.success) {
         toast.success("Login successful");
         localStorage.setItem("admin-token", data.token);
+        setIsLocked(false);
+        setLockoutMessage("");
         onLogin();
       } else {
-        toast.error(data.message || "Invalid credentials");
+        // Check if account is locked
+        if (data.locked) {
+          setIsLocked(true);
+          setLockoutMessage(data.message);
+          toast.error(data.message, { duration: 5000 });
+        } else {
+          // Show remaining attempts
+          toast.error(data.message || "Invalid credentials", { 
+            duration: 4000 
+          });
+        }
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -65,6 +79,17 @@ export function AdminLogin({ onLogin }: { onLogin: () => void }) {
           <p className="text-gray-600 mt-2">Sign in to manage bookings</p>
         </div>
 
+        {isLocked && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-800 text-sm font-medium flex items-center gap-2">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              {lockoutMessage}
+            </p>
+          </div>
+        )}
+
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <Label htmlFor="username">Admin Username</Label>
@@ -74,7 +99,7 @@ export function AdminLogin({ onLogin }: { onLogin: () => void }) {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Enter admin username"
-              disabled={isLoading}
+              disabled={isLoading || isLocked}
             />
           </div>
 
@@ -86,15 +111,20 @@ export function AdminLogin({ onLogin }: { onLogin: () => void }) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter admin password"
-              disabled={isLoading}
+              disabled={isLoading || isLocked}
             />
           </div>
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button type="submit" className="w-full" disabled={isLoading || isLocked}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Sign In
           </Button>
         </form>
+
+        <div className="mt-6 text-center text-xs text-gray-500">
+          <p>Security: Max 5 failed attempts</p>
+          <p>Lockout duration: 15 minutes</p>
+        </div>
       </Card>
     </div>
   );
