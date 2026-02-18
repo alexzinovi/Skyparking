@@ -44,11 +44,14 @@ function generateUserId(): string {
 
 // Create initial admin user if none exists
 export async function ensureAdminUser() {
+  console.log("🔧 Ensuring admin user exists...");
   const users = await kv.getByPrefix("user:");
+  console.log("Found", users.length, "existing users");
   
   // Check if admin user with old credentials exists
   const oldAdminId = await kv.get("username:admin");
   if (oldAdminId) {
+    console.log("Found old admin user, updating credentials...");
     // Update old admin user to new credentials
     const oldAdmin = await kv.get(`user:${oldAdminId}`) as User;
     if (oldAdmin) {
@@ -63,12 +66,20 @@ export async function ensureAdminUser() {
       await kv.set(`user:${oldAdminId}`, oldAdmin);
       await kv.set("username:sandeparking", oldAdminId);
       
-      console.log("Updated admin user to new credentials: sandeparking");
+      console.log("✅ Updated admin user to new credentials: sandeparking");
       return;
     }
   }
   
+  // Check if sandeparking user already exists
+  const existingSandeparking = await kv.get("username:sandeparking");
+  if (existingSandeparking) {
+    console.log("✅ Admin user 'sandeparking' already exists");
+    return;
+  }
+  
   if (users.length === 0) {
+    console.log("No users found, creating initial admin...");
     const adminId = generateUserId();
     const adminUser: User = {
       id: adminId,
@@ -84,7 +95,25 @@ export async function ensureAdminUser() {
     await kv.set(`user:${adminId}`, adminUser);
     await kv.set(`username:sandeparking`, adminId); // Username -> ID mapping
     
-    console.log("Created initial admin user: sandeparking");
+    console.log("✅ Created initial admin user: sandeparking with ID:", adminId);
+  } else {
+    console.log("Users exist but no sandeparking user - creating...");
+    const adminId = generateUserId();
+    const adminUser: User = {
+      id: adminId,
+      username: "sandeparking",
+      passwordHash: hashPassword("Sashoepichaga98!"),
+      fullName: "System Administrator",
+      email: "admin@skyparking.bg",
+      role: "admin",
+      isActive: true,
+      createdAt: new Date().toISOString()
+    };
+    
+    await kv.set(`user:${adminId}`, adminUser);
+    await kv.set(`username:sandeparking`, adminId);
+    
+    console.log("✅ Created admin user: sandeparking with ID:", adminId);
   }
 }
 
@@ -185,7 +214,7 @@ export async function updateUser(
   try {
     const user = await getUserById(userId);
     if (!user) {
-      return { success: false, message: "Потребит��лят не е намерен" };
+      return { success: false, message: "Потребитлят не е намерен" };
     }
     
     if (updates.fullName !== undefined) user.fullName = updates.fullName;
@@ -216,7 +245,7 @@ export async function deleteUser(userId: string): Promise<{ success: boolean; me
       const allUsers = await getAllUsers();
       const adminCount = allUsers.filter(u => u.role === "admin" && u.isActive).length;
       if (adminCount <= 1) {
-        return { success: false, message: "Не може да изтриете последния администратор" };
+        return { success: false, message: "Не може д�� изтриете последния администратор" };
       }
     }
     
@@ -245,11 +274,19 @@ export function createSessionToken(user: User): string {
 
 export async function verifySessionToken(token: string): Promise<User | null> {
   try {
+    console.log("🔍 Verifying token:", token?.substring(0, 50) + "...");
     const [userId, timestamp, hash] = token.split(":");
+    console.log("Token parts:", { userId, timestamp: timestamp ? "present" : "missing", hash: hash ? "present" : "missing" });
+    
+    if (!userId || !timestamp || !hash) {
+      console.log("❌ Token format invalid - missing parts");
+      return null;
+    }
     
     // Check if token is expired (24 hours)
     const tokenAge = Date.now() - parseInt(timestamp);
     if (tokenAge > 24 * 60 * 60 * 1000) {
+      console.log("❌ Token expired");
       return null;
     }
     
@@ -257,14 +294,17 @@ export async function verifySessionToken(token: string): Promise<User | null> {
     const data = `${userId}:${timestamp}`;
     const expectedHash = createHash("sha256").update(data + "skyparking_secret_key").digest("hex");
     if (hash !== expectedHash) {
+      console.log("❌ Token hash mismatch");
       return null;
     }
     
     const user = await getUserById(userId);
     if (!user || !user.isActive) {
+      console.log("❌ User not found or inactive");
       return null;
     }
     
+    console.log("✅ Token verified successfully for user:", user.username);
     return user;
   } catch (error) {
     console.error("Verify session token error:", error);
