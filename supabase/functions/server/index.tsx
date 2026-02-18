@@ -519,32 +519,40 @@ app.post("/make-server-47a4914e/bookings", async (c) => {
       console.error(`❌ Error sending customer confirmation email:`, emailError);
     }
     
-    // Send admin notification email
+    // Send admin notification email (check settings first)
     try {
-      console.log(`📧 Sending admin notification email to reservations@skyparking.bg...`);
-      const adminEmailResult = await sendAdminNotificationEmail({
-        name: bookingData.name,
-        email: bookingData.email,
-        phone: bookingData.phone,
-        licensePlate: bookingData.licensePlate,
-        arrivalDate: bookingData.arrivalDate,
-        arrivalTime: bookingData.arrivalTime,
-        departureDate: bookingData.departureDate,
-        departureTime: bookingData.departureTime,
-        numberOfCars: bookingData.numberOfCars || 1,
-        passengers: bookingData.passengers || 0,
-        totalPrice: bookingData.totalPrice,
-        bookingId: bookingData.bookingCode || bookingId,
-        carKeys: bookingData.carKeys,
-        needsInvoice: bookingData.needsInvoice,
-        companyName: bookingData.companyName,
-        language: bookingData.language || 'bg',
-      });
+      // Check if email notifications are enabled
+      const emailNotificationsEnabled = await kv.get("settings:emailNotificationsEnabled");
+      const shouldSendEmail = emailNotificationsEnabled !== false; // Default to true if not set
       
-      if (adminEmailResult.success) {
-        console.log(`✅ Admin notification email sent successfully to reservations@skyparking.bg`);
+      if (shouldSendEmail) {
+        console.log(`📧 Sending admin notification email to reservations@skyparking.bg...`);
+        const adminEmailResult = await sendAdminNotificationEmail({
+          name: bookingData.name,
+          email: bookingData.email,
+          phone: bookingData.phone,
+          licensePlate: bookingData.licensePlate,
+          arrivalDate: bookingData.arrivalDate,
+          arrivalTime: bookingData.arrivalTime,
+          departureDate: bookingData.departureDate,
+          departureTime: bookingData.departureTime,
+          numberOfCars: bookingData.numberOfCars || 1,
+          passengers: bookingData.passengers || 0,
+          totalPrice: bookingData.totalPrice,
+          bookingId: bookingData.bookingCode || bookingId,
+          carKeys: bookingData.carKeys,
+          needsInvoice: bookingData.needsInvoice,
+          companyName: bookingData.companyName,
+          language: bookingData.language || 'bg',
+        });
+        
+        if (adminEmailResult.success) {
+          console.log(`✅ Admin notification email sent successfully to reservations@skyparking.bg`);
+        } else {
+          console.error(`❌ Failed to send admin notification email: ${adminEmailResult.error}`);
+        }
       } else {
-        console.error(`❌ Failed to send admin notification email: ${adminEmailResult.error}`);
+        console.log(`⚠️ Admin notification email skipped - email notifications are disabled in settings`);
       }
     } catch (emailError) {
       console.error(`❌ Error sending admin notification email:`, emailError);
@@ -1724,6 +1732,59 @@ app.post("/make-server-47a4914e/update-late-surcharges", async (c) => {
   } catch (error) {
     console.log("Update late surcharges error:", error);
     return c.json({ success: false, message: "Failed to update late surcharges" }, 500);
+  }
+});
+
+// ===================================
+// SETTINGS ENDPOINTS
+// ===================================
+
+// Get settings
+app.get("/make-server-47a4914e/settings", async (c) => {
+  try {
+    // Verify admin token
+    const token = c.req.header("Authorization")?.replace("Bearer ", "");
+    const isValid = await users.verifyToken(token || "");
+    
+    if (!isValid) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    // Get settings from KV store
+    const emailNotificationsEnabled = await kv.get("settings:emailNotificationsEnabled");
+    
+    return c.json({
+      emailNotificationsEnabled: emailNotificationsEnabled !== null ? emailNotificationsEnabled : true
+    });
+  } catch (error) {
+    console.error("Get settings error:", error);
+    return c.json({ success: false, message: "Failed to get settings" }, 500);
+  }
+});
+
+// Update settings
+app.put("/make-server-47a4914e/settings", async (c) => {
+  try {
+    // Verify admin token
+    const token = c.req.header("Authorization")?.replace("Bearer ", "");
+    const user = await users.verifyToken(token || "");
+    
+    if (!user || (user.role !== "admin" && user.role !== "manager")) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    const body = await c.req.json();
+    const { emailNotificationsEnabled } = body;
+
+    // Save settings to KV store
+    if (typeof emailNotificationsEnabled === "boolean") {
+      await kv.set("settings:emailNotificationsEnabled", emailNotificationsEnabled);
+    }
+
+    return c.json({ success: true });
+  } catch (error) {
+    console.error("Update settings error:", error);
+    return c.json({ success: false, message: "Failed to update settings" }, 500);
   }
 });
 

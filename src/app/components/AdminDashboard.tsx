@@ -28,13 +28,15 @@ import {
   AlertTriangle,
   Users,
   Shield,
-  Percent
+  Percent,
+  Settings
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "./ui/dialog";
 import { toast } from "sonner";
 import type { User as UserType } from "./LoginScreen";
 import { PricingManager } from "./PricingManager";
 import { DiscountManager } from "./DiscountManager";
+import { SettingsManager } from "./SettingsManager";
 import { calculatePrice } from "@/app/utils/pricing";
 
 const projectId = "dbybybmjjeeocoecaewv";
@@ -60,6 +62,7 @@ const bg = {
   usersTab: "Потребители",
   pricingTab: "Ценообразуване",
   discountsTab: "Промо кодове",
+  settingsTab: "Настройки",
   
   // Booking details
   customer: "Клиент",
@@ -273,7 +276,7 @@ interface CapacityDay {
   wouldFit: boolean;
 }
 
-type TabType = "new" | "confirmed" | "arrived" | "completed" | "archive" | "all" | "users" | "pricing";
+type TabType = "new" | "confirmed" | "arrived" | "completed" | "archive" | "all" | "users" | "pricing" | "discounts" | "settings";
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -1065,6 +1068,17 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                   <Percent className="inline h-5 w-5 sm:h-6 sm:w-6 mr-1" />
                   {bg.discountsTab}
                 </button>
+                <button
+                  onClick={() => setActiveTab("settings")}
+                  className={`px-4 sm:px-6 py-4 sm:py-5 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors ${
+                    activeTab === "settings"
+                      ? "border-blue-500 text-blue-600"
+                      : "border-transparent text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  <Settings className="inline h-5 w-5 sm:h-6 sm:w-6 mr-1" />
+                  {bg.settingsTab}
+                </button>
               </>
             )}
           </div>
@@ -1183,8 +1197,11 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
           </div>
         </Card>
 
-        {/* Content - Bookings, Users, Pricing, or Discounts */}
-        {activeTab === "discounts" ? (
+        {/* Content - Bookings, Users, Pricing, Discounts, or Settings */}
+        {activeTab === "settings" ? (
+          /* ========== SETTINGS TAB ========== */
+          <SettingsManager />
+        ) : activeTab === "discounts" ? (
           /* ========== DISCOUNTS TAB ========== */
           <DiscountManager />
         ) : activeTab === "pricing" ? (
