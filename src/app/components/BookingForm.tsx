@@ -4,7 +4,7 @@ import { Card } from "./ui/card";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Button } from "./ui/button";
-import { CalendarIcon, CreditCard, Loader2, ChevronDown, Clock, Car, Users } from "lucide-react";
+import { CalendarIcon, CreditCard, Loader2, ChevronDown, Clock, Car, Users, X } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "./LanguageContext";
 import { calculatePrice } from "@/app/utils/pricing";
