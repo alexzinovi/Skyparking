@@ -333,7 +333,7 @@ export function BookingForm() {
                         )}
                       </div>
                       <p className="text-sm text-gray-600 mt-3">
-                        {language === 'bg' ? 'Крайна цена за престоя с включени трансфе��и' : 'Final price for the stay with transfers included'}
+                        {language === 'bg' ? 'Крайна цена за престоя с включени трансфери' : 'Final price for the stay with transfers included'}
                       </p>
                     </div>
                     
