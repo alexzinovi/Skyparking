@@ -33,22 +33,22 @@ function formatDateDisplay(dateStr: string): string {
 function generateConfirmationEmailHTML_BG(data: BookingEmailData): string {
   const carKeysText = data.carKeys 
     ? `<tr>
-         <td style="padding: 12px 0; border-bottom: 1px solid #f0f0f0;">
-           <span style="color: #6b7280; font-size: 15px;">🔑 Предаване на ключове</span>
+         <td style="padding: 14px 0;">
+           <span style="color: #6b7280; font-size: 14px;">🔑 Предаване на ключове</span>
          </td>
-         <td style="padding: 12px 0; text-align: right; border-bottom: 1px solid #f0f0f0;">
-           <span style="color: #111827; font-size: 15px; font-weight: 500;">Да</span>
+         <td style="padding: 14px 0; text-align: right;">
+           <span style="color: #1f2937; font-size: 14px; font-weight: 500;">Да</span>
          </td>
        </tr>`
     : '';
 
   const invoiceText = data.needsInvoice 
     ? `<tr>
-         <td style="padding: 12px 0; border-bottom: 1px solid #f0f0f0;">
-           <span style="color: #6b7280; font-size: 15px;">📄 Фактура за</span>
+         <td style="padding: 14px 0;">
+           <span style="color: #6b7280; font-size: 14px;">📄 Фактура за</span>
          </td>
-         <td style="padding: 12px 0; text-align: right; border-bottom: 1px solid #f0f0f0;">
-           <span style="color: #111827; font-size: 15px; font-weight: 500;">${data.companyName || 'фирма'}</span>
+         <td style="padding: 14px 0; text-align: right;">
+           <span style="color: #1f2937; font-size: 14px; font-weight: 500;">${data.companyName || 'фирма'}</span>
          </td>
        </tr>`
     : '';
@@ -62,171 +62,194 @@ function generateConfirmationEmailHTML_BG(data: BookingEmailData): string {
   <title>Потвърждение на резервация - SkyParking</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    body { 
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    @media only screen and (max-width: 600px) {
+      .mobile-padding { padding: 20px !important; }
+      .mobile-text-large { font-size: 32px !important; }
+      .mobile-button { width: 100% !important; display: block !important; }
+    }
   </style>
 </head>
-<body style="margin: 0; padding: 0; background-color: #f9fafb;">
+<body style="margin: 0; padding: 0; background-color: #f5f5f5;">
   <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
     
-    <!-- Header -->
-    <div style="padding: 50px 40px 40px; text-align: center; background-color: #ffffff;">
-      <img src="https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/email.png" alt="SkyParking" style="max-width: 180px; height: auto; margin-bottom: 30px;" />
-      <div style="height: 1px; background: linear-gradient(to right, transparent, rgba(5, 55, 144, 0.1), transparent); margin: 0 auto; max-width: 100%;"></div>
+    <!-- Header - Compact Blue Background -->
+    <div style="background-color: #053790; padding: 28px 20px; text-align: center;">
+      <img src="https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/email.png" alt="SkyParking" style="max-width: 170px; height: auto; display: inline-block;" />
     </div>
 
     <!-- Confirmation Statement -->
-    <div style="padding: 40px 40px 30px; text-align: center;">
-      <h1 style="margin: 0 0 12px 0; font-size: 28px; font-weight: 600; color: #053790; letter-spacing: -0.5px;">
+    <div style="padding: 32px 20px 24px; text-align: center; background-color: #ffffff;">
+      <h1 style="margin: 0 0 10px 0; font-size: 24px; font-weight: 600; color: #053790; letter-spacing: -0.3px;">
         Резервацията ви е потвърдена
       </h1>
-      <p style="margin: 0; font-size: 16px; color: #6b7280; font-weight: 400;">
+      <p style="margin: 0; font-size: 15px; color: #6b7280; font-weight: 400; line-height: 1.5;">
         Благодарим ви, че избрахте SkyParking.
       </p>
     </div>
 
     <!-- Reservation Details Card -->
-    <div style="padding: 0 40px 40px;">
-      <div style="background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%); border-radius: 12px; padding: 32px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); border: 1px solid #f0f0f0;">
+    <div class="mobile-padding" style="padding: 0 20px 32px;">
+      <div style="background-color: #fafafa; border-radius: 12px; padding: 0; border: 1px solid #e5e7eb; overflow: hidden;">
         
-        <!-- Price Section (Prominent) -->
-        <div style="text-align: center; padding: 24px; background: linear-gradient(135deg, #053790 0%, #073ea0 100%); border-radius: 10px; margin-bottom: 28px;">
-          <div style="font-size: 14px; color: rgba(255,255,255,0.85); font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 6px;">
-            Обща цена
-          </div>
-          <div style="font-size: 42px; font-weight: 700; color: #f1c933; letter-spacing: -1px;">
-            €${data.totalPrice}
-          </div>
-          <div style="font-size: 13px; color: rgba(255,255,255,0.7); margin-top: 4px;">
-            Плащане на място
+        <!-- Price Row (Refined - Top of Card) -->
+        <div style="background-color: #ffffff; padding: 24px 24px 20px; border-bottom: 2px solid #f1c933;">
+          <div style="text-align: center;">
+            <div style="font-size: 11px; color: #9ca3af; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px;">
+              Обща цена
+            </div>
+            <div class="mobile-text-large" style="font-size: 36px; font-weight: 700; color: #f1c933; letter-spacing: -1px; line-height: 1;">
+              €${data.totalPrice}
+            </div>
           </div>
         </div>
 
         <!-- Reservation Details Table -->
-        <table style="width: 100%; border-collapse: collapse;">
-          <tr>
-            <td style="padding: 14px 0; border-bottom: 1px solid #f0f0f0;">
-              <span style="color: #6b7280; font-size: 15px;">Номер на резервация</span>
-            </td>
-            <td style="padding: 14px 0; text-align: right; border-bottom: 1px solid #f0f0f0;">
-              <span style="color: #053790; font-size: 15px; font-weight: 600; font-family: 'Courier New', monospace;">${data.bookingId}</span>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 12px 0; border-bottom: 1px solid #f0f0f0;">
-              <span style="color: #6b7280; font-size: 15px;">Дата на пристигане</span>
-            </td>
-            <td style="padding: 12px 0; text-align: right; border-bottom: 1px solid #f0f0f0;">
-              <span style="color: #111827; font-size: 15px; font-weight: 500;">${formatDateDisplay(data.arrivalDate)}</span>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 12px 0; border-bottom: 1px solid #f0f0f0;">
-              <span style="color: #6b7280; font-size: 15px;">Час на пристигане</span>
-            </td>
-            <td style="padding: 12px 0; text-align: right; border-bottom: 1px solid #f0f0f0;">
-              <span style="color: #111827; font-size: 15px; font-weight: 500;">${data.arrivalTime}</span>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 12px 0; border-bottom: 1px solid #f0f0f0;">
-              <span style="color: #6b7280; font-size: 15px;">Дата на заминаване</span>
-            </td>
-            <td style="padding: 12px 0; text-align: right; border-bottom: 1px solid #f0f0f0;">
-              <span style="color: #111827; font-size: 15px; font-weight: 500;">${formatDateDisplay(data.departureDate)}</span>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 12px 0; border-bottom: 1px solid #f0f0f0;">
-              <span style="color: #6b7280; font-size: 15px;">Час на заминаване</span>
-            </td>
-            <td style="padding: 12px 0; text-align: right; border-bottom: 1px solid #f0f0f0;">
-              <span style="color: #111827; font-size: 15px; font-weight: 500;">${data.departureTime}</span>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 12px 0; border-bottom: 1px solid #f0f0f0;">
-              <span style="color: #6b7280; font-size: 15px;">Име на резервация</span>
-            </td>
-            <td style="padding: 12px 0; text-align: right; border-bottom: 1px solid #f0f0f0;">
-              <span style="color: #111827; font-size: 15px; font-weight: 500;">${data.name}</span>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 12px 0; border-bottom: 1px solid #f0f0f0;">
-              <span style="color: #6b7280; font-size: 15px;">Брой автомобили</span>
-            </td>
-            <td style="padding: 12px 0; text-align: right; border-bottom: 1px solid #f0f0f0;">
-              <span style="color: #111827; font-size: 15px; font-weight: 500;">${data.numberOfCars}</span>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 12px 0;">
-              <span style="color: #6b7280; font-size: 15px;">Регистрационни номера</span>
-            </td>
-            <td style="padding: 12px 0; text-align: right;">
-              <span style="color: #111827; font-size: 15px; font-weight: 500;">${data.licensePlate}</span>
-            </td>
-          </tr>
-          ${carKeysText}
-          ${invoiceText}
-        </table>
+        <div style="padding: 24px;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 14px 0; border-bottom: 1px solid #eeeeee;">
+                <span style="color: #6b7280; font-size: 14px;">Номер на резервация</span>
+              </td>
+              <td style="padding: 14px 0; text-align: right; border-bottom: 1px solid #eeeeee;">
+                <span style="color: #053790; font-size: 14px; font-weight: 600; font-family: 'Courier New', monospace; letter-spacing: 0.5px;">${data.bookingId}</span>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 14px 0; border-bottom: 1px solid #eeeeee;">
+                <span style="color: #6b7280; font-size: 14px;">Дата на пристигане</span>
+              </td>
+              <td style="padding: 14px 0; text-align: right; border-bottom: 1px solid #eeeeee;">
+                <span style="color: #1f2937; font-size: 14px; font-weight: 500;">${formatDateDisplay(data.arrivalDate)}</span>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 14px 0; border-bottom: 1px solid #eeeeee;">
+                <span style="color: #6b7280; font-size: 14px;">Час на пристигане</span>
+              </td>
+              <td style="padding: 14px 0; text-align: right; border-bottom: 1px solid #eeeeee;">
+                <span style="color: #1f2937; font-size: 14px; font-weight: 500;">${data.arrivalTime}</span>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 14px 0; border-bottom: 1px solid #eeeeee;">
+                <span style="color: #6b7280; font-size: 14px;">Дата на заминаване</span>
+              </td>
+              <td style="padding: 14px 0; text-align: right; border-bottom: 1px solid #eeeeee;">
+                <span style="color: #1f2937; font-size: 14px; font-weight: 500;">${formatDateDisplay(data.departureDate)}</span>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 14px 0; border-bottom: 1px solid #eeeeee;">
+                <span style="color: #6b7280; font-size: 14px;">Час на заминаване</span>
+              </td>
+              <td style="padding: 14px 0; text-align: right; border-bottom: 1px solid #eeeeee;">
+                <span style="color: #1f2937; font-size: 14px; font-weight: 500;">${data.departureTime}</span>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 14px 0; border-bottom: 1px solid #eeeeee;">
+                <span style="color: #6b7280; font-size: 14px;">Име на резервация</span>
+              </td>
+              <td style="padding: 14px 0; text-align: right; border-bottom: 1px solid #eeeeee;">
+                <span style="color: #1f2937; font-size: 14px; font-weight: 500;">${data.name}</span>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 14px 0; border-bottom: 1px solid #eeeeee;">
+                <span style="color: #6b7280; font-size: 14px;">Брой автомобили</span>
+              </td>
+              <td style="padding: 14px 0; text-align: right; border-bottom: 1px solid #eeeeee;">
+                <span style="color: #1f2937; font-size: 14px; font-weight: 500;">${data.numberOfCars}</span>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 14px 0; border-bottom: 1px solid #eeeeee;">
+                <span style="color: #6b7280; font-size: 14px;">Регистрационни номера</span>
+              </td>
+              <td style="padding: 14px 0; text-align: right; border-bottom: 1px solid #eeeeee;">
+                <span style="color: #1f2937; font-size: 14px; font-weight: 500;">${data.licensePlate}</span>
+              </td>
+            </tr>
+            ${carKeysText}
+            ${invoiceText}
+          </table>
+          
+          <!-- Payment Note -->
+          <div style="margin-top: 16px; text-align: center;">
+            <span style="font-size: 13px; color: #9ca3af; font-style: italic;">Плащане на място</span>
+          </div>
+        </div>
       </div>
     </div>
 
     <!-- Location Section -->
-    <div style="padding: 0 40px 40px;">
-      <div style="background-color: #fafafa; border-radius: 12px; padding: 28px; border: 1px solid #f0f0f0;">
-        <div style="display: flex; align-items: center; margin-bottom: 16px;">
-          <span style="font-size: 20px; margin-right: 8px;">📍</span>
-          <h2 style="margin: 0; font-size: 18px; font-weight: 600; color: #111827;">Локация на паркинга</h2>
+    <div class="mobile-padding" style="padding: 0 20px 28px;">
+      <div style="background-color: #fafafa; border-radius: 10px; padding: 24px 20px; border: 1px solid #e5e7eb;">
+        <div style="margin-bottom: 14px;">
+          <h2 style="margin: 0; font-size: 16px; font-weight: 600; color: #111827;">
+            📍 Локация на паркинга
+          </h2>
         </div>
-        <p style="margin: 0 0 20px 0; font-size: 16px; color: #4b5563; line-height: 1.5;">
+        <p style="margin: 0 0 20px 0; font-size: 14px; color: #4b5563; line-height: 1.6;">
           Ulitsa Nedelcho Bonchev 30
         </p>
         
         <!-- Navigation Buttons -->
-        <div style="display: block;">
-          <!-- Primary Button -->
-          <a href="https://waze.com/ul?ll=42.6977,23.4063&navigate=yes" style="display: block; text-align: center; background-color: #053790; color: #ffffff; padding: 14px 24px; text-decoration: none; border-radius: 8px; font-size: 15px; font-weight: 600; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(5, 55, 144, 0.15);">
-            🧭 Навигация с Waze
-          </a>
-          <!-- Secondary Button -->
-          <a href="https://www.google.com/maps/dir/?api=1&destination=42.6977,23.4063" style="display: block; text-align: center; background-color: #ffffff; color: #053790; padding: 14px 24px; text-decoration: none; border-radius: 8px; font-size: 15px; font-weight: 600; border: 2px solid #053790; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);">
-            🗺️ Навигация с Google Maps
-          </a>
-        </div>
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+          <tr>
+            <td style="padding-bottom: 12px;">
+              <a href="https://ul.waze.com/ul?ll=42.67683570,23.40003810&navigate=yes" class="mobile-button" style="display: block; text-align: center; background-color: #053790; color: #ffffff; padding: 13px 20px; text-decoration: none; border-radius: 10px; font-size: 14px; font-weight: 600;">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/0/01/Waze_Icon.png" alt="" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;" />
+                Навигация с Waze
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <a href="https://www.google.com/maps?q=42.6768423,23.4002030&entry=gps" class="mobile-button" style="display: block; text-align: center; background-color: #ffffff; color: #053790; padding: 13px 20px; text-decoration: none; border-radius: 10px; font-size: 14px; font-weight: 600; border: 2px solid #053790;">
+                <img src="https://maps.gstatic.com/mapfiles/api-3/images/google4.png" alt="" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;" />
+                Навигация с Google Maps
+              </a>
+            </td>
+          </tr>
+        </table>
       </div>
     </div>
 
-    <!-- Helpful Information -->
-    <div style="padding: 0 40px 50px;">
-      <h2 style="margin: 0 0 20px 0; font-size: 18px; font-weight: 600; color: #111827;">Важна информация</h2>
-      <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px 24px; border-radius: 8px; margin-bottom: 24px;">
-        <ul style="margin: 0; padding-left: 20px; color: #92400e; font-size: 15px; line-height: 1.8;">
-          <li style="margin-bottom: 8px;">Моля, пристигнете поне 10 минути по-рано.</li>
-          <li style="margin-bottom: 8px;">Запазете този имейл за справка.</li>
+    <!-- Important Information -->
+    <div class="mobile-padding" style="padding: 0 20px 28px;">
+      <h2 style="margin: 0 0 14px 0; font-size: 16px; font-weight: 600; color: #111827;">Важна информация</h2>
+      <div style="background-color: #fffbeb; border-left: 3px solid #f59e0b; padding: 16px 18px; border-radius: 8px; margin-bottom: 20px;">
+        <ul style="margin: 0; padding-left: 18px; color: #92400e; font-size: 14px; line-height: 1.7;">
+          <li style="margin-bottom: 6px;">Моля, пристигнете поне 10 минути по-рано.</li>
+          <li style="margin-bottom: 6px;">Запазете този имейл за справка.</li>
           <li>При нужда от съдействие, свържете се с нас.</li>
         </ul>
       </div>
 
       <!-- Contact Details -->
-      <div style="background-color: #f9fafb; border-radius: 10px; padding: 24px;">
-        <div style="margin-bottom: 16px;">
-          <div style="display: inline-block; color: #6b7280; font-size: 14px; font-weight: 500; margin-bottom: 6px;">
+      <div style="background-color: #f9fafb; border-radius: 8px; padding: 18px;">
+        <div style="margin-bottom: 14px;">
+          <div style="color: #6b7280; font-size: 12px; font-weight: 500; margin-bottom: 4px;">
             📞 Телефон
           </div>
           <div>
-            <a href="tel:+359886616991" style="color: #053790; font-size: 16px; font-weight: 600; text-decoration: none;">
+            <a href="tel:+359886616991" style="color: #053790; font-size: 15px; font-weight: 600; text-decoration: none;">
               +359 886 616 991
             </a>
           </div>
         </div>
         <div>
-          <div style="display: inline-block; color: #6b7280; font-size: 14px; font-weight: 500; margin-bottom: 6px;">
+          <div style="color: #6b7280; font-size: 12px; font-weight: 500; margin-bottom: 4px;">
             📧 Имейл
           </div>
           <div>
-            <a href="mailto:info@skyparking.bg" style="color: #053790; font-size: 16px; font-weight: 600; text-decoration: none;">
+            <a href="mailto:info@skyparking.bg" style="color: #053790; font-size: 15px; font-weight: 600; text-decoration: none;">
               info@skyparking.bg
             </a>
           </div>
@@ -235,16 +258,16 @@ function generateConfirmationEmailHTML_BG(data: BookingEmailData): string {
     </div>
 
     <!-- Footer -->
-    <div style="background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%); padding: 32px 40px; text-align: center; border-top: 1px solid #e5e7eb;">
-      <div style="font-size: 16px; font-weight: 600; color: #053790; margin-bottom: 8px;">
+    <div style="background-color: #f9fafb; padding: 24px 20px; text-align: center; border-top: 1px solid #e5e7eb;">
+      <div style="font-size: 15px; font-weight: 600; color: #053790; margin-bottom: 6px;">
         SkyParking
       </div>
-      <div style="font-size: 14px; color: #6b7280; margin-bottom: 4px;">
+      <div style="font-size: 13px; color: #6b7280; margin-bottom: 3px;">
         <a href="tel:+359886616991" style="color: #6b7280; text-decoration: none;">+359 886 616 991</a>
-        <span style="margin: 0 8px; color: #d1d5db;">•</span>
+        <span style="margin: 0 6px; color: #d1d5db;">•</span>
         <a href="mailto:info@skyparking.bg" style="color: #6b7280; text-decoration: none;">info@skyparking.bg</a>
       </div>
-      <div style="font-size: 13px; color: #9ca3af; margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+      <div style="font-size: 12px; color: #9ca3af; margin-top: 14px; padding-top: 14px; border-top: 1px solid #e5e7eb;">
         Това е автоматично генериран имейл. Моля, не отговаряйте на него.
       </div>
     </div>
@@ -259,22 +282,22 @@ function generateConfirmationEmailHTML_BG(data: BookingEmailData): string {
 function generateConfirmationEmailHTML_EN(data: BookingEmailData): string {
   const carKeysText = data.carKeys 
     ? `<tr>
-         <td style="padding: 12px 0; border-bottom: 1px solid #f0f0f0;">
-           <span style="color: #6b7280; font-size: 15px;">🔑 Car Key Handover</span>
+         <td style="padding: 14px 0;">
+           <span style="color: #6b7280; font-size: 14px;">🔑 Car Key Handover</span>
          </td>
-         <td style="padding: 12px 0; text-align: right; border-bottom: 1px solid #f0f0f0;">
-           <span style="color: #111827; font-size: 15px; font-weight: 500;">Yes</span>
+         <td style="padding: 14px 0; text-align: right;">
+           <span style="color: #1f2937; font-size: 14px; font-weight: 500;">Yes</span>
          </td>
        </tr>`
     : '';
 
   const invoiceText = data.needsInvoice 
     ? `<tr>
-         <td style="padding: 12px 0; border-bottom: 1px solid #f0f0f0;">
-           <span style="color: #6b7280; font-size: 15px;">📄 Invoice For</span>
+         <td style="padding: 14px 0;">
+           <span style="color: #6b7280; font-size: 14px;">📄 Invoice For</span>
          </td>
-         <td style="padding: 12px 0; text-align: right; border-bottom: 1px solid #f0f0f0;">
-           <span style="color: #111827; font-size: 15px; font-weight: 500;">${data.companyName || 'company'}</span>
+         <td style="padding: 14px 0; text-align: right;">
+           <span style="color: #1f2937; font-size: 14px; font-weight: 500;">${data.companyName || 'company'}</span>
          </td>
        </tr>`
     : '';
@@ -288,171 +311,194 @@ function generateConfirmationEmailHTML_EN(data: BookingEmailData): string {
   <title>Booking Confirmation - SkyParking</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    body { 
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    @media only screen and (max-width: 600px) {
+      .mobile-padding { padding: 20px !important; }
+      .mobile-text-large { font-size: 32px !important; }
+      .mobile-button { width: 100% !important; display: block !important; }
+    }
   </style>
 </head>
-<body style="margin: 0; padding: 0; background-color: #f9fafb;">
+<body style="margin: 0; padding: 0; background-color: #f5f5f5;">
   <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
     
-    <!-- Header -->
-    <div style="padding: 50px 40px 40px; text-align: center; background-color: #ffffff;">
-      <img src="https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/email.png" alt="SkyParking" style="max-width: 180px; height: auto; margin-bottom: 30px;" />
-      <div style="height: 1px; background: linear-gradient(to right, transparent, rgba(5, 55, 144, 0.1), transparent); margin: 0 auto; max-width: 100%;"></div>
+    <!-- Header - Compact Blue Background -->
+    <div style="background-color: #053790; padding: 28px 20px; text-align: center;">
+      <img src="https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/email.png" alt="SkyParking" style="max-width: 170px; height: auto; display: inline-block;" />
     </div>
 
     <!-- Confirmation Statement -->
-    <div style="padding: 40px 40px 30px; text-align: center;">
-      <h1 style="margin: 0 0 12px 0; font-size: 28px; font-weight: 600; color: #053790; letter-spacing: -0.5px;">
+    <div style="padding: 32px 20px 24px; text-align: center; background-color: #ffffff;">
+      <h1 style="margin: 0 0 10px 0; font-size: 24px; font-weight: 600; color: #053790; letter-spacing: -0.3px;">
         Your reservation is confirmed
       </h1>
-      <p style="margin: 0; font-size: 16px; color: #6b7280; font-weight: 400;">
+      <p style="margin: 0; font-size: 15px; color: #6b7280; font-weight: 400; line-height: 1.5;">
         Thank you for choosing SkyParking.
       </p>
     </div>
 
     <!-- Reservation Details Card -->
-    <div style="padding: 0 40px 40px;">
-      <div style="background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%); border-radius: 12px; padding: 32px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); border: 1px solid #f0f0f0;">
+    <div class="mobile-padding" style="padding: 0 20px 32px;">
+      <div style="background-color: #fafafa; border-radius: 12px; padding: 0; border: 1px solid #e5e7eb; overflow: hidden;">
         
-        <!-- Price Section (Prominent) -->
-        <div style="text-align: center; padding: 24px; background: linear-gradient(135deg, #053790 0%, #073ea0 100%); border-radius: 10px; margin-bottom: 28px;">
-          <div style="font-size: 14px; color: rgba(255,255,255,0.85); font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 6px;">
-            Total Price
-          </div>
-          <div style="font-size: 42px; font-weight: 700; color: #f1c933; letter-spacing: -1px;">
-            €${data.totalPrice}
-          </div>
-          <div style="font-size: 13px; color: rgba(255,255,255,0.7); margin-top: 4px;">
-            Payment on arrival
+        <!-- Price Row (Refined - Top of Card) -->
+        <div style="background-color: #ffffff; padding: 24px 24px 20px; border-bottom: 2px solid #f1c933;">
+          <div style="text-align: center;">
+            <div style="font-size: 11px; color: #9ca3af; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px;">
+              Total Price
+            </div>
+            <div class="mobile-text-large" style="font-size: 36px; font-weight: 700; color: #f1c933; letter-spacing: -1px; line-height: 1;">
+              €${data.totalPrice}
+            </div>
           </div>
         </div>
 
         <!-- Reservation Details Table -->
-        <table style="width: 100%; border-collapse: collapse;">
-          <tr>
-            <td style="padding: 14px 0; border-bottom: 1px solid #f0f0f0;">
-              <span style="color: #6b7280; font-size: 15px;">Reservation Number</span>
-            </td>
-            <td style="padding: 14px 0; text-align: right; border-bottom: 1px solid #f0f0f0;">
-              <span style="color: #053790; font-size: 15px; font-weight: 600; font-family: 'Courier New', monospace;">${data.bookingId}</span>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 12px 0; border-bottom: 1px solid #f0f0f0;">
-              <span style="color: #6b7280; font-size: 15px;">Arrival Date</span>
-            </td>
-            <td style="padding: 12px 0; text-align: right; border-bottom: 1px solid #f0f0f0;">
-              <span style="color: #111827; font-size: 15px; font-weight: 500;">${formatDateDisplay(data.arrivalDate)}</span>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 12px 0; border-bottom: 1px solid #f0f0f0;">
-              <span style="color: #6b7280; font-size: 15px;">Arrival Time</span>
-            </td>
-            <td style="padding: 12px 0; text-align: right; border-bottom: 1px solid #f0f0f0;">
-              <span style="color: #111827; font-size: 15px; font-weight: 500;">${data.arrivalTime}</span>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 12px 0; border-bottom: 1px solid #f0f0f0;">
-              <span style="color: #6b7280; font-size: 15px;">Departure Date</span>
-            </td>
-            <td style="padding: 12px 0; text-align: right; border-bottom: 1px solid #f0f0f0;">
-              <span style="color: #111827; font-size: 15px; font-weight: 500;">${formatDateDisplay(data.departureDate)}</span>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 12px 0; border-bottom: 1px solid #f0f0f0;">
-              <span style="color: #6b7280; font-size: 15px;">Departure Time</span>
-            </td>
-            <td style="padding: 12px 0; text-align: right; border-bottom: 1px solid #f0f0f0;">
-              <span style="color: #111827; font-size: 15px; font-weight: 500;">${data.departureTime}</span>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 12px 0; border-bottom: 1px solid #f0f0f0;">
-              <span style="color: #6b7280; font-size: 15px;">Reservation Name</span>
-            </td>
-            <td style="padding: 12px 0; text-align: right; border-bottom: 1px solid #f0f0f0;">
-              <span style="color: #111827; font-size: 15px; font-weight: 500;">${data.name}</span>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 12px 0; border-bottom: 1px solid #f0f0f0;">
-              <span style="color: #6b7280; font-size: 15px;">Number of Cars</span>
-            </td>
-            <td style="padding: 12px 0; text-align: right; border-bottom: 1px solid #f0f0f0;">
-              <span style="color: #111827; font-size: 15px; font-weight: 500;">${data.numberOfCars}</span>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 12px 0;">
-              <span style="color: #6b7280; font-size: 15px;">License Plates</span>
-            </td>
-            <td style="padding: 12px 0; text-align: right;">
-              <span style="color: #111827; font-size: 15px; font-weight: 500;">${data.licensePlate}</span>
-            </td>
-          </tr>
-          ${carKeysText}
-          ${invoiceText}
-        </table>
+        <div style="padding: 24px;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 14px 0; border-bottom: 1px solid #eeeeee;">
+                <span style="color: #6b7280; font-size: 14px;">Reservation Number</span>
+              </td>
+              <td style="padding: 14px 0; text-align: right; border-bottom: 1px solid #eeeeee;">
+                <span style="color: #053790; font-size: 14px; font-weight: 600; font-family: 'Courier New', monospace; letter-spacing: 0.5px;">${data.bookingId}</span>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 14px 0; border-bottom: 1px solid #eeeeee;">
+                <span style="color: #6b7280; font-size: 14px;">Arrival Date</span>
+              </td>
+              <td style="padding: 14px 0; text-align: right; border-bottom: 1px solid #eeeeee;">
+                <span style="color: #1f2937; font-size: 14px; font-weight: 500;">${formatDateDisplay(data.arrivalDate)}</span>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 14px 0; border-bottom: 1px solid #eeeeee;">
+                <span style="color: #6b7280; font-size: 14px;">Arrival Time</span>
+              </td>
+              <td style="padding: 14px 0; text-align: right; border-bottom: 1px solid #eeeeee;">
+                <span style="color: #1f2937; font-size: 14px; font-weight: 500;">${data.arrivalTime}</span>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 14px 0; border-bottom: 1px solid #eeeeee;">
+                <span style="color: #6b7280; font-size: 14px;">Departure Date</span>
+              </td>
+              <td style="padding: 14px 0; text-align: right; border-bottom: 1px solid #eeeeee;">
+                <span style="color: #1f2937; font-size: 14px; font-weight: 500;">${formatDateDisplay(data.departureDate)}</span>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 14px 0; border-bottom: 1px solid #eeeeee;">
+                <span style="color: #6b7280; font-size: 14px;">Departure Time</span>
+              </td>
+              <td style="padding: 14px 0; text-align: right; border-bottom: 1px solid #eeeeee;">
+                <span style="color: #1f2937; font-size: 14px; font-weight: 500;">${data.departureTime}</span>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 14px 0; border-bottom: 1px solid #eeeeee;">
+                <span style="color: #6b7280; font-size: 14px;">Reservation Name</span>
+              </td>
+              <td style="padding: 14px 0; text-align: right; border-bottom: 1px solid #eeeeee;">
+                <span style="color: #1f2937; font-size: 14px; font-weight: 500;">${data.name}</span>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 14px 0; border-bottom: 1px solid #eeeeee;">
+                <span style="color: #6b7280; font-size: 14px;">Number of Cars</span>
+              </td>
+              <td style="padding: 14px 0; text-align: right; border-bottom: 1px solid #eeeeee;">
+                <span style="color: #1f2937; font-size: 14px; font-weight: 500;">${data.numberOfCars}</span>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 14px 0; border-bottom: 1px solid #eeeeee;">
+                <span style="color: #6b7280; font-size: 14px;">License Plates</span>
+              </td>
+              <td style="padding: 14px 0; text-align: right; border-bottom: 1px solid #eeeeee;">
+                <span style="color: #1f2937; font-size: 14px; font-weight: 500;">${data.licensePlate}</span>
+              </td>
+            </tr>
+            ${carKeysText}
+            ${invoiceText}
+          </table>
+          
+          <!-- Payment Note -->
+          <div style="margin-top: 16px; text-align: center;">
+            <span style="font-size: 13px; color: #9ca3af; font-style: italic;">Payment on arrival</span>
+          </div>
+        </div>
       </div>
     </div>
 
     <!-- Location Section -->
-    <div style="padding: 0 40px 40px;">
-      <div style="background-color: #fafafa; border-radius: 12px; padding: 28px; border: 1px solid #f0f0f0;">
-        <div style="display: flex; align-items: center; margin-bottom: 16px;">
-          <span style="font-size: 20px; margin-right: 8px;">📍</span>
-          <h2 style="margin: 0; font-size: 18px; font-weight: 600; color: #111827;">Parking Location</h2>
+    <div class="mobile-padding" style="padding: 0 20px 28px;">
+      <div style="background-color: #fafafa; border-radius: 10px; padding: 24px 20px; border: 1px solid #e5e7eb;">
+        <div style="margin-bottom: 14px;">
+          <h2 style="margin: 0; font-size: 16px; font-weight: 600; color: #111827;">
+            📍 Parking Location
+          </h2>
         </div>
-        <p style="margin: 0 0 20px 0; font-size: 16px; color: #4b5563; line-height: 1.5;">
+        <p style="margin: 0 0 20px 0; font-size: 14px; color: #4b5563; line-height: 1.6;">
           Ulitsa Nedelcho Bonchev 30
         </p>
         
         <!-- Navigation Buttons -->
-        <div style="display: block;">
-          <!-- Primary Button -->
-          <a href="https://waze.com/ul?ll=42.6977,23.4063&navigate=yes" style="display: block; text-align: center; background-color: #053790; color: #ffffff; padding: 14px 24px; text-decoration: none; border-radius: 8px; font-size: 15px; font-weight: 600; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(5, 55, 144, 0.15);">
-            🧭 Navigate with Waze
-          </a>
-          <!-- Secondary Button -->
-          <a href="https://www.google.com/maps/dir/?api=1&destination=42.6977,23.4063" style="display: block; text-align: center; background-color: #ffffff; color: #053790; padding: 14px 24px; text-decoration: none; border-radius: 8px; font-size: 15px; font-weight: 600; border: 2px solid #053790; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);">
-            🗺️ Navigate with Google Maps
-          </a>
-        </div>
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+          <tr>
+            <td style="padding-bottom: 12px;">
+              <a href="https://ul.waze.com/ul?ll=42.67683570,23.40003810&navigate=yes" class="mobile-button" style="display: block; text-align: center; background-color: #053790; color: #ffffff; padding: 13px 20px; text-decoration: none; border-radius: 10px; font-size: 14px; font-weight: 600;">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/0/01/Waze_Icon.png" alt="" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;" />
+                Navigate with Waze
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <a href="https://www.google.com/maps?q=42.6768423,23.4002030&entry=gps" class="mobile-button" style="display: block; text-align: center; background-color: #ffffff; color: #053790; padding: 13px 20px; text-decoration: none; border-radius: 10px; font-size: 14px; font-weight: 600; border: 2px solid #053790;">
+                <img src="https://maps.gstatic.com/mapfiles/api-3/images/google4.png" alt="" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;" />
+                Navigate with Google Maps
+              </a>
+            </td>
+          </tr>
+        </table>
       </div>
     </div>
 
-    <!-- Helpful Information -->
-    <div style="padding: 0 40px 50px;">
-      <h2 style="margin: 0 0 20px 0; font-size: 18px; font-weight: 600; color: #111827;">Important Information</h2>
-      <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px 24px; border-radius: 8px; margin-bottom: 24px;">
-        <ul style="margin: 0; padding-left: 20px; color: #92400e; font-size: 15px; line-height: 1.8;">
-          <li style="margin-bottom: 8px;">Please arrive at least 10 minutes early.</li>
-          <li style="margin-bottom: 8px;">Please save this email for your reference.</li>
+    <!-- Important Information -->
+    <div class="mobile-padding" style="padding: 0 20px 28px;">
+      <h2 style="margin: 0 0 14px 0; font-size: 16px; font-weight: 600; color: #111827;">Important Information</h2>
+      <div style="background-color: #fffbeb; border-left: 3px solid #f59e0b; padding: 16px 18px; border-radius: 8px; margin-bottom: 20px;">
+        <ul style="margin: 0; padding-left: 18px; color: #92400e; font-size: 14px; line-height: 1.7;">
+          <li style="margin-bottom: 6px;">Please arrive at least 10 minutes early.</li>
+          <li style="margin-bottom: 6px;">Please save this email for your reference.</li>
           <li>If you need assistance, please contact us.</li>
         </ul>
       </div>
 
       <!-- Contact Details -->
-      <div style="background-color: #f9fafb; border-radius: 10px; padding: 24px;">
-        <div style="margin-bottom: 16px;">
-          <div style="display: inline-block; color: #6b7280; font-size: 14px; font-weight: 500; margin-bottom: 6px;">
+      <div style="background-color: #f9fafb; border-radius: 8px; padding: 18px;">
+        <div style="margin-bottom: 14px;">
+          <div style="color: #6b7280; font-size: 12px; font-weight: 500; margin-bottom: 4px;">
             📞 Phone
           </div>
           <div>
-            <a href="tel:+359886616991" style="color: #053790; font-size: 16px; font-weight: 600; text-decoration: none;">
+            <a href="tel:+359886616991" style="color: #053790; font-size: 15px; font-weight: 600; text-decoration: none;">
               +359 886 616 991
             </a>
           </div>
         </div>
         <div>
-          <div style="display: inline-block; color: #6b7280; font-size: 14px; font-weight: 500; margin-bottom: 6px;">
+          <div style="color: #6b7280; font-size: 12px; font-weight: 500; margin-bottom: 4px;">
             📧 Email
           </div>
           <div>
-            <a href="mailto:info@skyparking.bg" style="color: #053790; font-size: 16px; font-weight: 600; text-decoration: none;">
+            <a href="mailto:info@skyparking.bg" style="color: #053790; font-size: 15px; font-weight: 600; text-decoration: none;">
               info@skyparking.bg
             </a>
           </div>
@@ -461,16 +507,16 @@ function generateConfirmationEmailHTML_EN(data: BookingEmailData): string {
     </div>
 
     <!-- Footer -->
-    <div style="background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%); padding: 32px 40px; text-align: center; border-top: 1px solid #e5e7eb;">
-      <div style="font-size: 16px; font-weight: 600; color: #053790; margin-bottom: 8px;">
+    <div style="background-color: #f9fafb; padding: 24px 20px; text-align: center; border-top: 1px solid #e5e7eb;">
+      <div style="font-size: 15px; font-weight: 600; color: #053790; margin-bottom: 6px;">
         SkyParking
       </div>
-      <div style="font-size: 14px; color: #6b7280; margin-bottom: 4px;">
+      <div style="font-size: 13px; color: #6b7280; margin-bottom: 3px;">
         <a href="tel:+359886616991" style="color: #6b7280; text-decoration: none;">+359 886 616 991</a>
-        <span style="margin: 0 8px; color: #d1d5db;">•</span>
+        <span style="margin: 0 6px; color: #d1d5db;">•</span>
         <a href="mailto:info@skyparking.bg" style="color: #6b7280; text-decoration: none;">info@skyparking.bg</a>
       </div>
-      <div style="font-size: 13px; color: #9ca3af; margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+      <div style="font-size: 12px; color: #9ca3af; margin-top: 14px; padding-top: 14px; border-top: 1px solid #e5e7eb;">
         This is an automatically generated email. Please do not reply to it.
       </div>
     </div>
