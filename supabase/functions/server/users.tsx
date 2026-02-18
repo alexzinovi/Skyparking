@@ -46,6 +46,28 @@ function generateUserId(): string {
 export async function ensureAdminUser() {
   const users = await kv.getByPrefix("user:");
   
+  // Check if admin user with old credentials exists
+  const oldAdminId = await kv.get("username:admin");
+  if (oldAdminId) {
+    // Update old admin user to new credentials
+    const oldAdmin = await kv.get(`user:${oldAdminId}`) as User;
+    if (oldAdmin) {
+      // Delete old username mapping
+      await kv.del("username:admin");
+      
+      // Update user with new credentials
+      oldAdmin.username = "sandeparking";
+      oldAdmin.passwordHash = hashPassword("Sashoepichaga98!");
+      
+      // Save with new username mapping
+      await kv.set(`user:${oldAdminId}`, oldAdmin);
+      await kv.set("username:sandeparking", oldAdminId);
+      
+      console.log("Updated admin user to new credentials: sandeparking");
+      return;
+    }
+  }
+  
   if (users.length === 0) {
     const adminId = generateUserId();
     const adminUser: User = {
@@ -163,7 +185,7 @@ export async function updateUser(
   try {
     const user = await getUserById(userId);
     if (!user) {
-      return { success: false, message: "Потребителят не е намерен" };
+      return { success: false, message: "Потребит��лят не е намерен" };
     }
     
     if (updates.fullName !== undefined) user.fullName = updates.fullName;
