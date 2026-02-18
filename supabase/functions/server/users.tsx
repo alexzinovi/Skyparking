@@ -50,8 +50,8 @@ export async function ensureAdminUser() {
     const adminId = generateUserId();
     const adminUser: User = {
       id: adminId,
-      username: "admin",
-      passwordHash: hashPassword("skyparking2024"),
+      username: "sandeparking",
+      passwordHash: hashPassword("Sashoepichaga98!"),
       fullName: "System Administrator",
       email: "admin@skyparking.bg",
       role: "admin",
@@ -60,9 +60,9 @@ export async function ensureAdminUser() {
     };
     
     await kv.set(`user:${adminId}`, adminUser);
-    await kv.set(`username:admin`, adminId); // Username -> ID mapping
+    await kv.set(`username:sandeparking`, adminId); // Username -> ID mapping
     
-    console.log("Created initial admin user: admin / skyparking2024");
+    console.log("Created initial admin user: sandeparking");
   }
 }
 

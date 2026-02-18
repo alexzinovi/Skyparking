@@ -126,11 +126,6 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             )}
           </Button>
         </form>
-
-        <div className="mt-6 text-center text-sm text-gray-600">
-          <p>По подразбиране:</p>
-          <p className="font-mono text-xs mt-1">admin / skyparking2024</p>
-        </div>
       </Card>
     </div>
   );
