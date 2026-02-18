@@ -55,6 +55,13 @@ export function BookingForm() {
   const [autoVatNumber, setAutoVatNumber] = useState("");
   const [confirmedBooking, setConfirmedBooking] = useState<any>(null);
   
+  // Discount code states
+  const [discountCode, setDiscountCode] = useState("");
+  const [appliedDiscount, setAppliedDiscount] = useState<any>(null);
+  const [discountError, setDiscountError] = useState("");
+  const [isValidatingDiscount, setIsValidatingDiscount] = useState(false);
+  const [basePrice, setBasePrice] = useState<number | null>(null);
+  
   // Date states - using Date objects for DatePicker
   const [arrivalDateObj, setArrivalDateObj] = useState<Date | undefined>();
   const [departureDateObj, setDepartureDateObj] = useState<Date | undefined>();
@@ -108,6 +115,7 @@ export function BookingForm() {
   useEffect(() => {
     const price = calculatePrice(arrivalDate, arrivalTime, departureDate, departureTime, numberOfCars);
     setTotalPrice(price);
+    setBasePrice(price); // Store base price for discount calculation
   }, [arrivalDate, arrivalTime, departureDate, departureTime, numberOfCars]);
 
   // Auto-populate VAT number when VAT is checked and tax number exists
@@ -123,6 +131,64 @@ export function BookingForm() {
       setAutoVatNumber("");
     }
   }, [isVAT, taxNumber]);
+
+  // Validate discount code
+  const validateDiscountCode = async () => {
+    if (!discountCode) {
+      setDiscountError(t("discountCodeRequired"));
+      setAppliedDiscount(null);
+      return;
+    }
+
+    setIsValidatingDiscount(true);
+    setDiscountError("");
+
+    try {
+      const response = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/discount/validate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${publicAnonKey}`,
+        },
+        body: JSON.stringify({ code: discountCode }),
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.message || "Invalid discount code");
+      }
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.message || "Invalid discount code");
+      }
+
+      // Apply discount
+      setAppliedDiscount(result.discount);
+      
+      // Calculate discounted price based on type
+      let discountedPrice = basePrice;
+      if (basePrice && result.discount) {
+        if (result.discount.discountType === 'percentage') {
+          discountedPrice = basePrice * (1 - result.discount.discountValue / 100);
+        } else if (result.discount.discountType === 'fixed') {
+          discountedPrice = Math.max(0, basePrice - result.discount.discountValue);
+        }
+      }
+      setTotalPrice(discountedPrice);
+      
+      toast.success(t("discountApplied") + " " + (result.discount.discountType === 'percentage' ? `${result.discount.discountValue}%` : `€${result.discount.discountValue}`));
+
+    } catch (error: any) {
+      console.error("Discount validation error:", error);
+      setDiscountError(error.message || error.toString());
+      setAppliedDiscount(null);
+      setTotalPrice(basePrice); // Revert to base price if discount is invalid
+    } finally {
+      setIsValidatingDiscount(false);
+    }
+  };
 
   const onSubmit = async (data: BookingFormData) => {
     if (!totalPrice) {
@@ -143,12 +209,32 @@ export function BookingForm() {
     setIsSubmitting(true);
     
     try {
+      // Apply discount code usage if one was applied
+      if (appliedDiscount && discountCode) {
+        try {
+          await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/discount/apply`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${publicAnonKey}`,
+            },
+            body: JSON.stringify({ code: discountCode }),
+          });
+        } catch (error) {
+          console.error("Failed to track discount usage:", error);
+          // Continue with booking even if discount tracking fails
+        }
+      }
+      
       // Create reservation in database
       const bookingData = {
         ...data,
         totalPrice,
+        basePrice, // Store base price before discount
         numberOfCars,
         needsInvoice,
+        discountCode: appliedDiscount ? discountCode : null,
+        discountApplied: appliedDiscount,
         language, // Add the current language to the booking
         paymentStatus: "unpaid",
         status: "new", // All new bookings start as "new"
@@ -596,6 +682,79 @@ export function BookingForm() {
                   error={errors.passengers?.message}
                 />
               </div>
+
+              {/* Discount Code Section */}
+              {totalPrice && arrivalDate && departureDate && arrivalTime && departureTime && (
+                <div className="space-y-4 bg-gray-50 p-6 rounded-xl border-2 border-dashed border-gray-300">
+                  <h3 className="text-xl md:text-2xl font-bold text-gray-900">{t("discountCode")}</h3>
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <Input
+                      id="discountCode"
+                      type="text"
+                      value={discountCode}
+                      onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
+                      placeholder={t("discountCodePlaceholder")}
+                      className={`h-12 text-base bg-white ${discountError ? "border-red-500" : appliedDiscount ? "border-green-500" : "border-gray-300"}`}
+                      disabled={!!appliedDiscount}
+                    />
+                    <Button
+                      type="button"
+                      className="bg-[#073590] hover:bg-[#052c70] font-bold text-white text-lg h-12 px-8 rounded-xl shadow-md hover:shadow-lg transition-all whitespace-nowrap"
+                      disabled={isValidatingDiscount || !!appliedDiscount}
+                      onClick={validateDiscountCode}
+                    >
+                      {isValidatingDiscount ? (
+                        <>
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          {t("validating")}
+                        </>
+                      ) : (
+                        t("apply")
+                      )}
+                    </Button>
+                  </div>
+                  {discountError && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                      <p className="text-sm text-red-700">{discountError}</p>
+                    </div>
+                  )}
+                  {appliedDiscount && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-semibold text-green-900">✓ {t("discountApplied")}</p>
+                          <p className="text-xs text-green-700 mt-1">
+                            {language === 'bg' ? 'Код' : 'Code'}: <span className="font-mono font-bold">{discountCode}</span>
+                            {' • '}
+                            {appliedDiscount.discountType === 'percentage' 
+                              ? `${appliedDiscount.discountValue}% ${t("discount")}` 
+                              : `€${appliedDiscount.discountValue} ${t("discount")}`}
+                          </p>
+                          {basePrice && totalPrice && basePrice !== totalPrice && (
+                            <p className="text-xs text-green-700 mt-1">
+                              {language === 'bg' ? 'Спестени' : 'Saved'}: <span className="font-bold">€{(basePrice - totalPrice).toFixed(2)}</span>
+                            </p>
+                          )}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setAppliedDiscount(null);
+                            setDiscountCode("");
+                            setTotalPrice(basePrice);
+                            setDiscountError("");
+                          }}
+                          className="text-green-700 hover:text-green-900 hover:bg-green-100"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Terms and Conditions Checkbox */}
               <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg border border-gray-300">

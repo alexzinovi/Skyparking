@@ -27,12 +27,14 @@ import {
   Key,
   AlertTriangle,
   Users,
-  Shield
+  Shield,
+  Percent
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "./ui/dialog";
 import { toast } from "sonner";
 import type { User as UserType } from "./LoginScreen";
 import { PricingManager } from "./PricingManager";
+import { DiscountManager } from "./DiscountManager";
 import { calculatePrice } from "@/app/utils/pricing";
 
 const projectId = "dbybybmjjeeocoecaewv";
@@ -57,6 +59,7 @@ const bg = {
   allReservations: "Всички",
   usersTab: "Потребители",
   pricingTab: "Ценообразуване",
+  discountsTab: "Промо кодове",
   
   // Booking details
   customer: "Клиент",
@@ -1051,6 +1054,17 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                   <Euro className="inline h-5 w-5 sm:h-6 sm:w-6 mr-1" />
                   {bg.pricingTab}
                 </button>
+                <button
+                  onClick={() => setActiveTab("discounts")}
+                  className={`px-4 sm:px-6 py-4 sm:py-5 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors ${
+                    activeTab === "discounts"
+                      ? "border-green-500 text-green-600"
+                      : "border-transparent text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  <Percent className="inline h-5 w-5 sm:h-6 sm:w-6 mr-1" />
+                  {bg.discountsTab}
+                </button>
               </>
             )}
           </div>
@@ -1169,8 +1183,11 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
           </div>
         </Card>
 
-        {/* Content - Bookings, Users, or Pricing */}
-        {activeTab === "pricing" ? (
+        {/* Content - Bookings, Users, Pricing, or Discounts */}
+        {activeTab === "discounts" ? (
+          /* ========== DISCOUNTS TAB ========== */
+          <DiscountManager />
+        ) : activeTab === "pricing" ? (
           /* ========== PRICING TAB ========== */
           <PricingManager sessionToken={localStorage.getItem("skyparking-token") || ""} />
         ) : activeTab === "users" ? (

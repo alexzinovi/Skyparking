@@ -3,7 +3,7 @@ import { Toaster } from "sonner";
 import { AdminDashboard } from "./components/AdminDashboard";
 import { OperatorDashboard } from "./components/OperatorDashboard";
 import { LoginScreen } from "./components/LoginScreen";
-import { LanguageProvider } from "./components/LanguageContext";
+import { LanguageProvider, useLanguage } from "./components/LanguageContext";
 import { Header } from "./components/Header";
 import { HeroSection } from "./components/HeroSection";
 import { Features } from "./components/Features";
@@ -12,7 +12,6 @@ import { BookingForm } from "./components/BookingForm";
 import { Reviews } from "./components/Reviews";
 import { MapSection } from "./components/MapSection";
 import { TermsAndConditions } from "./components/TermsAndConditions";
-import { useLanguage } from "./components/LanguageContext";
 
 interface User {
   id: string;
@@ -208,7 +207,7 @@ function MainSite() {
     // Set or update meta keywords
     const metaKeywords = document.querySelector('meta[name="keywords"]');
     const keywordsText = language === 'bg'
-      ? 'паркинг летище софия, skyparking, паркинг с��фия аеропорт, паркинг летище, паркинг аеропорт софия, евтин паркинг летище, охраняем паркинг летище сфия'
+      ? 'паркинг летище софия, skyparking, паркинг сфия аеропорт, паркинг летищ��, паркинг аеропорт софия, евтин паркинг летище, охраняем паркинг летище сфия'
       : 'sofia airport parking, skyparking, sofia airport parking lot, airport parking bulgaria, cheap airport parking sofia, secure airport parking';
     
     if (metaKeywords) {

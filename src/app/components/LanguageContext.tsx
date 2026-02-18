@@ -139,6 +139,15 @@ const translations = {
     messageRequired: "Съобщение е задължително",
     orContactDirectly: "Или се свържете с нас директно:",
     
+    // Discount Code
+    discountCode: "Промо код",
+    discountCodePlaceholder: "Въведете промо код",
+    discountCodeRequired: "Моля, въведете промо код",
+    apply: "Приложи",
+    validating: "Проверка...",
+    discountApplied: "Промо код приложен! Отстъпка:",
+    discount: "отстъпка",
+    
     // Toast Messages
     checkDates: "Моля, проверете д��тите и часовете",
     bookingConfirmed: "Резервация потвърдена! Сума: €",
@@ -303,6 +312,15 @@ const translations = {
     messagePlaceholder: "How can we help you?",
     messageRequired: "Message is required",
     orContactDirectly: "Or contact us directly:",
+    
+    // Discount Code
+    discountCode: "Promo Code",
+    discountCodePlaceholder: "Enter promo code",
+    discountCodeRequired: "Please enter a promo code",
+    apply: "Apply",
+    validating: "Validating...",
+    discountApplied: "Promo code applied! Discount:",
+    discount: "discount",
     
     // Toast Messages
     checkDates: "Please check your dates and times",

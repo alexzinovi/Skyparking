@@ -1237,6 +1237,207 @@ app.get("/make-server-47a4914e/pricing/calculate", async (c) => {
   }
 });
 
+// ============= DISCOUNT CODE MANAGEMENT ENDPOINTS =============
+
+// Validate discount code (public endpoint)
+app.post("/make-server-47a4914e/discount/validate", async (c) => {
+  try {
+    const { code } = await c.req.json();
+    
+    if (!code) {
+      return c.json({ success: false, message: "Discount code required" }, 400);
+    }
+    
+    // Get discount from KV store (case-insensitive)
+    const normalizedCode = code.toUpperCase().trim();
+    const discount = await kv.get(`discount:${normalizedCode}`);
+    
+    if (!discount) {
+      return c.json({ success: false, message: "Invalid discount code" }, 404);
+    }
+    
+    // Check if discount is active
+    if (!discount.isActive) {
+      return c.json({ success: false, message: "This discount code is no longer active" }, 400);
+    }
+    
+    // Check expiry date
+    if (discount.expiryDate) {
+      const now = new Date();
+      const expiry = new Date(discount.expiryDate);
+      if (now > expiry) {
+        return c.json({ success: false, message: "This discount code has expired" }, 400);
+      }
+    }
+    
+    // Check usage limit
+    if (discount.maxUsages && discount.usageCount >= discount.maxUsages) {
+      return c.json({ success: false, message: "This discount code has reached its usage limit" }, 400);
+    }
+    
+    return c.json({ 
+      success: true, 
+      discount: {
+        code: discount.code,
+        discountType: discount.discountType,
+        discountValue: discount.discountValue
+      }
+    });
+  } catch (error) {
+    console.log("Validate discount error:", error);
+    return c.json({ success: false, message: "Failed to validate discount code" }, 500);
+  }
+});
+
+// Apply discount code to booking (internal use when creating booking)
+app.post("/make-server-47a4914e/discount/apply", async (c) => {
+  try {
+    const { code } = await c.req.json();
+    
+    if (!code) {
+      return c.json({ success: false, message: "Discount code required" }, 400);
+    }
+    
+    const normalizedCode = code.toUpperCase().trim();
+    const discount = await kv.get(`discount:${normalizedCode}`);
+    
+    if (!discount || !discount.isActive) {
+      return c.json({ success: false, message: "Invalid or inactive discount code" }, 400);
+    }
+    
+    // Increment usage count
+    const updated = {
+      ...discount,
+      usageCount: (discount.usageCount || 0) + 1,
+      lastUsedAt: new Date().toISOString()
+    };
+    
+    await kv.set(`discount:${normalizedCode}`, updated);
+    
+    return c.json({ success: true });
+  } catch (error) {
+    console.log("Apply discount error:", error);
+    return c.json({ success: false, message: "Failed to apply discount code" }, 500);
+  }
+});
+
+// Get all discount codes (admin only)
+app.get("/make-server-47a4914e/discounts", async (c) => {
+  try {
+    const discounts = await kv.getByPrefix("discount:");
+    
+    // Sort by creation date (newest first)
+    const sortedDiscounts = discounts.sort((a: any, b: any) => {
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+    
+    return c.json({ success: true, discounts: sortedDiscounts });
+  } catch (error) {
+    console.log("Get discounts error:", error);
+    return c.json({ success: false, message: "Failed to fetch discount codes" }, 500);
+  }
+});
+
+// Create discount code (admin only)
+app.post("/make-server-47a4914e/discounts", async (c) => {
+  try {
+    const discountData = await c.req.json();
+    
+    // Validate required fields
+    if (!discountData.code) {
+      return c.json({ success: false, message: "Discount code is required" }, 400);
+    }
+    
+    if (!discountData.discountType || !['percentage', 'fixed'].includes(discountData.discountType)) {
+      return c.json({ success: false, message: "Invalid discount type. Must be 'percentage' or 'fixed'" }, 400);
+    }
+    
+    if (typeof discountData.discountValue !== 'number' || discountData.discountValue <= 0) {
+      return c.json({ success: false, message: "Discount value must be a positive number" }, 400);
+    }
+    
+    // Normalize code to uppercase
+    const normalizedCode = discountData.code.toUpperCase().trim();
+    
+    // Check if code already exists
+    const existing = await kv.get(`discount:${normalizedCode}`);
+    if (existing) {
+      return c.json({ success: false, message: "A discount code with this name already exists" }, 400);
+    }
+    
+    const discount = {
+      code: normalizedCode,
+      discountType: discountData.discountType,
+      discountValue: discountData.discountValue,
+      isActive: discountData.isActive !== false, // Default to true
+      usageCount: 0,
+      maxUsages: discountData.maxUsages || null,
+      expiryDate: discountData.expiryDate || null,
+      createdAt: new Date().toISOString(),
+      createdBy: discountData.createdBy || 'admin'
+    };
+    
+    await kv.set(`discount:${normalizedCode}`, discount);
+    
+    console.log(`Discount code created: ${normalizedCode}`);
+    
+    return c.json({ success: true, discount });
+  } catch (error) {
+    console.log("Create discount error:", error);
+    return c.json({ success: false, message: "Failed to create discount code" }, 500);
+  }
+});
+
+// Update discount code (admin only)
+app.put("/make-server-47a4914e/discounts/:code", async (c) => {
+  try {
+    const code = c.req.param("code").toUpperCase().trim();
+    const updates = await c.req.json();
+    
+    const existing = await kv.get(`discount:${code}`);
+    if (!existing) {
+      return c.json({ success: false, message: "Discount code not found" }, 404);
+    }
+    
+    // Don't allow changing the code itself or usage count directly
+    const { code: _, usageCount: __, ...allowedUpdates } = updates;
+    
+    const updated = {
+      ...existing,
+      ...allowedUpdates,
+      updatedAt: new Date().toISOString()
+    };
+    
+    await kv.set(`discount:${code}`, updated);
+    
+    return c.json({ success: true, discount: updated });
+  } catch (error) {
+    console.log("Update discount error:", error);
+    return c.json({ success: false, message: "Failed to update discount code" }, 500);
+  }
+});
+
+// Delete discount code (admin only)
+app.delete("/make-server-47a4914e/discounts/:code", async (c) => {
+  try {
+    const code = c.req.param("code").toUpperCase().trim();
+    
+    const existing = await kv.get(`discount:${code}`);
+    if (!existing) {
+      return c.json({ success: false, message: "Discount code not found" }, 404);
+    }
+    
+    await kv.del(`discount:${code}`);
+    
+    console.log(`Discount code deleted: ${code}`);
+    
+    return c.json({ success: true });
+  } catch (error) {
+    console.log("Delete discount error:", error);
+    return c.json({ success: false, message: "Failed to delete discount code" }, 500);
+  }
+});
+
 // ============= USER MANAGEMENT ENDPOINTS =============
 
 // Ensure admin user exists on startup
