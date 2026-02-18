@@ -30,6 +30,22 @@ export default function App() {
   const [permissions, setPermissions] = useState<string[]>([]);
   const [isVerifying, setIsVerifying] = useState(true);
 
+  // Disable Chrome's automatic translation - we have our own bilingual system
+  useEffect(() => {
+    document.documentElement.setAttribute('translate', 'no');
+    document.documentElement.classList.add('notranslate');
+    
+    // Add meta tag to prevent translation
+    const meta = document.createElement('meta');
+    meta.name = 'google';
+    meta.content = 'notranslate';
+    document.head.appendChild(meta);
+    
+    return () => {
+      document.head.removeChild(meta);
+    };
+  }, []);
+
   // Check if we're on the admin route
   useEffect(() => {
     try {
