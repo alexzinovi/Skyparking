@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useLanguage } from "./LanguageContext";
 import { calculatePrice } from "@/app/utils/pricing";
 import { ReservationConfirmation } from "./ReservationConfirmation";
+import { ErrorBoundary } from "./ErrorBoundary";
 
 const projectId = "dbybybmjjeeocoecaewv";
 const publicAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRieWJ5Ym1qamVlb2NvZWNhZXd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODgxMzAsImV4cCI6MjA4MjA2NDEzMH0.fMZ3Yi5gZpE6kBBz-y1x0FKZcGczxSJZ9jL-Zeau340";
@@ -210,43 +211,11 @@ export function BookingForm() {
     console.log("=== RENDERING CONFIRMATION SCREEN ===");
     console.log("Confirmed booking data:", confirmedBooking);
     
-    // SAFETY WRAPPER - Catch any rendering errors
-    try {
-      return <ReservationConfirmation booking={confirmedBooking} onBackToHome={handleBackToHome} />;
-    } catch (error) {
-      console.error("Error rendering confirmation:", error);
-      alert("Rendering error: " + (error as Error).message);
-      return (
-        <div style={{ 
-          minHeight: '100vh', 
-          backgroundColor: '#ff0000',
-          padding: '20px',
-          color: '#ffffff',
-          fontSize: '18px'
-        }}>
-          <h1 style={{ fontSize: '32px', marginBottom: '20px' }}>ERROR RENDERING CONFIRMATION</h1>
-          <p>Error: {(error as Error).message}</p>
-          <p>Stack: {(error as Error).stack}</p>
-          <pre style={{ backgroundColor: '#fff', color: '#000', padding: '10px', marginTop: '20px' }}>
-            {JSON.stringify(confirmedBooking, null, 2)}
-          </pre>
-          <button 
-            onClick={handleBackToHome}
-            style={{
-              marginTop: '20px',
-              padding: '15px 30px',
-              fontSize: '18px',
-              backgroundColor: '#0000ff',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '8px'
-            }}
-          >
-            Back to Form
-          </button>
-        </div>
-      );
-    }
+    return (
+      <ErrorBoundary>
+        <ReservationConfirmation booking={confirmedBooking} onBackToHome={handleBackToHome} />
+      </ErrorBoundary>
+    );
   }
 
   return (
