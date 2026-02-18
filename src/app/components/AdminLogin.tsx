@@ -43,7 +43,7 @@ export function AdminLogin({ onLogin }: { onLogin: () => void }) {
 
       if (data.success) {
         toast.success("Login successful");
-        localStorage.setItem("admin-token", data.token);
+        localStorage.setItem("skyparking-token", data.token);
         setIsLocked(false);
         setLockoutMessage("");
         onLogin();
