@@ -158,9 +158,6 @@ export function BookingForm() {
       // Set confirmed booking to show confirmation screen
       setConfirmedBooking(result.booking);
       
-      // Force scroll to top immediately for all browsers
-      window.scrollTo(0, 0);
-      
     } catch (error: any) {
       console.error("Reservation error:", error);
       toast.error("Failed to create reservation: " + (error.message || error.toString()));

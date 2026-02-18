@@ -4,7 +4,7 @@ import { Card } from "./ui/card";
 import { useLanguage } from "./LanguageContext";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 
 interface ReservationConfirmationProps {
   booking: {
@@ -30,6 +30,14 @@ interface ReservationConfirmationProps {
 
 export function ReservationConfirmation({ booking, onBackToHome }: ReservationConfirmationProps) {
   const { t, language } = useLanguage();
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to top of this component when it mounts
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, []);
 
   const handlePrint = () => {
     window.print();
@@ -115,7 +123,7 @@ export function ReservationConfirmation({ booking, onBackToHome }: ReservationCo
   ].filter(Boolean);
 
   return (
-    <div className="min-h-screen bg-gray-100 py-12 px-4">
+    <div className="min-h-screen bg-gray-100 py-12 px-4" ref={containerRef}>
       <div className="max-w-4xl mx-auto">
         {/* Success Header */}
         <div className="text-center mb-8">
