@@ -106,11 +106,8 @@ export function BookingForm() {
 
   // Auto-calculate price when dates change
   useEffect(() => {
-    async function updatePrice() {
-      const price = await calculatePrice(arrivalDate, arrivalTime, departureDate, departureTime, numberOfCars);
-      setTotalPrice(price);
-    }
-    updatePrice();
+    const price = calculatePrice(arrivalDate, arrivalTime, departureDate, departureTime, numberOfCars);
+    setTotalPrice(price);
   }, [arrivalDate, arrivalTime, departureDate, departureTime, numberOfCars]);
 
   // Auto-populate VAT number when VAT is checked and tax number exists
@@ -336,7 +333,7 @@ export function BookingForm() {
                         )}
                       </div>
                       <p className="text-sm text-gray-600 mt-3">
-                        {language === 'bg' ? 'Крайна цена за престоя с включени трансфери' : 'Final price for the stay with transfers included'}
+                        {language === 'bg' ? 'Крайна цена за престоя с включени трансфе��и' : 'Final price for the stay with transfers included'}
                       </p>
                     </div>
                     
