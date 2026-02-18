@@ -188,27 +188,34 @@ export function BookingForm() {
     console.log("=== RENDERING CONFIRMATION SCREEN ===");
     console.log("Confirmed booking data:", confirmedBooking);
     
-    // Add a visible debugging element to check if this renders
+    // SIMPLE TEST - Just render plain HTML to confirm state works
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
-        {/* Debug indicator - Remove this after testing */}
-        <div style={{ 
-          position: 'fixed', 
-          top: 0, 
-          left: 0, 
-          backgroundColor: 'red', 
-          color: 'white', 
-          padding: '10px', 
-          zIndex: 9999,
-          fontSize: '12px'
-        }}>
-          CONFIRMATION LOADED: {confirmedBooking.bookingCode}
-        </div>
-        
-        <ReservationConfirmation 
-          booking={confirmedBooking} 
-          onBackToHome={handleBackToHome}
-        />
+      <div style={{ 
+        minHeight: '100vh', 
+        backgroundColor: '#00ff00',
+        padding: '20px',
+        color: '#000000',
+        fontSize: '18px'
+      }}>
+        <h1 style={{ fontSize: '32px', marginBottom: '20px' }}>TEST - CONFIRMATION WORKING</h1>
+        <p>Booking Code: {confirmedBooking.bookingCode}</p>
+        <p>Name: {confirmedBooking.name}</p>
+        <p>Email: {confirmedBooking.email}</p>
+        <p>Price: €{confirmedBooking.totalPrice}</p>
+        <button 
+          onClick={handleBackToHome}
+          style={{
+            marginTop: '20px',
+            padding: '15px 30px',
+            fontSize: '18px',
+            backgroundColor: '#0000ff',
+            color: '#ffffff',
+            border: 'none',
+            borderRadius: '8px'
+          }}
+        >
+          Back to Form
+        </button>
       </div>
     );
   }
