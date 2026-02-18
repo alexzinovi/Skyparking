@@ -1769,24 +1769,34 @@ app.get("/make-server-47a4914e/settings", async (c) => {
 // Update settings
 app.put("/make-server-47a4914e/settings", async (c) => {
   try {
+    console.log("📝 Settings update request received");
+    console.log("Headers:", Object.fromEntries(c.req.raw.headers));
+    
     // Verify admin token
     const sessionToken = c.req.header("X-Session-Token");
+    console.log("Session token present:", !!sessionToken);
+    
     if (!sessionToken) {
-      return c.json({ error: "Unauthorized" }, 401);
+      console.log("❌ No session token provided");
+      return c.json({ error: "Missing authorization header" }, 401);
     }
     
     const currentUser = await users.verifySessionToken(sessionToken);
+    console.log("User verification result:", currentUser ? "Valid user" : "Invalid token");
     
     if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "manager")) {
+      console.log("❌ Unauthorized user or insufficient permissions");
       return c.json({ error: "Unauthorized" }, 401);
     }
 
     const body = await c.req.json();
     const { emailNotificationsEnabled } = body;
+    console.log("Settings to save:", { emailNotificationsEnabled });
 
     // Save settings to KV store
     if (typeof emailNotificationsEnabled === "boolean") {
       await kv.set("settings:emailNotificationsEnabled", emailNotificationsEnabled);
+      console.log("✅ Settings saved successfully");
     }
 
     return c.json({ success: true });
