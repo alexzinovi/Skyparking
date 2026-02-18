@@ -338,6 +338,9 @@ app.get("/make-server-47a4914e/health", (c) => {
 // Admin login endpoint with security
 app.post("/make-server-47a4914e/admin/login", async (c) => {
   try {
+    // Ensure admin user exists
+    await users.ensureAdminUser();
+    
     const { username, password } = await c.req.json();
     
     // Get client IP for rate limiting
@@ -371,6 +374,7 @@ app.post("/make-server-47a4914e/admin/login", async (c) => {
     
     // Authenticate using the user management system
     const user = await users.authenticateUser(username, password);
+    console.log("Authentication result for user", username, ":", user ? "SUCCESS" : "FAILED");
     
     if (user) {
       // Successful login - clear any failed attempts
@@ -379,6 +383,7 @@ app.post("/make-server-47a4914e/admin/login", async (c) => {
       
       // Create a proper session token
       const sessionToken = users.createSessionToken(user);
+      console.log("Created session token for user:", user.id);
       
       return c.json({ success: true, token: sessionToken });
     }
