@@ -30,10 +30,28 @@ const DEFAULT_PRICING = {
     7: 38,
     8: 40,
     9: 42,
-    10: 46
+    10: 46,
+    11: 50,
+    12: 54,
+    13: 58,
+    14: 62,
+    15: 66,
+    16: 70,
+    17: 74,
+    18: 78,
+    19: 82,
+    20: 86,
+    21: 90,
+    22: 94,
+    23: 98,
+    24: 102,
+    25: 106,
+    26: 110,
+    27: 114,
+    28: 118,
+    29: 122,
+    30: 126
   },
-  midRangeRate: 5,      // Days 11-30
-  midRangeMaxDay: 30,    // Last day of mid-range pricing
   longTermRate: 2.8      // Days 31+
 };
 
@@ -47,21 +65,14 @@ async function getPricingConfig() {
 async function calculatePrice(days: number): Promise<number> {
   const pricing = await getPricingConfig();
   
-  // Days 1-10: Use specific daily prices
-  if (days <= 10 && pricing.dailyPrices[days]) {
+  // Days 1-30: Use specific daily prices
+  if (days <= 30 && pricing.dailyPrices[days]) {
     return pricing.dailyPrices[days];
   }
   
-  // Days 11-30: Base price from day 10 + midRangeRate per additional day
-  if (days <= pricing.midRangeMaxDay) {
-    const basePrice = pricing.dailyPrices[10];
-    const additionalDays = days - 10;
-    return basePrice + (additionalDays * pricing.midRangeRate);
-  }
-  
   // Days 31+: Price at day 30 + longTermRate per additional day
-  const day30Price = pricing.dailyPrices[10] + ((pricing.midRangeMaxDay - 10) * pricing.midRangeRate);
-  const additionalDays = days - pricing.midRangeMaxDay;
+  const day30Price = pricing.dailyPrices[30] || 0;
+  const additionalDays = days - 30;
   return day30Price + (additionalDays * pricing.longTermRate);
 }
 
@@ -1097,10 +1108,8 @@ app.put("/make-server-47a4914e/pricing", async (c) => {
       return c.json({ success: false, message: "Invalid pricing structure: dailyPrices required" }, 400);
     }
     
-    if (typeof newPricing.midRangeRate !== 'number' || 
-        typeof newPricing.midRangeMaxDay !== 'number' || 
-        typeof newPricing.longTermRate !== 'number') {
-      return c.json({ success: false, message: "Invalid pricing structure: rates must be numbers" }, 400);
+    if (typeof newPricing.longTermRate !== 'number') {
+      return c.json({ success: false, message: "Invalid pricing structure: longTermRate must be a number" }, 400);
     }
     
     await kv.set("pricing:config", newPricing);

@@ -12,8 +12,6 @@ const publicAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 
 interface PricingConfig {
   dailyPrices: Record<number, number>;
-  midRangeRate: number;
-  midRangeMaxDay: number;
   longTermRate: number;
 }
 
@@ -122,7 +120,7 @@ export function PricingManager({ sessionToken }: PricingManagerProps) {
     }
   };
 
-  const updateRate = (field: 'midRangeRate' | 'longTermRate' | 'midRangeMaxDay', value: string) => {
+  const updateRate = (field: 'longTermRate', value: string) => {
     if (!pricing) return;
     const numValue = parseFloat(value);
     if (!isNaN(numValue) && numValue >= 0) {
@@ -220,50 +218,57 @@ export function PricingManager({ sessionToken }: PricingManagerProps) {
           </div>
         </div>
 
-        {/* Mid-Range Pricing (Days 11-30) */}
+        {/* Daily Prices (Days 11-20) */}
         <div className="border-t pt-6">
-          <h3 className="text-xl sm:text-2xl font-semibold mb-4">Mid-Range Pricing (Days 11-30)</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="midRangeRate" className="text-base sm:text-lg">Price per additional day</Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-base sm:text-lg">€</span>
-                <Input
-                  id="midRangeRate"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={pricing.midRangeRate}
-                  onChange={(e) => updateRate('midRangeRate', e.target.value)}
-                  className="pl-8 sm:pl-9 text-base sm:text-lg py-5 sm:py-6"
-                />
+          <h3 className="text-xl sm:text-2xl font-semibold mb-4">Daily Prices (Days 11-20)</h3>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            {[11, 12, 13, 14, 15, 16, 17, 18, 19, 20].map((day) => (
+              <div key={day} className="space-y-2">
+                <Label htmlFor={`day-${day}`} className="text-base sm:text-lg">Day {day}</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-base sm:text-lg">€</span>
+                  <Input
+                    id={`day-${day}`}
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={pricing.dailyPrices[day] || 0}
+                    onChange={(e) => updateDailyPrice(day, e.target.value)}
+                    className="pl-8 sm:pl-9 text-base sm:text-lg py-5 sm:py-6"
+                  />
+                </div>
               </div>
-              <p className="text-base sm:text-lg text-gray-600">
-                Days 11-{pricing.midRangeMaxDay}: Base price from Day 10 + €{pricing.midRangeRate}/day
-              </p>
-            </div>
+            ))}
+          </div>
+        </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="midRangeMaxDay" className="text-base sm:text-lg">Last day of mid-range pricing</Label>
-              <Input
-                id="midRangeMaxDay"
-                type="number"
-                min="11"
-                step="1"
-                value={pricing.midRangeMaxDay}
-                onChange={(e) => updateRate('midRangeMaxDay', e.target.value)}
-                className="text-base sm:text-lg py-5 sm:py-6"
-              />
-              <p className="text-base sm:text-lg text-gray-600">
-                Typically 30 days
-              </p>
-            </div>
+        {/* Daily Prices (Days 21-30) */}
+        <div className="border-t pt-6">
+          <h3 className="text-xl sm:text-2xl font-semibold mb-4">Daily Prices (Days 21-30)</h3>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            {[21, 22, 23, 24, 25, 26, 27, 28, 29, 30].map((day) => (
+              <div key={day} className="space-y-2">
+                <Label htmlFor={`day-${day}`} className="text-base sm:text-lg">Day {day}</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-base sm:text-lg">€</span>
+                  <Input
+                    id={`day-${day}`}
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={pricing.dailyPrices[day] || 0}
+                    onChange={(e) => updateDailyPrice(day, e.target.value)}
+                    className="pl-8 sm:pl-9 text-base sm:text-lg py-5 sm:py-6"
+                  />
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
         {/* Long-Term Pricing (31+ days) */}
         <div className="border-t pt-6">
-          <h3 className="text-xl sm:text-2xl font-semibold mb-4">Long-Term Pricing (Day {pricing.midRangeMaxDay + 1}+)</h3>
+          <h3 className="text-xl sm:text-2xl font-semibold mb-4">Long-Term Pricing (Day 31+)</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="longTermRate" className="text-base sm:text-lg">Price per additional day</Label>
@@ -280,7 +285,7 @@ export function PricingManager({ sessionToken }: PricingManagerProps) {
                 />
               </div>
               <p className="text-base sm:text-lg text-gray-600">
-                Day {pricing.midRangeMaxDay + 1}+: Price at Day {pricing.midRangeMaxDay} + €{pricing.longTermRate}/day
+                Day 31+: Price at Day 30 + €{pricing.longTermRate}/day
               </p>
             </div>
           </div>
@@ -292,13 +297,11 @@ export function PricingManager({ sessionToken }: PricingManagerProps) {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {[1, 7, 15, 30, 45, 60].map((days) => {
               let price = 0;
-              if (days <= 10) {
+              if (days <= 30) {
                 price = pricing.dailyPrices[days] || 0;
-              } else if (days <= pricing.midRangeMaxDay) {
-                price = (pricing.dailyPrices[10] || 0) + ((days - 10) * pricing.midRangeRate);
               } else {
-                const day30Price = (pricing.dailyPrices[10] || 0) + ((pricing.midRangeMaxDay - 10) * pricing.midRangeRate);
-                price = day30Price + ((days - pricing.midRangeMaxDay) * pricing.longTermRate);
+                const day30Price = pricing.dailyPrices[30] || 0;
+                price = day30Price + ((days - 30) * pricing.longTermRate);
               }
 
               return (
