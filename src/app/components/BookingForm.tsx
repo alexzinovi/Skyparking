@@ -170,11 +170,31 @@ export function BookingForm() {
 
   // If we have a confirmed booking, show the confirmation screen
   if (confirmedBooking) {
+    console.log("=== RENDERING CONFIRMATION SCREEN ===");
+    console.log("Confirmed booking data:", confirmedBooking);
+    
+    // Add a visible debugging element to check if this renders
     return (
-      <ReservationConfirmation 
-        booking={confirmedBooking} 
-        onBackToHome={handleBackToHome}
-      />
+      <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
+        {/* Debug indicator - Remove this after testing */}
+        <div style={{ 
+          position: 'fixed', 
+          top: 0, 
+          left: 0, 
+          backgroundColor: 'red', 
+          color: 'white', 
+          padding: '10px', 
+          zIndex: 9999,
+          fontSize: '12px'
+        }}>
+          CONFIRMATION LOADED: {confirmedBooking.bookingCode}
+        </div>
+        
+        <ReservationConfirmation 
+          booking={confirmedBooking} 
+          onBackToHome={handleBackToHome}
+        />
+      </div>
     );
   }
 
