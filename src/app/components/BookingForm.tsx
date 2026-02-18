@@ -210,36 +210,43 @@ export function BookingForm() {
     console.log("=== RENDERING CONFIRMATION SCREEN ===");
     console.log("Confirmed booking data:", confirmedBooking);
     
-    // SIMPLE TEST - Just render plain HTML to confirm state works
-    return (
-      <div style={{ 
-        minHeight: '100vh', 
-        backgroundColor: '#00ff00',
-        padding: '20px',
-        color: '#000000',
-        fontSize: '18px'
-      }}>
-        <h1 style={{ fontSize: '32px', marginBottom: '20px' }}>TEST - CONFIRMATION WORKING</h1>
-        <p>Booking Code: {confirmedBooking.bookingCode}</p>
-        <p>Name: {confirmedBooking.name}</p>
-        <p>Email: {confirmedBooking.email}</p>
-        <p>Price: €{confirmedBooking.totalPrice}</p>
-        <button 
-          onClick={handleBackToHome}
-          style={{
-            marginTop: '20px',
-            padding: '15px 30px',
-            fontSize: '18px',
-            backgroundColor: '#0000ff',
-            color: '#ffffff',
-            border: 'none',
-            borderRadius: '8px'
-          }}
-        >
-          Back to Form
-        </button>
-      </div>
-    );
+    // SAFETY WRAPPER - Catch any rendering errors
+    try {
+      return <ReservationConfirmation booking={confirmedBooking} onBackToHome={handleBackToHome} />;
+    } catch (error) {
+      console.error("Error rendering confirmation:", error);
+      alert("Rendering error: " + (error as Error).message);
+      return (
+        <div style={{ 
+          minHeight: '100vh', 
+          backgroundColor: '#ff0000',
+          padding: '20px',
+          color: '#ffffff',
+          fontSize: '18px'
+        }}>
+          <h1 style={{ fontSize: '32px', marginBottom: '20px' }}>ERROR RENDERING CONFIRMATION</h1>
+          <p>Error: {(error as Error).message}</p>
+          <p>Stack: {(error as Error).stack}</p>
+          <pre style={{ backgroundColor: '#fff', color: '#000', padding: '10px', marginTop: '20px' }}>
+            {JSON.stringify(confirmedBooking, null, 2)}
+          </pre>
+          <button 
+            onClick={handleBackToHome}
+            style={{
+              marginTop: '20px',
+              padding: '15px 30px',
+              fontSize: '18px',
+              backgroundColor: '#0000ff',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '8px'
+            }}
+          >
+            Back to Form
+          </button>
+        </div>
+      );
+    }
   }
 
   return (
