@@ -111,12 +111,8 @@ export function BookingForm() {
   }, [isVAT, taxNumber]);
 
   const onSubmit = async (data: BookingFormData) => {
-    console.log("=== FORM SUBMITTED ===");
-    alert("Form submitted! Check console."); // Visual confirmation on Android
-    
     if (!totalPrice) {
       toast.error(t("checkDates"));
-      alert("No price calculated");
       return;
     }
 
@@ -134,11 +130,6 @@ export function BookingForm() {
         status: "new", // All new bookings start as "new"
       };
 
-      console.log("Submitting booking with needsInvoice:", needsInvoice);
-      console.log("Full booking data:", bookingData);
-
-      alert("About to send request...");
-
       const response = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/bookings`, {
         method: "POST",
         headers: {
@@ -148,19 +139,14 @@ export function BookingForm() {
         body: JSON.stringify(bookingData),
       });
 
-      alert("Request sent, got response");
-
       // Check if response is ok
       if (!response.ok) {
         const errorText = await response.text();
         console.error("Server error response:", errorText);
-        alert("Server error: " + response.status);
         throw new Error(`Server error: ${response.status} - ${errorText}`);
       }
 
       const result = await response.json();
-      console.log("Server response:", result);
-      alert("Got result: " + JSON.stringify(result).substring(0, 100));
 
       if (!result.success) {
         throw new Error(result.message || "Failed to create reservation");
@@ -168,24 +154,16 @@ export function BookingForm() {
 
       // Show success message with reservation details
       toast.success(t("bookingConfirmed") + " €" + totalPrice);
-      toast.info("Reservation ID: " + (result.booking.bookingCode || result.booking.id)); // Use bookingCode
       
       // Set confirmed booking to show confirmation screen
-      console.log("Setting confirmed booking:", result.booking);
-      alert("About to set confirmed booking state");
-      
-      setConfirmedBooking(result.booking);
-      
-      alert("State set! Should show confirmation now");
-      
-      // Scroll to top after a short delay to ensure state is updated
-      setTimeout(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }, 100);
+      // Use requestAnimationFrame to ensure DOM is ready before state update
+      // This helps prevent Samsung browser from treating the screen change as a popup
+      requestAnimationFrame(() => {
+        setConfirmedBooking(result.booking);
+      });
       
     } catch (error: any) {
       console.error("Reservation error:", error);
-      alert("ERROR: " + error.message);
       toast.error("Failed to create reservation: " + (error.message || error.toString()));
     } finally {
       setIsSubmitting(false);
