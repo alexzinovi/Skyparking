@@ -369,16 +369,18 @@ app.post("/make-server-47a4914e/admin/login", async (c) => {
       }
     }
     
-    // Updated credentials
-    const adminUsername = "sandeparking";
-    const adminPassword = "Sashoepichaga98!";
+    // Authenticate using the user management system
+    const user = await users.authenticateUser(username, password);
     
-    if (username === adminUsername && password === adminPassword) {
+    if (user) {
       // Successful login - clear any failed attempts
       await kv.del(attemptsKey);
       await kv.del(lockoutKey);
       
-      return c.json({ success: true, token: "admin-authenticated" });
+      // Create a proper session token
+      const sessionToken = users.createSessionToken(user);
+      
+      return c.json({ success: true, token: sessionToken });
     }
     
     // Failed login - increment attempts
