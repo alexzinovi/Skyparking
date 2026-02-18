@@ -163,23 +163,32 @@ function MainSite() {
     // Set page title
     document.title = t("heroTitle");
     
-    // Set or update favicon
-    let favicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
-    if (!favicon) {
-      favicon = document.createElement('link');
-      favicon.rel = 'icon';
-      document.head.appendChild(favicon);
-    }
-    favicon.href = 'https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/favicon.png?v=' + Date.now();
+    // AGGRESSIVE favicon clearing and setting
+    // Remove ALL existing favicon-related links first
+    const existingIcons = document.querySelectorAll('link[rel*="icon"]');
+    existingIcons.forEach(icon => icon.remove());
     
-    // Also add apple-touch-icon for iOS devices
-    let appleTouchIcon = document.querySelector('link[rel="apple-touch-icon"]') as HTMLLinkElement;
-    if (!appleTouchIcon) {
-      appleTouchIcon = document.createElement('link');
-      appleTouchIcon.rel = 'apple-touch-icon';
-      document.head.appendChild(appleTouchIcon);
-    }
-    appleTouchIcon.href = 'https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/favicon.png?v=' + Date.now();
+    // Create unique cache-busting parameter (changes every second)
+    const cacheBuster = `v=${Date.now()}`;
+    const faviconUrl = `https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/favicon.png?${cacheBuster}`;
+    
+    // Add multiple favicon formats for maximum compatibility
+    const iconTypes = [
+      { rel: 'icon', type: 'image/png', sizes: '' },
+      { rel: 'shortcut icon', type: 'image/png', sizes: '' },
+      { rel: 'apple-touch-icon', type: 'image/png', sizes: '180x180' },
+      { rel: 'icon', type: 'image/png', sizes: '32x32' },
+      { rel: 'icon', type: 'image/png', sizes: '16x16' }
+    ];
+    
+    iconTypes.forEach(({ rel, type, sizes }) => {
+      const link = document.createElement('link');
+      link.rel = rel;
+      link.type = type;
+      if (sizes) link.sizes = sizes;
+      link.href = faviconUrl;
+      document.head.appendChild(link);
+    });
     
     // Set or update meta description
     const metaDescription = document.querySelector('meta[name="description"]');
