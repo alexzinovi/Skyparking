@@ -158,6 +158,11 @@ function MainSite() {
   const { t } = useLanguage();
   const path = window.location.pathname;
   
+  // Update document title based on language
+  useEffect(() => {
+    document.title = t("heroTitle");
+  }, [t]);
+  
   // Show Terms and Conditions page (wrapped in LanguageProvider already)
   if (path === "/terms") {
     return <TermsAndConditions />;

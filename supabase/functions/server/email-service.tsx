@@ -59,7 +59,7 @@ function generateConfirmationEmailHTML_BG(data: BookingEmailData): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Потвърждение на резервация - SkyParking</title>
+  <title>Потвърждение на резервация - SkyParking - Паркинг Летище София</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     body { 
@@ -315,7 +315,7 @@ function generateConfirmationEmailHTML_EN(data: BookingEmailData): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Booking Confirmation - SkyParking</title>
+  <title>Booking Confirmation - SkyParking - Sofia Airport Parking</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     body { 
@@ -650,7 +650,7 @@ function generateAdminNotificationEmailHTML(data: BookingEmailData): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Нова резервация - SkyParking</title>
+  <title>Нова резервация - SkyParking - Паркинг Летище София</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
   <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 0;">
