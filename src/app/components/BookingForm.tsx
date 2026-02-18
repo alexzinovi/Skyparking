@@ -4,7 +4,7 @@ import { Card } from "./ui/card";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Button } from "./ui/button";
-import { CalendarIcon, CreditCard, Loader2, ChevronDown, Clock } from "lucide-react";
+import { CalendarIcon, CreditCard, Loader2, ChevronDown, Clock, Car, Users } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "./LanguageContext";
 import { calculatePrice } from "@/app/utils/pricing";
@@ -12,6 +12,7 @@ import { ReservationConfirmation } from "./ReservationConfirmation";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { DatePicker } from "./DatePicker";
 import { TimePicker } from "./TimePicker";
+import { NumberPicker } from "./NumberPicker";
 
 const projectId = "dbybybmjjeeocoecaewv";
 const publicAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRieWJ5Ym1qamVlb2NvZWNhZXd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODgxMzAsImV4cCI6MjA4MjA2NDEzMH0.fMZ3Yi5gZpE6kBBz-y1x0FKZcGczxSJZ9jL-Zeau340";
@@ -233,18 +234,19 @@ export function BookingForm() {
               {/* Number of Cars Selection */}
               <div className="space-y-4">
                 <h3 className="text-xl md:text-2xl font-bold text-gray-900">{t("numberOfCars")}</h3>
-                <select
+                <NumberPicker
                   id="numberOfCars"
-                  className="w-full h-12 px-4 text-base border border-gray-300 rounded-lg bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
                   value={numberOfCars}
-                  onChange={(e) => setNumberOfCars(parseInt(e.target.value))}
-                >
-                  <option value="1">1 {t("car")}</option>
-                  <option value="2">2 {t("cars")}</option>
-                  <option value="3">3 {t("cars")}</option>
-                  <option value="4">4 {t("cars")}</option>
-                  <option value="5">5 {t("cars")}</option>
-                </select>
+                  onChange={(value) => setNumberOfCars(value)}
+                  options={[
+                    { value: 1, label: `1 ${t("car")}` },
+                    { value: 2, label: `2 ${t("cars")}` },
+                    { value: 3, label: `3 ${t("cars")}` },
+                    { value: 4, label: `4 ${t("cars")}` },
+                    { value: 5, label: `5 ${t("cars")}` },
+                  ]}
+                  icon={<Car className="h-4 w-4" />}
+                />
               </div>
 
               {/* Divider */}
@@ -575,27 +577,27 @@ export function BookingForm() {
                 </div>
 
                 {/* Passengers Dropdown */}
-                <div className="space-y-3">
-                  <Label className="text-base font-medium text-gray-700" htmlFor="passengers">{t("passengers")}</Label>
-                  <select
-                    id="passengers"
-                    {...register("passengers", { required: t("passengersRequired") })}
-                    className="w-full h-12 px-4 text-base border border-gray-300 rounded-lg bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
-                    defaultValue="1"
-                  >
-                    <option value="1">1 {t("passenger")}</option>
-                    <option value="2">2 {t("passengersLabel")}</option>
-                    <option value="3">3 {t("passengersLabel")}</option>
-                    <option value="4">4 {t("passengersLabel")}</option>
-                    <option value="5">5 {t("passengersLabel")}</option>
-                    <option value="6">6 {t("passengersLabel")}</option>
-                    <option value="7">7 {t("passengersLabel")}</option>
-                    <option value="8">8 {t("passengersLabel")}</option>
-                  </select>
-                  {errors.passengers && (
-                    <p className="text-sm text-red-500">{errors.passengers.message}</p>
-                  )}
-                </div>
+                <NumberPicker
+                  id="passengers"
+                  label={t("passengers")}
+                  value={watch("passengers") || 1}
+                  onChange={(value) => {
+                    setValue('passengers', value, { shouldValidate: true });
+                  }}
+                  options={[
+                    { value: 1, label: `1 ${t("passenger")}` },
+                    { value: 2, label: `2 ${t("passengersLabel")}` },
+                    { value: 3, label: `3 ${t("passengersLabel")}` },
+                    { value: 4, label: `4 ${t("passengersLabel")}` },
+                    { value: 5, label: `5 ${t("passengersLabel")}` },
+                    { value: 6, label: `6 ${t("passengersLabel")}` },
+                    { value: 7, label: `7 ${t("passengersLabel")}` },
+                    { value: 8, label: `8 ${t("passengersLabel")}` },
+                  ]}
+                  placeholder={language === 'bg' ? 'Избери' : 'Select'}
+                  icon={<Users className="h-4 w-4" />}
+                  error={errors.passengers?.message}
+                />
               </div>
 
               {/* Terms and Conditions Checkbox */}
