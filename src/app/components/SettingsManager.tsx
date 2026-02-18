@@ -26,7 +26,6 @@ export function SettingsManager() {
         `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/settings`,
         {
           mode: "cors",
-          credentials: "include",
           headers: {
             "X-Session-Token": token || "",
           },
@@ -57,7 +56,6 @@ export function SettingsManager() {
         {
           method: "PUT",
           mode: "cors",
-          credentials: "include",
           headers: {
             "Content-Type": "application/json",
             "X-Session-Token": token || "",

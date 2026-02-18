@@ -327,7 +327,6 @@ app.use(
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     exposeHeaders: ["Content-Length", "X-Session-Token"],
     maxAge: 600,
-    credentials: true,
   }),
 );
 
