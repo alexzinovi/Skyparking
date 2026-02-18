@@ -55,6 +55,18 @@ export function BookingForm() {
     reValidateMode: "onChange" // Re-validate on change after first validation
   });
 
+  // DEBUG: Log state changes
+  console.log("=== COMPONENT RENDER ===");
+  console.log("confirmedBooking state:", confirmedBooking);
+  console.log("confirmedBooking is truthy?", !!confirmedBooking);
+  
+  // Show alert on every render
+  if (confirmedBooking) {
+    alert("RENDER: confirmedBooking exists! Should show green screen");
+  } else {
+    console.log("RENDER: No confirmed booking, showing form");
+  }
+
   const arrivalDate = watch("arrivalDate");
   const arrivalTime = watch("arrivalTime");
   const departureDate = watch("departureDate");
