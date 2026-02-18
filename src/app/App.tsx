@@ -170,7 +170,7 @@ function MainSite() {
       favicon.rel = 'icon';
       document.head.appendChild(favicon);
     }
-    favicon.href = 'https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/favicon.png';
+    favicon.href = 'https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/favicon.png?v=' + Date.now();
     
     // Also add apple-touch-icon for iOS devices
     let appleTouchIcon = document.querySelector('link[rel="apple-touch-icon"]') as HTMLLinkElement;
@@ -179,7 +179,7 @@ function MainSite() {
       appleTouchIcon.rel = 'apple-touch-icon';
       document.head.appendChild(appleTouchIcon);
     }
-    appleTouchIcon.href = 'https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/favicon.png';
+    appleTouchIcon.href = 'https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/favicon.png?v=' + Date.now();
     
     // Set or update meta description
     const metaDescription = document.querySelector('meta[name="description"]');
