@@ -339,6 +339,7 @@ app.get("/make-server-47a4914e/health", (c) => {
 app.post("/make-server-47a4914e/admin/login", async (c) => {
   try {
     const { username, password } = await c.req.json();
+    // Updated credentials
     const adminUsername = "sandeparking";
     const adminPassword = "Sashoepichaga98!";
     
