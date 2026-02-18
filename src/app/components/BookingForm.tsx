@@ -50,22 +50,10 @@ export function BookingForm() {
   const [isVAT, setIsVAT] = useState(false);
   const [autoVatNumber, setAutoVatNumber] = useState("");
   const [confirmedBooking, setConfirmedBooking] = useState<any>(null);
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<BookingFormData>({
-    mode: "onBlur", // Validate on blur (when user leaves field)
-    reValidateMode: "onChange" // Re-validate on change after first validation
+  const { register, handleSubmit, watch, formState: { errors }, setValue, trigger } = useForm<BookingFormData>({
+    mode: "onBlur",
+    reValidateMode: "onChange"
   });
-
-  // DEBUG: Log state changes
-  console.log("=== COMPONENT RENDER ===");
-  console.log("confirmedBooking state:", confirmedBooking);
-  console.log("confirmedBooking is truthy?", !!confirmedBooking);
-  
-  // Show alert on every render
-  if (confirmedBooking) {
-    alert("RENDER: confirmedBooking exists! Should show green screen");
-  } else {
-    console.log("RENDER: No confirmed booking, showing form");
-  }
 
   const arrivalDate = watch("arrivalDate");
   const arrivalTime = watch("arrivalTime");
@@ -75,6 +63,28 @@ export function BookingForm() {
   
   // Get today's date in YYYY-MM-DD format for min date validation
   const today = new Date().toISOString().split('T')[0];
+
+  // Handle autofill detection for key fields
+  useEffect(() => {
+    // Check for autofilled values after a short delay
+    const checkAutofill = setTimeout(() => {
+      const nameInput = document.getElementById('name') as HTMLInputElement;
+      const emailInput = document.getElementById('email') as HTMLInputElement;
+      const phoneInput = document.getElementById('phone') as HTMLInputElement;
+      
+      if (nameInput?.value) {
+        setValue('name', nameInput.value, { shouldValidate: true });
+      }
+      if (emailInput?.value) {
+        setValue('email', emailInput.value, { shouldValidate: true });
+      }
+      if (phoneInput?.value) {
+        setValue('phone', phoneInput.value, { shouldValidate: true });
+      }
+    }, 500);
+    
+    return () => clearTimeout(checkAutofill);
+  }, [setValue]);
 
   // Auto-calculate price when dates change
   useEffect(() => {
@@ -492,6 +502,10 @@ export function BookingForm() {
                     placeholder={t("namePlaceholder")}
                     className={`h-12 text-base bg-white ${errors.name ? "border-red-500" : "border-gray-300"}`}
                     autoComplete="name"
+                    onChange={(e) => {
+                      register("name").onChange(e);
+                      setValue('name', e.target.value, { shouldValidate: true });
+                    }}
                   />
                   {errors.name && (
                     <p className="text-sm text-red-500">{errors.name.message}</p>
@@ -514,6 +528,10 @@ export function BookingForm() {
                       placeholder={t("emailPlaceholder")}
                       className={`h-12 text-base bg-white ${errors.email ? "border-red-500" : "border-gray-300"}`}
                       autoComplete="email"
+                      onChange={(e) => {
+                        register("email").onChange(e);
+                        setValue('email', e.target.value, { shouldValidate: true });
+                      }}
                     />
                     {errors.email && (
                       <p className="text-sm text-red-500">{errors.email.message}</p>
@@ -535,6 +553,10 @@ export function BookingForm() {
                       placeholder={t("phonePlaceholder")}
                       className={`h-12 text-base bg-white ${errors.phone ? "border-red-500" : "border-gray-300"}`}
                       autoComplete="tel"
+                      onChange={(e) => {
+                        register("phone").onChange(e);
+                        setValue('phone', e.target.value, { shouldValidate: true });
+                      }}
                     />
                     {errors.phone && (
                       <p className="text-sm text-red-500">{errors.phone.message}</p>
