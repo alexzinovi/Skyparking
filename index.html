@@ -16,6 +16,25 @@
 
       gtag('config', 'AW-17964080992');
     </script>
+    
+    <!-- Event snippet for Purchase (1) conversion page -->
+    <script>
+      function gtag_report_conversion(url) {
+        var callback = function () {
+          if (typeof(url) != 'undefined') {
+            window.location = url;
+          }
+        };
+        gtag('event', 'conversion', {
+            'send_to': 'AW-17964080992/RMpKCKfirvsbEOC--PVC',
+            'value': 1.0,
+            'currency': 'EUR',
+            'transaction_id': '',
+            'event_callback': callback
+        });
+        return false;
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

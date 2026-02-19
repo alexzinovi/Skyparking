@@ -4,6 +4,13 @@ import { useEffect } from "react";
 import { useLanguage } from "../components/LanguageContext";
 import { Header } from "../components/Header";
 
+// Declare gtag_report_conversion function from index.html
+declare global {
+  interface Window {
+    gtag_report_conversion: (url?: string) => boolean;
+  }
+}
+
 export function ConfirmationPage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -16,6 +23,14 @@ export function ConfirmationPage() {
       navigate("/");
     }
   }, [booking, navigate]);
+
+  // Track conversion when page loads with valid booking
+  useEffect(() => {
+    if (booking && typeof window.gtag_report_conversion === 'function') {
+      // Call conversion tracking
+      window.gtag_report_conversion();
+    }
+  }, [booking]);
 
   if (!booking) {
     return null;
