@@ -530,6 +530,30 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
       const data = await response.json();
       if (data.success) {
         setUsers(data.users);
+        
+        // Silently cleanup invalid users in the background
+        const invalidUsers = data.users.filter((user: any) => !user.username || user.username.trim() === '');
+        if (invalidUsers.length > 0) {
+          // Trigger cleanup without waiting for response
+          fetch(
+            `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/users/cleanup-invalid`,
+            {
+              method: "POST",
+              headers: {
+                "Authorization": `Bearer ${publicAnonKey}`,
+                "X-Session-Token": token || "",
+              },
+            }
+          ).then(async (cleanupResponse) => {
+            const cleanupData = await cleanupResponse.json();
+            if (cleanupData.success && cleanupData.deleted > 0) {
+              // Refresh users list after cleanup
+              setTimeout(() => fetchUsers(), 500);
+            }
+          }).catch((error) => {
+            console.error("Background cleanup error:", error);
+          });
+        }
       } else {
         toast.error("Грешка при зареждане на потребителите");
       }
@@ -735,46 +759,6 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
     } catch (error) {
       console.error("Delete user error:", error);
       toast.error("Грешка при изтриване на потребител");
-    }
-  };
-
-  // Cleanup invalid users (users with no username)
-  const cleanupInvalidUsers = async () => {
-    const invalidUsers = users.filter(user => !user.username || user.username.trim() === '');
-    
-    if (invalidUsers.length === 0) {
-      toast.info("Няма невалидни потребители за изтриване");
-      return;
-    }
-    
-    if (!confirm(`Намерени са ${invalidUsers.length} невалидни потребители. Сигурни ли сте, че искате да ги изтриете?`)) {
-      return;
-    }
-
-    const token = localStorage.getItem("skyparking-token");
-
-    try {
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/users/cleanup-invalid`,
-        {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${publicAnonKey}`,
-            "X-Session-Token": token || "",
-          },
-        }
-      );
-
-      const data = await response.json();
-      if (data.success) {
-        toast.success(data.message || `Изтрити са ${data.deleted} невалидни потребители`);
-        fetchUsers();
-      } else {
-        toast.error(data.message || "Грешка при изтриване на невалидни потребители");
-      }
-    } catch (error) {
-      console.error("Cleanup invalid users error:", error);
-      toast.error("Грешка при изтриване на невалидни потребители");
     }
   };
 
@@ -1778,15 +1762,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
           /* ========== USERS TAB ========== */
           <>
             {/* Users Actions Bar */}
-            <div className="mb-6 flex justify-between items-center">
-              <div>
-                {users.filter(user => !user.username || user.username.trim() === '').length > 0 && (
-                  <Button onClick={cleanupInvalidUsers} variant="outline" className="border-red-500 text-red-600 hover:bg-red-50">
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Изтрий невалидни потребители ({users.filter(user => !user.username || user.username.trim() === '').length})
-                  </Button>
-                )}
-              </div>
+            <div className="mb-6 flex justify-end items-center">
               <Button onClick={() => { setIsAddingUser(true); setUserFormData({ role: "operator", isActive: true }); }}>
                 <Plus className="mr-2 h-4 w-4" />
                 {bg.addUser}
@@ -1800,9 +1776,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
               <div className="text-center py-12 text-gray-500">Няма потребители</div>
             ) : (
               <div className="grid gap-4">
-                {users
-                  .filter(user => user.username && user.username.trim() !== '') // Filter out invalid users
-                  .map((user) => (
+                {users.map((user) => (
                   <Card key={user.id} className="p-6">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
