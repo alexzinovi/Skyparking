@@ -374,25 +374,58 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
   const fetchCapacity = async () => {
     try {
       setCapacityLoading(true);
+      
+      // Calculate capacity for the next 14 days based on confirmed/arrived bookings
       const today = new Date();
-      const endDate = new Date(today);
-      endDate.setDate(endDate.getDate() + 14);
-
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/capacity/preview?` +
-        `arrivalDate=${today.toISOString().split('T')[0]}&` +
-        `departureDate=${endDate.toISOString().split('T')[0]}`,
-        {
-          headers: {
-            "Authorization": `Bearer ${publicAnonKey}`,
-          },
-        }
-      );
-
-      const data = await response.json();
-      if (data.success && data.capacity) {
-        setCapacityData(data.capacity.dailyBreakdown || []);
+      const dailyData: CapacityDay[] = [];
+      
+      for (let i = 0; i < 14; i++) {
+        const date = new Date(today);
+        date.setDate(date.getDate() + i);
+        const dateStr = date.toISOString().split('T')[0];
+        
+        // Find all confirmed or arrived bookings that overlap with this date
+        const overlappingBookings = bookings.filter(b => {
+          if (b.status !== 'confirmed' && b.status !== 'arrived') return false;
+          
+          const bookingArrival = new Date(b.arrivalDate);
+          const bookingDeparture = new Date(b.departureDate);
+          const currentDate = new Date(dateStr);
+          
+          // Check if this date falls within the booking period
+          return bookingArrival <= currentDate && currentDate < bookingDeparture;
+        });
+        
+        // Count non-keys and keys bookings
+        let nonKeysCount = 0;
+        let keysCount = 0;
+        
+        overlappingBookings.forEach(b => {
+          const carCount = b.numberOfCars || 1;
+          if (b.carKeys) {
+            keysCount += carCount;
+          } else {
+            nonKeysCount += carCount;
+          }
+        });
+        
+        const totalCount = nonKeysCount + keysCount;
+        
+        dailyData.push({
+          date: dateStr,
+          nonKeysCount,
+          keysCount,
+          totalCount,
+          maxSpots: 180,
+          keysOverflowSpots: 20,
+          maxTotal: 200,
+          isOverNonKeysLimit: nonKeysCount > 180,
+          isOverTotalLimit: totalCount > 200,
+          wouldFit: true
+        });
       }
+      
+      setCapacityData(dailyData);
     } catch (error) {
       console.error("Fetch capacity error:", error);
     } finally {
@@ -481,11 +514,17 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
 
   useEffect(() => {
     fetchBookings();
-    fetchCapacity();
     if (permissions.includes("manage_users")) {
       fetchUsers();
     }
   }, []);
+
+  // Recalculate capacity whenever bookings change
+  useEffect(() => {
+    if (bookings.length >= 0) {
+      fetchCapacity();
+    }
+  }, [bookings]);
 
   // Auto-calculate price when dates change in manual booking form
   useEffect(() => {
@@ -658,7 +697,6 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
       if (data.success) {
         toast.success(bg.bookingDeleted);
         fetchBookings();
-        fetchCapacity();
       } else {
         toast.error(bg.failedToDelete);
       }
@@ -693,7 +731,6 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
         setIsAddingNew(false);
         setFormData({});
         fetchBookings();
-        fetchCapacity();
       } else {
         toast.error(data.message || bg.failedToSave);
       }
@@ -726,7 +763,6 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
         toast.success(bg.bookingAccepted);
         setCapacityWarning({ show: false, booking: null, dailyBreakdown: [] });
         fetchBookings();
-        fetchCapacity(); // Refresh capacity dashboard
       } else if (data.requiresOverride && data.capacityPreview) {
         // Show capacity warning modal
         setCapacityWarning({
@@ -770,7 +806,6 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
         console.log(`[CANCEL] Success! Booking status: ${data.booking?.status}, cancelledBy: ${data.booking?.cancelledBy}`);
         toast.success(bg.bookingCancelled);
         fetchBookings();
-        fetchCapacity();
       } else {
         console.error(`[CANCEL] Failed:`, data.message);
         toast.error(data.message || bg.failedToSave);
@@ -802,7 +837,6 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
       if (data.success) {
         toast.success(bg.bookingMarkedArrived);
         fetchBookings();
-        fetchCapacity();
       } else {
         toast.error(data.message || bg.failedToSave);
       }
@@ -834,7 +868,6 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
       if (data.success) {
         toast.success(bg.bookingMarkedNoShow);
         fetchBookings();
-        fetchCapacity();
       } else {
         toast.error(data.message || bg.failedToSave);
       }
@@ -865,7 +898,6 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
       if (data.success) {
         toast.success(bg.bookingCheckedOut);
         fetchBookings();
-        fetchCapacity();
       } else {
         toast.error(data.message || bg.failedToSave);
       }
