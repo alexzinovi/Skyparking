@@ -104,7 +104,9 @@ export function HowItWorksPage() {
                 <h3 className="text-2xl font-bold mb-2" style={{ color: '#073590' }}>
                   {language === 'bg' ? 'Стандартен Паркинг' : 'Standard Parking'}
                 </h3>
-                <div className="text-3xl font-bold mb-1" style={{ color: '#f1c933' }}>4€</div>
+                <div className="text-3xl font-bold mb-1" style={{ color: '#f1c933' }}>
+                  {language === 'bg' ? 'от ' : 'from '}2.80€
+                </div>
                 <div className="text-gray-600">{language === 'bg' ? 'на ден' : 'per day'}</div>
               </div>
               <ul className="space-y-3 text-gray-700">
@@ -125,6 +127,13 @@ export function HowItWorksPage() {
                   <span>{language === 'bg' ? 'Безплатен трансфер' : 'Free transfer'}</span>
                 </li>
               </ul>
+              <div className="mt-6 text-center">
+                <p className="text-xs text-gray-500">
+                  {language === 'bg' 
+                    ? '* За 3+ седмици се обадете' 
+                    : '* For 3+ weeks please call'}
+                </p>
+              </div>
             </div>
 
             {/* Car Keys Service */}
@@ -139,8 +148,10 @@ export function HowItWorksPage() {
                 <h3 className="text-2xl font-bold mb-2" style={{ color: '#073590' }}>
                   {language === 'bg' ? 'Услуга "Ключове"' : '"Car Keys" Service'}
                 </h3>
-                <div className="text-3xl font-bold mb-1" style={{ color: '#073590' }}>5€</div>
-                <div className="text-gray-700">{language === 'bg' ? 'на ден' : 'per day'}</div>
+                <div className="text-lg font-semibold mb-1" style={{ color: '#073590' }}>
+                  {language === 'bg' ? 'За цени:' : 'For pricing:'}
+                </div>
+                <div className="text-2xl font-bold" style={{ color: '#073590' }}>+359 886 616 991</div>
               </div>
               <ul className="space-y-3 text-gray-700">
                 <li className="flex items-start">
@@ -185,7 +196,7 @@ export function HowItWorksPage() {
                 </h4>
                 <p className="text-gray-700">
                   {language === 'bg'
-                    ? 'Трансферът до летището отнема само 5 минути. Препоръчваме да пристигнете 45-60 минути преди полета.'
+                    ? 'Трансферът до летището отнема само 5 минути. Препоръчваме да пристиг��ете 45-60 минути преди полета.'
                     : 'The transfer to the airport takes only 5 minutes. We recommend arriving 45-60 minutes before your flight.'}
                 </p>
               </div>

@@ -139,7 +139,7 @@ export function ServicesPage() {
                     </li>
                     <li className="flex items-start">
                       <CheckCircle className="w-5 h-5 mr-2 flex-shrink-0" style={{ color: '#f1c933' }} />
-                      <span>{language === 'bg' ? 'Автомобилът е готов п��и връщане' : 'Car ready upon return'}</span>
+                      <span>{language === 'bg' ? 'Автомобилът е готов пи връщане' : 'Car ready upon return'}</span>
                     </li>
                     <li className="flex items-start">
                       <CheckCircle className="w-5 h-5 mr-2 flex-shrink-0" style={{ color: '#f1c933' }} />
@@ -152,13 +152,13 @@ export function ServicesPage() {
               <div className="text-center mt-8">
                 <div className="inline-block">
                   <div className="text-sm font-semibold mb-2" style={{ color: '#f1c933' }}>
-                    {language === 'bg' ? 'САМО' : 'ONLY'}
+                    {language === 'bg' ? 'ЗА ЦЕНИ:' : 'FOR PRICING:'}
                   </div>
-                  <div className="text-5xl font-bold mb-2">
-                    5€ <span className="text-2xl">{language === 'bg' ? '/ ден' : '/ day'}</span>
-                  </div>
-                  <div className="text-blue-200">
-                    {language === 'bg' ? '(9.78 лв на ден)' : '(9.78 BGN per day)'}
+                  <p className="text-lg font-semibold mb-2">
+                    {language === 'bg' ? 'Моля обадете се на:' : 'Please call:'}
+                  </p>
+                  <div className="text-3xl font-bold">
+                    +359 886 616 991
                   </div>
                 </div>
               </div>

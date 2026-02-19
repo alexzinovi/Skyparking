@@ -45,8 +45,8 @@ export function ContactPage() {
                     </div>
                     <div className="ml-4">
                       <h3 className="font-semibold text-lg mb-1">{language === 'bg' ? 'Телефон' : 'Phone'}</h3>
-                      <a href="tel:+359878123456" className="text-blue-600 hover:underline text-lg">
-                        +359 878 123 456
+                      <a href="tel:+359886616991" className="text-blue-600 hover:underline text-lg">
+                        +359 886 616 991
                       </a>
                       <p className="text-sm text-gray-600 mt-1">
                         {language === 'bg' ? 'За спешни случаи 24/7' : 'For emergencies 24/7'}
