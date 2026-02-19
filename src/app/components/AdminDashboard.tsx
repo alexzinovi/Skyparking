@@ -996,10 +996,10 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
         booking.discountCode || "",
       ]);
 
-      // Create CSV content
+      // Create CSV content with semicolon delimiter (for European Excel)
       const csvContent = [
-        headers.join(","),
-        ...rows.map(row => row.map(cell => `"${cell}"`).join(","))
+        headers.join(";"),
+        ...rows.map(row => row.map(cell => `"${cell}"`).join(";"))
       ].join("\n");
 
       // Add UTF-8 BOM for proper Cyrillic character display in Excel
