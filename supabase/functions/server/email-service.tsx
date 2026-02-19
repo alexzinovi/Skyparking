@@ -209,7 +209,7 @@ function generateConfirmationEmailHTML_BG(data: BookingEmailData): string {
               <tr>
                 <td style="padding-bottom: 12px;">
                   <a href="https://ul.waze.com/ul?ll=42.67683570,23.40003810&navigate=yes" style="display: block; text-align: center; background-color: #053790; color: #ffffff; padding: 14px 20px; text-decoration: none; border-radius: 10px; font-size: 14px; font-weight: 600; height: 48px; line-height: 20px; box-sizing: border-box;">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/0/01/Waze_Icon.png" alt="Waze" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;" />
+                    <img src="https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/waze-icon.png" alt="Waze" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;" />
                     Навигация с Waze
                   </a>
                 </td>
@@ -217,7 +217,7 @@ function generateConfirmationEmailHTML_BG(data: BookingEmailData): string {
               <tr>
                 <td>
                   <a href="https://www.google.com/maps?q=42.6768423,23.4002030&entry=gps" style="display: block; text-align: center; background-color: #ffffff; color: #053790; padding: 14px 20px; text-decoration: none; border-radius: 10px; font-size: 14px; font-weight: 600; border: 2px solid #053790; height: 48px; line-height: 20px; box-sizing: border-box;">
-                    <img src="https://maps.gstatic.com/mapfiles/api-3/images/google4.png" alt="Google Maps" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;" />
+                    <img src="https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/google-map-icon.png" alt="Google Maps" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;" />
                     Навигация с Google Maps
                   </a>
                 </td>
@@ -465,7 +465,7 @@ function generateConfirmationEmailHTML_EN(data: BookingEmailData): string {
               <tr>
                 <td style="padding-bottom: 12px;">
                   <a href="https://ul.waze.com/ul?ll=42.67683570,23.40003810&navigate=yes" style="display: block; text-align: center; background-color: #053790; color: #ffffff; padding: 14px 20px; text-decoration: none; border-radius: 10px; font-size: 14px; font-weight: 600; height: 48px; line-height: 20px; box-sizing: border-box;">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/0/01/Waze_Icon.png" alt="Waze" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;" />
+                    <img src="https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/waze-icon.png" alt="Waze" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;" />
                     Navigate with Waze
                   </a>
                 </td>
@@ -473,7 +473,7 @@ function generateConfirmationEmailHTML_EN(data: BookingEmailData): string {
               <tr>
                 <td>
                   <a href="https://www.google.com/maps?q=42.6768423,23.4002030&entry=gps" style="display: block; text-align: center; background-color: #ffffff; color: #053790; padding: 14px 20px; text-decoration: none; border-radius: 10px; font-size: 14px; font-weight: 600; border: 2px solid #053790; height: 48px; line-height: 20px; box-sizing: border-box;">
-                    <img src="https://maps.gstatic.com/mapfiles/api-3/images/google4.png" alt="Google Maps" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;" />
+                    <img src="https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/google-map-icon.png" alt="Google Maps" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;" />
                     Navigate with Google Maps
                   </a>
                 </td>

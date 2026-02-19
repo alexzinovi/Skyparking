@@ -49,7 +49,11 @@ export function MapSection() {
                   size="lg"
                   className="bg-[#f1c933] hover:bg-[#f1c933]/90 text-[#073590]"
                 >
-                  <Navigation className="mr-2 h-5 w-5" />
+                  <img 
+                    src="https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/google-map-icon.png" 
+                    alt="Google Maps" 
+                    className="mr-2 h-5 w-5"
+                  />
                   {t("googleMaps")}
                 </Button>
                 <Button 
@@ -57,7 +61,11 @@ export function MapSection() {
                   size="lg"
                   className="bg-[#073590] hover:bg-[#073590]/90 text-white"
                 >
-                  <Map className="mr-2 h-5 w-5" />
+                  <img 
+                    src="https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/waze-icon.png" 
+                    alt="Waze" 
+                    className="mr-2 h-5 w-5"
+                  />
                   {t("waze")}
                 </Button>
               </div>
