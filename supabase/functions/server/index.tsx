@@ -1732,17 +1732,21 @@ app.post("/make-server-47a4914e/users/cleanup-invalid", async (c) => {
     // Find invalid users (no username or empty username)
     const invalidUsers = allUsers.filter(user => !user.username || user.username.trim() === '');
     
+    console.log(`Found ${invalidUsers.length} invalid users:`, invalidUsers.map(u => ({ id: u.id, username: u.username })));
+    
     let successCount = 0;
     let failCount = 0;
     
     for (const user of invalidUsers) {
       try {
+        console.log(`Attempting to delete user ${user.id}...`);
         // Force delete from KV store without validation
         await kv.del(`user:${user.id}`);
         // Try to delete username mapping if it exists
         if (user.username) {
           await kv.del(`username:${user.username}`);
         }
+        console.log(`Successfully deleted user ${user.id}`);
         successCount++;
       } catch (error) {
         console.log(`Failed to delete invalid user ${user.id}:`, error);
