@@ -1381,117 +1381,6 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
       </div>
 
       <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        {/* Live Capacity Dashboard */}
-        <Card className="mb-6 p-6 bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold flex items-center gap-2">
-              <Car className="h-5 w-5" />
-              Капацитет на паркинга - Следващи 14 дни
-            </h2>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={fetchCapacity}
-              disabled={capacityLoading}
-            >
-              {capacityLoading ? "Зареждане..." : "Обнови"}
-            </Button>
-          </div>
-
-          {capacityLoading ? (
-            <div className="text-center py-4 text-gray-500">Зареждане на капацитет...</div>
-          ) : capacityData.length === 0 ? (
-            <div className="text-center py-4 text-gray-500">Няма данни за капацитет</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-base sm:text-lg">
-                <thead className="bg-white/50">
-                  <tr>
-                    <th className="text-left p-3 sm:p-4 font-semibold border-b-2 text-base sm:text-lg">{bg.date}</th>
-                    <th className="text-center p-3 sm:p-4 font-semibold border-b-2 text-base sm:text-lg">{bg.regularCars}</th>
-                    <th className="text-center p-3 sm:p-4 font-semibold border-b-2 text-base sm:text-lg">{bg.withKeys}</th>
-                    <th className="text-center p-3 sm:p-4 font-semibold border-b-2 text-base sm:text-lg">{bg.total}</th>
-                    <th className="text-center p-3 sm:p-4 font-semibold border-b-2 text-base sm:text-lg">Макс.</th>
-                    <th className="text-left p-3 sm:p-4 font-semibold border-b-2 text-base sm:text-lg">Заетост</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {capacityData.map((day, idx) => {
-                    const regularPercent = (day.nonKeysCount / day.maxSpots) * 100;
-                    const totalPercent = (day.totalCount / day.maxTotal) * 100;
-                    const isHigh = totalPercent >= 80;
-                    const isFull = totalPercent >= 100;
-                    const isOverRegular = day.isOverNonKeysLimit;
-
-                    return (
-                      <tr key={idx} className={`border-b ${isFull ? 'bg-red-100' : isHigh ? 'bg-yellow-50' : 'bg-white'}`}>
-                        <td className="p-3 sm:p-4 font-medium text-base sm:text-lg">
-                          {formatDateDisplay(day.date)}
-                        </td>
-                        <td className="text-center p-3 sm:p-4 text-base sm:text-lg">
-                          <span className={isOverRegular ? 'text-red-600 font-bold' : ''}>
-                            {day.nonKeysCount}/{day.maxSpots}
-                            {isOverRegular && ' ⚠'}
-                          </span>
-                        </td>
-                        <td className="text-center p-3 sm:p-4 text-purple-700 font-medium text-base sm:text-lg">
-                          {day.keysCount}
-                        </td>
-                        <td className="text-center p-3 sm:p-4 font-bold text-base sm:text-lg">
-                          {day.totalCount}/{day.maxTotal}
-                        </td>
-                        <td className="text-center p-3 sm:p-4 text-gray-600 text-base sm:text-lg">
-                          {day.maxTotal}
-                        </td>
-                        <td className="p-3 sm:p-4">
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 bg-gray-200 rounded-full h-6 overflow-hidden">
-                              <div 
-                                className={`h-full transition-all ${
-                                  isFull ? 'bg-red-500' : 
-                                  isHigh ? 'bg-yellow-500' : 
-                                  'bg-green-500'
-                                }`}
-                                style={{ width: `${Math.min(totalPercent, 100)}%` }}
-                              />
-                            </div>
-                            <span className={`text-xs font-semibold w-12 text-right ${
-                              isFull ? 'text-red-600' : 
-                              isHigh ? 'text-yellow-700' : 
-                              'text-green-600'
-                            }`}>
-                              {totalPercent.toFixed(0)}%
-                            </span>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          <div className="mt-4 pt-4 border-t flex items-center gap-6 text-xs text-gray-600">
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-green-500 rounded"></div>
-              <span>&lt; 80% - Свободно</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-yellow-500 rounded"></div>
-              <span>80-99% - Почти пълно</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-red-500 rounded"></div>
-              <span>≥100% - Пълно</span>
-            </div>
-            <div className="ml-auto text-purple-700 font-medium">
-              <Key className="h-3 w-3 inline mr-1" />
-              Лилаво = Коли с ключове (могат да се преместват)
-            </div>
-          </div>
-        </Card>
-
         {/* Content - Bookings, Users, Pricing, Discounts, or Settings */}
         {activeTab === "settings" ? (
           /* ========== SETTINGS TAB ========== */
@@ -1504,7 +1393,120 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
           <PricingManager sessionToken={localStorage.getItem("skyparking-token") || ""} />
         ) : activeTab === "calendar" ? (
           /* ========== CALENDAR TAB ========== */
-          <Card className="p-6">
+          <>
+            {/* Live Capacity Dashboard - Next 14 Days */}
+            <Card className="mb-6 p-6 bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold flex items-center gap-2">
+                  <Car className="h-5 w-5" />
+                  Капацитет на паркинга - Следващи 14 дни
+                </h2>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={fetchCapacity}
+                  disabled={capacityLoading}
+                >
+                  {capacityLoading ? "Зареждане..." : "Обнови"}
+                </Button>
+              </div>
+
+              {capacityLoading ? (
+                <div className="text-center py-4 text-gray-500">Зареждане на капацитет...</div>
+              ) : capacityData.length === 0 ? (
+                <div className="text-center py-4 text-gray-500">Няма данни за капацитет</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-base sm:text-lg">
+                    <thead className="bg-white/50">
+                      <tr>
+                        <th className="text-left p-3 sm:p-4 font-semibold border-b-2 text-base sm:text-lg">{bg.date}</th>
+                        <th className="text-center p-3 sm:p-4 font-semibold border-b-2 text-base sm:text-lg">{bg.regularCars}</th>
+                        <th className="text-center p-3 sm:p-4 font-semibold border-b-2 text-base sm:text-lg">{bg.withKeys}</th>
+                        <th className="text-center p-3 sm:p-4 font-semibold border-b-2 text-base sm:text-lg">{bg.total}</th>
+                        <th className="text-center p-3 sm:p-4 font-semibold border-b-2 text-base sm:text-lg">Макс.</th>
+                        <th className="text-left p-3 sm:p-4 font-semibold border-b-2 text-base sm:text-lg">Заетост</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {capacityData.map((day, idx) => {
+                        const regularPercent = (day.nonKeysCount / day.maxSpots) * 100;
+                        const totalPercent = (day.totalCount / day.maxTotal) * 100;
+                        const isHigh = totalPercent >= 80;
+                        const isFull = totalPercent >= 100;
+                        const isOverRegular = day.isOverNonKeysLimit;
+
+                        return (
+                          <tr key={idx} className={`border-b ${isFull ? 'bg-red-100' : isHigh ? 'bg-yellow-50' : 'bg-white'}`}>
+                            <td className="p-3 sm:p-4 font-medium text-base sm:text-lg">
+                              {formatDateDisplay(day.date)}
+                            </td>
+                            <td className="text-center p-3 sm:p-4 text-base sm:text-lg">
+                              <span className={isOverRegular ? 'text-red-600 font-bold' : ''}>
+                                {day.nonKeysCount}/{day.maxSpots}
+                                {isOverRegular && ' ⚠'}
+                              </span>
+                            </td>
+                            <td className="text-center p-3 sm:p-4 text-purple-700 font-medium text-base sm:text-lg">
+                              {day.keysCount}
+                            </td>
+                            <td className="text-center p-3 sm:p-4 font-bold text-base sm:text-lg">
+                              {day.totalCount}/{day.maxTotal}
+                            </td>
+                            <td className="text-center p-3 sm:p-4 text-gray-600 text-base sm:text-lg">
+                              {day.maxTotal}
+                            </td>
+                            <td className="p-3 sm:p-4">
+                              <div className="flex items-center gap-2">
+                                <div className="flex-1 bg-gray-200 rounded-full h-6 overflow-hidden">
+                                  <div 
+                                    className={`h-full transition-all ${
+                                      isFull ? 'bg-red-500' : 
+                                      isHigh ? 'bg-yellow-500' : 
+                                      'bg-green-500'
+                                    }`}
+                                    style={{ width: `${Math.min(totalPercent, 100)}%` }}
+                                  />
+                                </div>
+                                <span className={`text-xs font-semibold w-12 text-right ${
+                                  isFull ? 'text-red-600' : 
+                                  isHigh ? 'text-yellow-700' : 
+                                  'text-green-600'
+                                }`}>
+                                  {totalPercent.toFixed(0)}%
+                                </span>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              <div className="mt-4 pt-4 border-t flex items-center gap-6 text-xs text-gray-600">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-green-500 rounded"></div>
+                  <span>&lt; 80% - Свободно</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-yellow-500 rounded"></div>
+                  <span>80-99% - Почти пълно</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-red-500 rounded"></div>
+                  <span>≥100% - Пълно</span>
+                </div>
+                <div className="ml-auto text-purple-700 font-medium">
+                  <Key className="h-3 w-3 inline mr-1" />
+                  Лилаво = Коли с ключове (могат да се преместават)
+                </div>
+              </div>
+            </Card>
+
+            {/* Monthly Calendar View */}
+            <Card className="p-6">
             {/* Month Navigation */}
             <div className="flex items-center justify-between mb-6">
               <Button
@@ -1672,6 +1674,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
               );
             })()}
           </Card>
+          </>
         ) : activeTab === "users" ? (
           /* ========== USERS TAB ========== */
           <>
