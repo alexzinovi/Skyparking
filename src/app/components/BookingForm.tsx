@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router";
 import { Card } from "./ui/card";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -7,12 +8,12 @@ import { Button } from "./ui/button";
 import { CalendarIcon, CreditCard, Loader2, ChevronDown, Clock, Car, Users, X } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "./LanguageContext";
-import { calculatePrice } from "@/app/utils/pricing";
-import { ReservationConfirmation } from "./ReservationConfirmation";
+import { calculatePrice } from "../utils/pricing";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { DatePicker } from "./DatePicker";
 import { TimePicker } from "./TimePicker";
 import { NumberPicker } from "./NumberPicker";
+import { eurToBgn } from "../utils/currency";
 
 const projectId = "dbybybmjjeeocoecaewv";
 const publicAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRieWJ5Ym1qamVlb2NvZWNhZXd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODgxMzAsImV4cCI6MjA4MjA2NDEzMH0.fMZ3Yi5gZpE6kBBz-y1x0FKZcGczxSJZ9jL-Zeau340";
@@ -47,13 +48,13 @@ interface BookingFormData {
 
 export function BookingForm() {
   const { t, language } = useLanguage();
+  const navigate = useNavigate();
   const [totalPrice, setTotalPrice] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [numberOfCars, setNumberOfCars] = useState(1);
   const [needsInvoice, setNeedsInvoice] = useState(false);
   const [isVAT, setIsVAT] = useState(false);
   const [autoVatNumber, setAutoVatNumber] = useState("");
-  const [confirmedBooking, setConfirmedBooking] = useState<any>(null);
   
   // Discount code states
   const [discountCode, setDiscountCode] = useState("");
@@ -269,8 +270,8 @@ export function BookingForm() {
       // Show success message with reservation details
       toast.success(t("bookingConfirmed") + " €" + totalPrice);
       
-      // Set confirmed booking to show confirmation screen
-      setConfirmedBooking(result.booking);
+      // Navigate to the confirmation page
+      navigate('/reservation-confirmed', { state: { booking: result.booking } });
       
     } catch (error: any) {
       console.error("Reservation error:", error);
@@ -280,32 +281,6 @@ export function BookingForm() {
       setLastSubmitTime(Date.now()); // Update last submit time
     }
   };
-
-  const handleBackToHome = () => {
-    setConfirmedBooking(null);
-    // Scroll to the beginning of the booking section (header aligns with booking section)
-    setTimeout(() => {
-      const bookingElement = document.getElementById('booking');
-      if (bookingElement) {
-        // Get header height (80px on mobile, 110px on desktop)
-        const headerHeight = window.innerWidth >= 768 ? 110 : 80;
-        const elementPosition = bookingElement.getBoundingClientRect().top + window.pageYOffset;
-        window.scrollTo({ top: elementPosition - headerHeight, behavior: 'smooth' });
-      }
-    }, 100); // Small delay to ensure DOM is updated
-  };
-
-  // If we have a confirmed booking, show the confirmation screen
-  if (confirmedBooking) {
-    console.log("=== RENDERING CONFIRMATION SCREEN ===");
-    console.log("Confirmed booking data:", confirmedBooking);
-    
-    return (
-      <ErrorBoundary>
-        <ReservationConfirmation booking={confirmedBooking} onBackToHome={handleBackToHome} />
-      </ErrorBoundary>
-    );
-  }
 
   return (
     <section id="booking" className="py-16 bg-gray-100">
@@ -416,11 +391,19 @@ export function BookingForm() {
                       <p className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-2">
                         {language === 'bg' ? 'Обща цена' : 'Total Price'}
                       </p>
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-5xl font-bold text-[#073590]">€{totalPrice}</span>
-                        {numberOfCars > 1 && (
-                          <span className="text-xl text-gray-500">(€{(totalPrice / numberOfCars).toFixed(2)} {t("perCar")})</span>
-                        )}
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-5xl font-bold text-[#073590]">€{totalPrice}</span>
+                          {numberOfCars > 1 && (
+                            <span className="text-xl text-gray-500">(€{(totalPrice / numberOfCars).toFixed(2)} {t("perCar")})</span>
+                          )}
+                        </div>
+                        <div className="text-2xl font-semibold text-gray-700">
+                          {eurToBgn(totalPrice).toFixed(2)} лв
+                          {numberOfCars > 1 && (
+                            <span className="text-lg text-gray-500 ml-2">({eurToBgn(totalPrice / numberOfCars).toFixed(2)} лв {t("perCar")})</span>
+                          )}
+                        </div>
                       </div>
                       <p className="text-sm text-gray-600 mt-3">
                         {language === 'bg' ? 'Крайна цена за престоя с включени трансфери' : 'Final price for the stay with transfers included'}
@@ -736,7 +719,7 @@ export function BookingForm() {
                           </p>
                           {basePrice && totalPrice && basePrice !== totalPrice && (
                             <p className="text-xs text-green-700 mt-1">
-                              {language === 'bg' ? 'Спестени' : 'Saved'}: <span className="font-bold">€{(basePrice - totalPrice).toFixed(2)}</span>
+                              {language === 'bg' ? 'Спестени' : 'Saved'}: <span className="font-bold">€{(basePrice - totalPrice).toFixed(2)} ({eurToBgn(basePrice - totalPrice).toFixed(2)} лв)</span>
                             </p>
                           )}
                         </div>

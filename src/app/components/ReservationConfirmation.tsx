@@ -5,6 +5,7 @@ import { useLanguage } from "./LanguageContext";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { useRef, useEffect } from "react";
+import { eurToBgn } from "../utils/currency";
 
 interface ReservationConfirmationProps {
   booking: {
@@ -244,13 +245,18 @@ export function ReservationConfirmation({ booking, onBackToHome }: ReservationCo
                   <p className="text-sm mb-1" style={{ opacity: 0.9 }}>
                     {language === 'bg' ? 'ОБЩА ЦЕНА' : 'TOTAL PRICE'}
                   </p>
-                  <p className="text-4xl font-bold flex items-center gap-2">
-                    <Euro className="w-8 h-8" />
-                    {booking.totalPrice}
-                  </p>
+                  <div className="space-y-1">
+                    <p className="text-4xl font-bold flex items-center gap-2">
+                      <Euro className="w-8 h-8" />
+                      {booking.totalPrice}
+                    </p>
+                    <p className="text-2xl font-semibold" style={{ opacity: 0.95 }}>
+                      {eurToBgn(booking.totalPrice).toFixed(2)} лв
+                    </p>
+                  </div>
                   {booking.numberOfCars > 1 && (
-                    <p className="text-sm mt-1" style={{ opacity: 0.9 }}>
-                      €{(booking.totalPrice / booking.numberOfCars).toFixed(2)} {language === 'bg' ? 'на автомобил' : 'per car'}
+                    <p className="text-sm mt-2" style={{ opacity: 0.9 }}>
+                      €{(booking.totalPrice / booking.numberOfCars).toFixed(2)} ({eurToBgn(booking.totalPrice / booking.numberOfCars).toFixed(2)} лв) {language === 'bg' ? 'на автомобил' : 'per car'}
                     </p>
                   )}
                 </div>
