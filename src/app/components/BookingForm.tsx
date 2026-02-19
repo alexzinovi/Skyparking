@@ -72,7 +72,11 @@ export function BookingForm() {
   
   const { register, handleSubmit, watch, formState: { errors }, setValue, trigger } = useForm<BookingFormData>({
     mode: "onBlur",
-    reValidateMode: "onChange"
+    reValidateMode: "onChange",
+    defaultValues: {
+      passengers: 1, // Default to 1 passenger
+      numberOfCars: 1,
+    }
   });
 
   const arrivalDate = watch("arrivalDate");

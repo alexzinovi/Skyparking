@@ -29,7 +29,8 @@ import {
   Users,
   Shield,
   Percent,
-  Settings
+  Settings,
+  Download
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "./ui/dialog";
 import { toast } from "sonner";
@@ -159,6 +160,12 @@ const bg = {
   noShowConfirm: "Сигурни ли сте, че клиентът не се е явил?",
   checkoutConfirm: "Сигурни ли сте, че искате да приключите тази резервация?",
   operatorName: "Въведете вашето име:",
+  
+  // Export
+  exportCSV: "Експорт CSV",
+  exportJSON: "Експорт JSON",
+  exportingData: "Експортиране...",
+  dataExported: "Данните са експортирани успешно",
   
   // Audit trail
   actionAccept: "Приета",
@@ -938,6 +945,111 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
 
   const counts = getTabCounts();
 
+  // Export functions
+  const exportToCSV = () => {
+    try {
+      // CSV header
+      const headers = [
+        "Booking Code",
+        "Status",
+        "Name",
+        "Email",
+        "Phone",
+        "Arrival Date",
+        "Arrival Time",
+        "Departure Date",
+        "Departure Time",
+        "License Plate(s)",
+        "Passengers",
+        "Number of Cars",
+        "Car Keys",
+        "Total Price (EUR)",
+        "Payment Status",
+        "Invoice Requested",
+        "Company Name",
+        "Tax Number",
+        "Created At",
+        "Discount Code",
+      ];
+
+      // CSV rows
+      const rows = bookings.map(booking => [
+        booking.bookingCode || booking.id,
+        booking.status,
+        booking.name,
+        booking.email,
+        booking.phone,
+        booking.arrivalDate,
+        booking.arrivalTime,
+        booking.departureDate,
+        booking.departureTime,
+        [booking.licensePlate, booking.licensePlate2, booking.licensePlate3, booking.licensePlate4, booking.licensePlate5].filter(Boolean).join("; "),
+        booking.passengers || "0",
+        booking.numberOfCars || "1",
+        booking.carKeys ? "Yes" : "No",
+        booking.totalPrice,
+        booking.paymentStatus,
+        booking.needsInvoice ? "Yes" : "No",
+        booking.companyName || "",
+        booking.taxNumber || "",
+        booking.createdAt,
+        booking.discountCode || "",
+      ]);
+
+      // Create CSV content
+      const csvContent = [
+        headers.join(","),
+        ...rows.map(row => row.map(cell => `"${cell}"`).join(","))
+      ].join("\n");
+
+      // Download CSV
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", `skyparking-reservations-${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success(bg.dataExported);
+    } catch (error) {
+      console.error("Export CSV error:", error);
+      toast.error("Failed to export CSV");
+    }
+  };
+
+  const exportToJSON = () => {
+    try {
+      // Create JSON with all booking data
+      const exportData = {
+        exportDate: new Date().toISOString(),
+        totalBookings: bookings.length,
+        bookings: bookings.map(booking => ({
+          ...booking,
+          // Ensure all fields are included
+        }))
+      };
+
+      // Download JSON
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", `skyparking-reservations-${new Date().toISOString().split('T')[0]}.json`);
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success(bg.dataExported);
+    } catch (error) {
+      console.error("Export JSON error:", error);
+      toast.error("Failed to export JSON");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -1286,13 +1398,36 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                   className="pl-10 sm:pl-12 text-base sm:text-lg py-5 sm:py-6"
                 />
               </div>
-              <Button 
-                onClick={() => { setIsAddingNew(true); setFormData({ paymentStatus: "manual", status: "confirmed", passengers: 0, numberOfCars: 1 }); }}
-                className="text-base sm:text-lg py-5 sm:py-6 px-6"
-              >
-                <Plus className="mr-2 h-5 w-5 sm:h-6 sm:w-6" />
-                {bg.addManualBooking}
-              </Button>
+              <div className="flex flex-wrap gap-2 sm:gap-3">
+                {/* Export Buttons - Admin Only */}
+                {permissions.includes("manage_users") && (
+                  <>
+                    <Button 
+                      onClick={exportToCSV}
+                      variant="outline"
+                      className="text-base sm:text-lg py-5 sm:py-6 px-4 sm:px-6 border-2 border-green-600 text-green-600 hover:bg-green-50"
+                    >
+                      <Download className="mr-2 h-5 w-5 sm:h-6 sm:w-6" />
+                      {bg.exportCSV}
+                    </Button>
+                    <Button 
+                      onClick={exportToJSON}
+                      variant="outline"
+                      className="text-base sm:text-lg py-5 sm:py-6 px-4 sm:px-6 border-2 border-blue-600 text-blue-600 hover:bg-blue-50"
+                    >
+                      <Download className="mr-2 h-5 w-5 sm:h-6 sm:w-6" />
+                      {bg.exportJSON}
+                    </Button>
+                  </>
+                )}
+                <Button 
+                  onClick={() => { setIsAddingNew(true); setFormData({ paymentStatus: "manual", status: "confirmed", passengers: 0, numberOfCars: 1 }); }}
+                  className="text-base sm:text-lg py-5 sm:py-6 px-4 sm:px-6"
+                >
+                  <Plus className="mr-2 h-5 w-5 sm:h-6 sm:w-6" />
+                  {bg.addManualBooking}
+                </Button>
+              </div>
             </div>
 
             {/* Bookings List */}
