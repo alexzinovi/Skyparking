@@ -1,12 +1,14 @@
 import { useLanguage } from "./LanguageContext";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "./ui/button";
+import { useNavigate } from "react-router";
 
 export function TermsAndConditions() {
   const { t, language } = useLanguage();
+  const navigate = useNavigate();
 
   const handleBack = () => {
-    window.location.href = "/";
+    navigate("/");
   };
 
   return (
@@ -123,7 +125,7 @@ export function TermsAndConditions() {
                 </p>
                 
                 <p className="text-justify mb-4">
-                  5.4. Ако резервацията е направена от трета страна, тя носи отговорността за договорните задължения на клиента. Третата страна може да има предимство пред клиента само ако фирмата "А-Парк 98" ЕООД приеме това.
+                  5.4. Ако резервацията е н��правена от трета страна, тя носи отговорността за договорните задължения на клиента. Третата страна може да има предимство пред клиента само ако фирмата "А-Парк 98" ЕООД приеме това.
                 </p>
                 
                 <p className="text-justify mb-4">
