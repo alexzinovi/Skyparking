@@ -904,6 +904,8 @@ app.put("/make-server-47a4914e/bookings/:id/decline", async (c) => {
       ...booking,
       status: 'declined',
       declineReason: reason,
+      declinedBy: operator || 'system',
+      declinedAt: new Date().toISOString(),
       statusHistory,
       updatedAt: new Date().toISOString(),
     };
@@ -923,12 +925,18 @@ app.put("/make-server-47a4914e/bookings/:id/cancel", async (c) => {
     const id = c.req.param("id");
     const { operator, reason } = await c.req.json();
     
+    console.log(`[CANCEL] Booking ID: ${id}, Operator: ${operator}, Reason: ${reason}`);
+    
     const booking = await kv.get(id);
     if (!booking) {
+      console.log(`[CANCEL] Booking not found: ${id}`);
       return c.json({ success: false, message: "Booking not found" }, 404);
     }
     
+    console.log(`[CANCEL] Current booking status: ${booking.status}`);
+    
     if (!isValidTransition(booking.status, 'cancelled')) {
+      console.log(`[CANCEL] Invalid transition from ${booking.status} to cancelled`);
       return c.json({ 
         success: false, 
         message: `Cannot cancel booking with status "${booking.status}". Valid transitions: ${ALLOWED_TRANSITIONS[booking.status]?.join(', ') || 'none'}` 
@@ -947,7 +955,11 @@ app.put("/make-server-47a4914e/bookings/:id/cancel", async (c) => {
       updatedAt: new Date().toISOString(),
     };
     
+    console.log(`[CANCEL] Updating booking to cancelled. CancelledBy: ${updated.cancelledBy}`);
+    
     await kv.set(id, updated);
+    
+    console.log(`[CANCEL] Successfully cancelled booking ${id}`);
     
     return c.json({ success: true, booking: updated });
   } catch (error) {

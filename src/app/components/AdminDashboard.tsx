@@ -277,6 +277,8 @@ interface Booking {
   carKeysNotes?: string;
   capacityOverride?: boolean;
   declineReason?: string;
+  declinedBy?: string; // Operator who declined
+  declinedAt?: string; // Timestamp of decline
   discountCode?: string;
 }
 
@@ -524,13 +526,13 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
         filtered = bookings.filter(b => b.status === "checked-out");
         break;
       case "cancelled":
-        filtered = bookings.filter(b => b.status === "cancelled");
+        filtered = bookings.filter(b => b.status === "cancelled" || b.status === "declined");
         break;
       case "no-show":
         filtered = bookings.filter(b => b.status === "no-show");
         break;
       case "archive":
-        filtered = bookings.filter(b => b.status === "no-show" || b.status === "cancelled");
+        filtered = bookings.filter(b => b.status === "no-show" || b.status === "cancelled" || b.status === "declined");
         break;
       case "all":
         filtered = bookings;
@@ -747,6 +749,8 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
     if (!reason) return;
 
     try {
+      console.log(`[CANCEL] Cancelling booking ${booking.id} with operator: ${operatorName}`);
+      
       const response = await fetch(
         `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/bookings/${booking.id}/cancel`,
         {
@@ -760,11 +764,15 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
       );
 
       const data = await response.json();
+      console.log(`[CANCEL] Response:`, data);
+      
       if (data.success) {
+        console.log(`[CANCEL] Success! Booking status: ${data.booking?.status}, cancelledBy: ${data.booking?.cancelledBy}`);
         toast.success(bg.bookingCancelled);
         fetchBookings();
         fetchCapacity();
       } else {
+        console.error(`[CANCEL] Failed:`, data.message);
         toast.error(data.message || bg.failedToSave);
       }
     } catch (error) {
@@ -954,9 +962,9 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
       confirmed: bookings.filter(b => b.status === "confirmed").length,
       arrived: bookings.filter(b => b.status === "arrived").length,
       completed: bookings.filter(b => b.status === "checked-out").length,
-      cancelled: bookings.filter(b => b.status === "cancelled").length,
+      cancelled: bookings.filter(b => b.status === "cancelled" || b.status === "declined").length,
       noShow: bookings.filter(b => b.status === "no-show").length,
-      archive: bookings.filter(b => b.status === "no-show" || b.status === "cancelled").length,
+      archive: bookings.filter(b => b.status === "no-show" || b.status === "cancelled" || b.status === "declined").length,
       all: bookings.length,
     };
   };
@@ -990,6 +998,8 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
         "Discount Code",
         "Cancelled By",
         "Cancelled At",
+        "Declined By",
+        "Declined At",
         "No-Show By",
         "No-Show At",
       ];
@@ -1018,6 +1028,8 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
         booking.discountCode || "",
         booking.cancelledBy || "",
         booking.cancelledAt || "",
+        booking.declinedBy || "",
+        booking.declinedAt || "",
         booking.noShowBy || "",
         booking.noShowAt || "",
       ]);
@@ -1734,6 +1746,23 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                           <span className="ml-2">{booking.noShowBy}</span>
                           {booking.noShowAt && (
                             <span className="ml-2">({bg.at} {formatDateTimeDisplay(booking.noShowAt)})</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {booking.declineReason && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-base space-y-1">
+                      <div>
+                        <span className="font-semibold text-red-900">{bg.reason}:</span>
+                        <span className="text-red-700 ml-2">{booking.declineReason}</span>
+                      </div>
+                      {booking.declinedBy && (
+                        <div className="text-sm text-red-600">
+                          <span className="font-semibold">{bg.cancelledBy}:</span>
+                          <span className="ml-2">{booking.declinedBy}</span>
+                          {booking.declinedAt && (
+                            <span className="ml-2">({bg.at} {formatDateTimeDisplay(booking.declinedAt)})</span>
                           )}
                         </div>
                       )}
