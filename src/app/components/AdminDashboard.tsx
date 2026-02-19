@@ -58,6 +58,8 @@ const bg = {
   confirmedReservations: "Потвърдени",
   arrivedReservations: "Пристигнали",
   completedReservations: "Приключени",
+  cancelledReservations: "Отказани",
+  noShowReservations: "Не се явиха",
   archiveReservations: "Архив",
   allReservations: "Всички",
   usersTab: "Потребители",
@@ -291,7 +293,7 @@ interface CapacityDay {
   wouldFit: boolean;
 }
 
-type TabType = "new" | "confirmed" | "arrived" | "completed" | "archive" | "all" | "users" | "pricing" | "discounts" | "settings";
+type TabType = "new" | "confirmed" | "arrived" | "completed" | "cancelled" | "no-show" | "archive" | "all" | "users" | "pricing" | "discounts" | "settings";
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -520,6 +522,12 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
         break;
       case "completed":
         filtered = bookings.filter(b => b.status === "checked-out");
+        break;
+      case "cancelled":
+        filtered = bookings.filter(b => b.status === "cancelled");
+        break;
+      case "no-show":
+        filtered = bookings.filter(b => b.status === "no-show");
         break;
       case "archive":
         filtered = bookings.filter(b => b.status === "no-show" || b.status === "cancelled");
@@ -946,6 +954,8 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
       confirmed: bookings.filter(b => b.status === "confirmed").length,
       arrived: bookings.filter(b => b.status === "arrived").length,
       completed: bookings.filter(b => b.status === "checked-out").length,
+      cancelled: bookings.filter(b => b.status === "cancelled").length,
+      noShow: bookings.filter(b => b.status === "no-show").length,
       archive: bookings.filter(b => b.status === "no-show" || b.status === "cancelled").length,
       all: bookings.length,
     };
@@ -1146,10 +1156,30 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
               {bg.completedReservations} ({counts.completed})
             </button>
             <button
+              onClick={() => setActiveTab("cancelled")}
+              className={`px-4 sm:px-6 py-4 sm:py-5 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors ${
+                activeTab === "cancelled"
+                  ? "border-red-500 text-red-600"
+                  : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              {bg.cancelledReservations} ({counts.cancelled})
+            </button>
+            <button
+              onClick={() => setActiveTab("no-show")}
+              className={`px-4 sm:px-6 py-4 sm:py-5 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors ${
+                activeTab === "no-show"
+                  ? "border-orange-500 text-orange-600"
+                  : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              {bg.noShowReservations} ({counts.noShow})
+            </button>
+            <button
               onClick={() => setActiveTab("archive")}
               className={`px-4 sm:px-6 py-4 sm:py-5 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors ${
                 activeTab === "archive"
-                  ? "border-red-500 text-red-600"
+                  ? "border-purple-500 text-purple-600"
                   : "border-transparent text-gray-600 hover:text-gray-900"
               }`}
             >
