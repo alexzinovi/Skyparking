@@ -1002,8 +1002,12 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
         ...rows.map(row => row.map(cell => `"${cell}"`).join(","))
       ].join("\n");
 
+      // Add UTF-8 BOM for proper Cyrillic character display in Excel
+      const BOM = "\uFEFF";
+      const csvWithBOM = BOM + csvContent;
+
       // Download CSV
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const blob = new Blob([csvWithBOM], { type: "text/csv;charset=utf-8;" });
       const link = document.createElement("a");
       const url = URL.createObjectURL(blob);
       link.setAttribute("href", url);
