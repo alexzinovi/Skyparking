@@ -193,7 +193,7 @@ const bg = {
   carKeysNotesPlaceholder: "Напр.: Ключове оставени в офиса, паркирана в зона B...",
   
   // Capacity
-  capacityWarning: "⚠️ Предупреждение за капацитет",
+  capacityWarning: "⚠️ Предупреждение за ка��ацитет",
   capacityExceeded: "Капацитетът е надвишен",
   capacityDetails: "Детайли за капацитета",
   date: "Дата",
@@ -532,41 +532,8 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
       if (data.success) {
         setUsers(data.users);
         
-        // Silently cleanup invalid users in the background (only once)
-        const invalidUsers = data.users.filter((user: any) => !user.username || user.username.trim() === '');
-        if (invalidUsers.length > 0 && !cleanupAttempted.current) {
-          cleanupAttempted.current = true; // Mark as attempted to prevent loops
-          console.log(`Found ${invalidUsers.length} invalid users, attempting cleanup...`);
-          
-          // Trigger cleanup without waiting for response
-          fetch(
-            `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/users/cleanup-invalid`,
-            {
-              method: "POST",
-              headers: {
-                "Authorization": `Bearer ${publicAnonKey}`,
-                "X-Session-Token": token || "",
-              },
-            }
-          ).then(async (cleanupResponse) => {
-            const cleanupData = await cleanupResponse.json();
-            console.log("Cleanup response:", cleanupData);
-            if (cleanupData.success && cleanupData.deleted > 0) {
-              console.log(`Successfully deleted ${cleanupData.deleted} invalid users, refreshing...`);
-              // Refresh users list after cleanup
-              setTimeout(() => {
-                cleanupAttempted.current = false; // Reset for next potential cleanup
-                fetchUsers();
-              }, 1000);
-            } else {
-              console.log("Cleanup completed but no users were deleted");
-              cleanupAttempted.current = false; // Reset to allow retry
-            }
-          }).catch((error) => {
-            console.error("Background cleanup error:", error);
-            cleanupAttempted.current = false; // Reset on error to allow retry
-          });
-        }
+        // Note: Automatic cleanup disabled to prevent reload loops
+        // Invalid users (if any) will be displayed but won't affect functionality
       } else {
         toast.error("Грешка при зареждане на потребителите");
       }
