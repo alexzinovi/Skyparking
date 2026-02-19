@@ -752,36 +752,30 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
     }
 
     const token = localStorage.getItem("skyparking-token");
-    let successCount = 0;
-    let failCount = 0;
 
-    for (const user of invalidUsers) {
-      try {
-        const response = await fetch(
-          `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/users/${user.id}`,
-          {
-            method: "DELETE",
-            headers: {
-              "Authorization": `Bearer ${publicAnonKey}`,
-              "X-Session-Token": token || "",
-            },
-          }
-        );
-
-        const data = await response.json();
-        if (data.success) {
-          successCount++;
-        } else {
-          failCount++;
+    try {
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/users/cleanup-invalid`,
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${publicAnonKey}`,
+            "X-Session-Token": token || "",
+          },
         }
-      } catch (error) {
-        console.error("Cleanup user error:", error);
-        failCount++;
+      );
+
+      const data = await response.json();
+      if (data.success) {
+        toast.success(data.message || `Изтрити са ${data.deleted} невалидни потребители`);
+        fetchUsers();
+      } else {
+        toast.error(data.message || "Грешка при изтриване на невалидни потребители");
       }
+    } catch (error) {
+      console.error("Cleanup invalid users error:", error);
+      toast.error("Грешка при изтриване на невалидни потребители");
     }
-    
-    toast.success(`Изтрити са ${successCount} невалидни потребители${failCount > 0 ? ` (${failCount} неуспешни)` : ''}`);
-    fetchUsers();
   };
 
   // Get role badge

@@ -1712,6 +1712,56 @@ app.delete("/make-server-47a4914e/users/:id", async (c) => {
   }
 });
 
+// Cleanup invalid users (admin only) - force delete without validation
+app.post("/make-server-47a4914e/users/cleanup-invalid", async (c) => {
+  try {
+    const sessionToken = c.req.header("X-Session-Token");
+    if (!sessionToken) {
+      return c.json({ success: false, message: "Unauthorized" }, 401);
+    }
+    
+    const currentUser = await users.verifySessionToken(sessionToken);
+    
+    if (!currentUser || !users.hasPermission(currentUser, "manage_users")) {
+      return c.json({ success: false, message: "Insufficient permissions" }, 403);
+    }
+    
+    // Get all users
+    const allUsers = await users.getAllUsers();
+    
+    // Find invalid users (no username or empty username)
+    const invalidUsers = allUsers.filter(user => !user.username || user.username.trim() === '');
+    
+    let successCount = 0;
+    let failCount = 0;
+    
+    for (const user of invalidUsers) {
+      try {
+        // Force delete from KV store without validation
+        await kv.del(`user:${user.id}`);
+        // Try to delete username mapping if it exists
+        if (user.username) {
+          await kv.del(`username:${user.username}`);
+        }
+        successCount++;
+      } catch (error) {
+        console.log(`Failed to delete invalid user ${user.id}:`, error);
+        failCount++;
+      }
+    }
+    
+    return c.json({ 
+      success: true, 
+      deleted: successCount, 
+      failed: failCount,
+      message: `Изтрити са ${successCount} невалидни потребители${failCount > 0 ? ` (${failCount} неуспешни)` : ''}`
+    });
+  } catch (error) {
+    console.log("Cleanup invalid users error:", error);
+    return c.json({ success: false, message: "Failed to cleanup invalid users" }, 500);
+  }
+});
+
 // Background job: Update late surcharges for all late bookings
 app.post("/make-server-47a4914e/update-late-surcharges", async (c) => {
   try {
