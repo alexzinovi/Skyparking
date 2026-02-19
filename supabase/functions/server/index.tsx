@@ -941,6 +941,8 @@ app.put("/make-server-47a4914e/bookings/:id/cancel", async (c) => {
       ...booking,
       status: 'cancelled',
       cancellationReason: reason,
+      cancelledBy: operator || 'system',
+      cancelledAt: new Date().toISOString(),
       statusHistory,
       updatedAt: new Date().toISOString(),
     };
@@ -1018,6 +1020,8 @@ app.put("/make-server-47a4914e/bookings/:id/mark-no-show", async (c) => {
       ...booking,
       status: 'no-show',
       noShowReason: reason,
+      noShowBy: operator || 'system',
+      noShowAt: new Date().toISOString(),
       statusHistory,
       updatedAt: new Date().toISOString(),
     };

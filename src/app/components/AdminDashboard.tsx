@@ -85,6 +85,9 @@ const bg = {
   created: "Създадена",
   updated: "Обновена",
   statusHistory: "История на статусите",
+  cancelledBy: "Отказана от",
+  noShowBy: "Маркирана като не се яви от",
+  at: "на",
   
   // Status names
   statusNew: "Нова",
@@ -262,12 +265,17 @@ interface Booking {
   statusHistory?: StatusChange[];
   cancellationReason?: string;
   noShowReason?: string;
+  cancelledBy?: string; // Operator who cancelled
+  cancelledAt?: string; // Timestamp of cancellation
+  noShowBy?: string; // Operator who marked as no-show
+  noShowAt?: string; // Timestamp of no-show
   arrivedAt?: string;
   checkedOutAt?: string;
   carKeys?: boolean;
   carKeysNotes?: string;
   capacityOverride?: boolean;
   declineReason?: string;
+  discountCode?: string;
 }
 
 interface CapacityDay {
@@ -970,6 +978,10 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
         "Tax Number",
         "Created At",
         "Discount Code",
+        "Cancelled By",
+        "Cancelled At",
+        "No-Show By",
+        "No-Show At",
       ];
 
       // CSV rows
@@ -994,6 +1006,10 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
         booking.taxNumber || "",
         booking.createdAt,
         booking.discountCode || "",
+        booking.cancelledBy || "",
+        booking.cancelledAt || "",
+        booking.noShowBy || "",
+        booking.noShowAt || "",
       ]);
 
       // Create CSV content with semicolon delimiter (for European Excel)
@@ -1660,15 +1676,37 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
 
                   {/* Cancellation/No-show reason */}
                   {booking.cancellationReason && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-base">
-                      <span className="font-semibold text-red-900">{bg.reason}:</span>
-                      <span className="text-red-700 ml-2">{booking.cancellationReason}</span>
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-base space-y-1">
+                      <div>
+                        <span className="font-semibold text-red-900">{bg.reason}:</span>
+                        <span className="text-red-700 ml-2">{booking.cancellationReason}</span>
+                      </div>
+                      {booking.cancelledBy && (
+                        <div className="text-sm text-red-600">
+                          <span className="font-semibold">{bg.cancelledBy}:</span>
+                          <span className="ml-2">{booking.cancelledBy}</span>
+                          {booking.cancelledAt && (
+                            <span className="ml-2">({bg.at} {formatDateTimeDisplay(booking.cancelledAt)})</span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                   {booking.noShowReason && (
-                    <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 text-base">
-                      <span className="font-semibold text-gray-900">{bg.reason}:</span>
-                      <span className="text-gray-700 ml-2">{booking.noShowReason}</span>
+                    <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 text-base space-y-1">
+                      <div>
+                        <span className="font-semibold text-gray-900">{bg.reason}:</span>
+                        <span className="text-gray-700 ml-2">{booking.noShowReason}</span>
+                      </div>
+                      {booking.noShowBy && (
+                        <div className="text-sm text-gray-600">
+                          <span className="font-semibold">{bg.noShowBy}:</span>
+                          <span className="ml-2">{booking.noShowBy}</span>
+                          {booking.noShowAt && (
+                            <span className="ml-2">({bg.at} {formatDateTimeDisplay(booking.noShowAt)})</span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
 
