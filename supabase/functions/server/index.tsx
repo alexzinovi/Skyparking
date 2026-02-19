@@ -495,36 +495,9 @@ app.post("/make-server-47a4914e/bookings", async (c) => {
     
     await kv.set(bookingId, bookingData);
     
-    // Send confirmation email to customer
-    try {
-      console.log(`📧 Sending customer confirmation email to ${bookingData.email}...`);
-      const customerEmailResult = await sendConfirmationEmail({
-        name: bookingData.name,
-        email: bookingData.email,
-        phone: bookingData.phone,
-        licensePlate: bookingData.licensePlate,
-        arrivalDate: bookingData.arrivalDate,
-        arrivalTime: bookingData.arrivalTime,
-        departureDate: bookingData.departureDate,
-        departureTime: bookingData.departureTime,
-        numberOfCars: bookingData.numberOfCars || 1,
-        passengers: bookingData.passengers || 0,
-        totalPrice: bookingData.totalPrice,
-        bookingId: bookingData.bookingCode || bookingId,
-        carKeys: bookingData.carKeys,
-        needsInvoice: bookingData.needsInvoice,
-        companyName: bookingData.companyName,
-        language: bookingData.language || 'bg',
-      });
-      
-      if (customerEmailResult.success) {
-        console.log(`✅ Customer confirmation email sent successfully to ${bookingData.email}`);
-      } else {
-        console.error(`❌ Failed to send customer confirmation email: ${customerEmailResult.error}`);
-      }
-    } catch (emailError) {
-      console.error(`❌ Error sending customer confirmation email:`, emailError);
-    }
+    // DON'T send confirmation email to customer here - only send when operator confirms
+    // Confirmation email will be sent when status changes to "confirmed"
+    console.log(`📋 Booking created with status "pending". Confirmation email will be sent when operator confirms.`);
     
     // Send admin notification email (check settings first)
     try {
@@ -872,6 +845,37 @@ app.put("/make-server-47a4914e/bookings/:id/accept", async (c) => {
     };
     
     await kv.set(id, updated);
+    
+    // NOW send confirmation email to customer when operator confirms
+    try {
+      console.log(`📧 Sending customer confirmation email to ${updated.email}...`);
+      const customerEmailResult = await sendConfirmationEmail({
+        name: updated.name,
+        email: updated.email,
+        phone: updated.phone,
+        licensePlate: updated.licensePlate,
+        arrivalDate: updated.arrivalDate,
+        arrivalTime: updated.arrivalTime,
+        departureDate: updated.departureDate,
+        departureTime: updated.departureTime,
+        numberOfCars: updated.numberOfCars || 1,
+        passengers: updated.passengers || 0,
+        totalPrice: updated.totalPrice,
+        bookingId: updated.bookingCode || id,
+        carKeys: updated.carKeys,
+        needsInvoice: updated.needsInvoice,
+        companyName: updated.companyName,
+        language: updated.language || 'bg',
+      });
+      
+      if (customerEmailResult.success) {
+        console.log(`✅ Customer confirmation email sent successfully to ${updated.email}`);
+      } else {
+        console.error(`❌ Failed to send customer confirmation email: ${customerEmailResult.error}`);
+      }
+    } catch (emailError) {
+      console.error(`❌ Error sending customer confirmation email:`, emailError);
+    }
     
     return c.json({ success: true, booking: updated });
   } catch (error) {

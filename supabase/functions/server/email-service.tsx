@@ -71,6 +71,8 @@ function generateConfirmationEmailHTML_BG(data: BookingEmailData): string {
       .mobile-padding { padding: 20px !important; }
       .mobile-text-large { font-size: 32px !important; }
       .nav-button-container { max-width: 100% !important; }
+      .email-header { padding: 30px 20px !important; }
+      .header-logo { max-width: 220px !important; }
     }
   </style>
 </head>
@@ -78,8 +80,8 @@ function generateConfirmationEmailHTML_BG(data: BookingEmailData): string {
   <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
     
     <!-- Header - Compact with Solid Brand Blue -->
-    <div style="background-color: #053790; padding: 18px 20px; text-align: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
-      <img src="https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/email.png" alt="SkyParking" style="max-width: 160px; height: auto; display: inline-block;" />
+    <div class="email-header" style="background-color: #053790; padding: 18px 20px; text-align: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+      <img class="header-logo" src="https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/email.png" alt="SkyParking" style="max-width: 160px; height: auto; display: inline-block;" />
     </div>
 
     <!-- Confirmation Statement -->
@@ -327,6 +329,8 @@ function generateConfirmationEmailHTML_EN(data: BookingEmailData): string {
       .mobile-padding { padding: 20px !important; }
       .mobile-text-large { font-size: 32px !important; }
       .nav-button-container { max-width: 100% !important; }
+      .email-header { padding: 30px 20px !important; }
+      .header-logo { max-width: 220px !important; }
     }
   </style>
 </head>
@@ -334,8 +338,8 @@ function generateConfirmationEmailHTML_EN(data: BookingEmailData): string {
   <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
     
     <!-- Header - Compact with Solid Brand Blue -->
-    <div style="background-color: #053790; padding: 18px 20px; text-align: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
-      <img src="https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/email.png" alt="SkyParking" style="max-width: 160px; height: auto; display: inline-block;" />
+    <div class="email-header" style="background-color: #053790; padding: 18px 20px; text-align: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+      <img class="header-logo" src="https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/email.png" alt="SkyParking" style="max-width: 160px; height: auto; display: inline-block;" />
     </div>
 
     <!-- Confirmation Statement -->
