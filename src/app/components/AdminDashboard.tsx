@@ -738,6 +738,52 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
     }
   };
 
+  // Cleanup invalid users (users with no username)
+  const cleanupInvalidUsers = async () => {
+    const invalidUsers = users.filter(user => !user.username || user.username.trim() === '');
+    
+    if (invalidUsers.length === 0) {
+      toast.info("Няма невалидни потребители за изтриване");
+      return;
+    }
+    
+    if (!confirm(`Намерени са ${invalidUsers.length} невалидни потребители. Сигурни ли сте, че искате да ги изтриете?`)) {
+      return;
+    }
+
+    const token = localStorage.getItem("skyparking-token");
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const user of invalidUsers) {
+      try {
+        const response = await fetch(
+          `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/users/${user.id}`,
+          {
+            method: "DELETE",
+            headers: {
+              "Authorization": `Bearer ${publicAnonKey}`,
+              "X-Session-Token": token || "",
+            },
+          }
+        );
+
+        const data = await response.json();
+        if (data.success) {
+          successCount++;
+        } else {
+          failCount++;
+        }
+      } catch (error) {
+        console.error("Cleanup user error:", error);
+        failCount++;
+      }
+    }
+    
+    toast.success(`Изтрити са ${successCount} невалидни потребители${failCount > 0 ? ` (${failCount} неуспешни)` : ''}`);
+    fetchUsers();
+  };
+
   // Get role badge
   const getRoleBadge = (role: string) => {
     switch (role) {
@@ -1738,7 +1784,15 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
           /* ========== USERS TAB ========== */
           <>
             {/* Users Actions Bar */}
-            <div className="mb-6 flex justify-end">
+            <div className="mb-6 flex justify-between items-center">
+              <div>
+                {users.filter(user => !user.username || user.username.trim() === '').length > 0 && (
+                  <Button onClick={cleanupInvalidUsers} variant="outline" className="border-red-500 text-red-600 hover:bg-red-50">
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Изтрий невалидни потребители ({users.filter(user => !user.username || user.username.trim() === '').length})
+                  </Button>
+                )}
+              </div>
               <Button onClick={() => { setIsAddingUser(true); setUserFormData({ role: "operator", isActive: true }); }}>
                 <Plus className="mr-2 h-4 w-4" />
                 {bg.addUser}
@@ -1752,7 +1806,9 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
               <div className="text-center py-12 text-gray-500">Няма потребители</div>
             ) : (
               <div className="grid gap-4">
-                {users.map((user) => (
+                {users
+                  .filter(user => user.username && user.username.trim() !== '') // Filter out invalid users
+                  .map((user) => (
                   <Card key={user.id} className="p-6">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
