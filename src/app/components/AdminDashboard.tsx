@@ -40,6 +40,7 @@ import type { User as UserType } from "./LoginScreen";
 import { PricingManager } from "./PricingManager";
 import { DiscountManager } from "./DiscountManager";
 import { SettingsManager } from "./SettingsManager";
+import { RevenueManagement } from "./RevenueManagement";
 import { calculatePrice } from "@/app/utils/pricing";
 
 const projectId = "dbybybmjjeeocoecaewv";
@@ -69,6 +70,7 @@ const bg = {
   discountsTab: "Промо кодове",
   settingsTab: "Настройки",
   calendarTab: "Календар",
+  revenueTab: "Приходи",
   
   // Booking details
   customer: "Клиент",
@@ -247,6 +249,52 @@ const bg = {
   mediumOccupancy: "Среден",
   highOccupancy: "Висок",
   fullOccupancy: "Пълен",
+  
+  // Revenue
+  revenueManagement: "Управление на приходи",
+  revenueOverview: "Обща информация за приходи",
+  pastRevenue: "Реализирани приходи",
+  futureRevenue: "Прогнозни приходи",
+  totalRevenue: "Обща сума",
+  cashRevenue: "В брой",
+  cardRevenue: "С карта",
+  projectedRevenue: "Прогноза",
+  selectPeriod: "Изберете период",
+  customRange: "Персонализиран период",
+  today: "Днес",
+  yesterday: "Вчера",
+  thisWeek: "Тази седмица",
+  lastWeek: "Миналата седмица",
+  thisMonth: "Този месец",
+  lastMonth: "Миналия месец",
+  last3Months: "Последните 3 месеца",
+  last6Months: "Последните 6 месеца",
+  thisYear: "Тази година",
+  next30Days: "Следващите 30 дни",
+  next90Days: "Следващите 90 дни",
+  next6Months: "Следващите 6 месеца",
+  next12Months: "Следващата година",
+  startDate: "Начална дата",
+  endDate: "Крайна дата",
+  applyFilter: "Приложи",
+  resetFilter: "Нулирай",
+  revenueByDay: "Приходи по дни",
+  revenueByOperator: "Приходи по оператори",
+  revenueByPayment: "Приходи по метод на плащане",
+  day: "Ден",
+  operator: "Оператор",
+  paymentMethod: "Метод на плащане",
+  reservations: "Резервации",
+  amount: "Сума",
+  basePrice: "Базова цена",
+  lateFees: "Такси за закъснение",
+  discounts: "Отстъпки",
+  averagePrice: "Средна цена",
+  breakdown: "Разбивка",
+  detailedBreakdown: "Детайлна разбивка",
+  noData: "Няма данни за избрания период",
+  pendingPayment: "Очаква плащане",
+  exportData: "Експортирай данни",
 };
 
 interface StatusChange {
@@ -319,7 +367,7 @@ interface CapacityDay {
   wouldFit: boolean;
 }
 
-type TabType = "new" | "confirmed" | "arrived" | "completed" | "cancelled" | "no-show" | "archive" | "all" | "users" | "pricing" | "discounts" | "settings" | "calendar";
+type TabType = "new" | "confirmed" | "arrived" | "completed" | "cancelled" | "no-show" | "archive" | "all" | "users" | "pricing" | "discounts" | "settings" | "calendar" | "revenue";
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -1374,6 +1422,17 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                   <Calendar className="inline h-5 w-5 sm:h-6 sm:w-6 mr-1" />
                   {bg.calendarTab}
                 </button>
+                <button
+                  onClick={() => setActiveTab("revenue")}
+                  className={`px-4 sm:px-6 py-4 sm:py-5 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors ${
+                    activeTab === "revenue"
+                      ? "border-green-500 text-green-600"
+                      : "border-transparent text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  <Euro className="inline h-5 w-5 sm:h-6 sm:w-6 mr-1" />
+                  {bg.revenueTab}
+                </button>
               </>
             )}
           </div>
@@ -1740,6 +1799,9 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
               </div>
             )}
           </>
+        ) : activeTab === "revenue" ? (
+          /* ========== REVENUE TAB ========== */
+          <RevenueManagement bookings={bookings} users={users} />
         ) : (
           /* ========== BOOKINGS TABS ========== */
           <>
@@ -2622,7 +2684,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                   <p className="font-semibold text-yellow-900 mb-2">{bg.capacityOverrideWarning}</p>
                   <p className="text-xs text-yellow-700">
                     Ако приемете тази резервация, ще надвишите лимита на капацитета. 
-                    Уверете се, че имате план за управление на излишните коли.
+                    Уверете се, че имате ��лан за управление на излишните коли.
                   </p>
                 </div>
               </div>
