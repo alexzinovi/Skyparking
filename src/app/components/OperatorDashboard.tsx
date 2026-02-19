@@ -1720,27 +1720,29 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                         </div>
                         <div className="flex flex-col gap-2">
                           <Button
-                            size="sm"
+                            size="lg"
                             onClick={() => handleAcceptReservation(booking)}
-                            className="bg-green-600 hover:bg-green-700"
+                            className="bg-green-600 hover:bg-green-700 h-12 text-base font-semibold"
                           >
-                            <CheckCircle className="w-4 h-4 mr-1" />
+                            <CheckCircle className="w-5 h-5 mr-2" />
                             Потвърди
                           </Button>
                           <Button
-                            size="sm"
+                            size="lg"
                             variant="destructive"
                             onClick={() => handleDeclineReservation(booking)}
+                            className="h-12 text-base font-semibold"
                           >
-                            <XCircle className="w-4 h-4 mr-1" />
+                            <XCircle className="w-5 h-5 mr-2" />
                             Откажи
                           </Button>
                           <Button
-                            size="sm"
+                            size="lg"
                             variant="outline"
                             onClick={() => handleEditReservation(booking)}
+                            className="h-12 text-base font-semibold"
                           >
-                            <Edit className="w-3 h-3 mr-1" />
+                            <Edit className="w-4 h-4 mr-2" />
                             Редактирай
                           </Button>
                         </div>

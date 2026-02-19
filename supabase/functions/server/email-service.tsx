@@ -18,6 +18,7 @@ interface BookingEmailData {
   carKeys?: boolean;
   needsInvoice?: boolean;
   companyName?: string;
+  companyEIK?: string;
   language?: 'bg' | 'en'; // Add language support
 }
 
@@ -50,7 +51,15 @@ function generateConfirmationEmailHTML_BG(data: BookingEmailData): string {
          <td style="padding: 14px 0; text-align: right;">
            <span style="color: #1f2937; font-size: 14px; font-weight: 500;">${data.companyName || 'фирма'}</span>
          </td>
-       </tr>`
+       </tr>
+       ${data.companyEIK ? `<tr>
+         <td style="padding: 14px 0;">
+           <span style="color: #6b7280; font-size: 14px;">🏢 ЕИК</span>
+         </td>
+         <td style="padding: 14px 0; text-align: right;">
+           <span style="color: #1f2937; font-size: 14px; font-weight: 500;">${data.companyEIK}</span>
+         </td>
+       </tr>` : ''}`
     : '';
 
   return `
@@ -81,7 +90,7 @@ function generateConfirmationEmailHTML_BG(data: BookingEmailData): string {
     
     <!-- Header - Compact with Solid Brand Blue -->
     <div class="email-header" style="background-color: #053790; padding: 18px 20px; text-align: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
-      <img class="header-logo" src="https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/email.png" alt="SkyParking" style="max-width: 160px; height: auto; display: inline-block;" />
+      <img class="header-logo" src="https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/email_header.png" alt="SkyParking" style="max-width: 160px; height: auto; display: inline-block;" />
     </div>
 
     <!-- Confirmation Statement -->
@@ -308,7 +317,15 @@ function generateConfirmationEmailHTML_EN(data: BookingEmailData): string {
          <td style="padding: 14px 0; text-align: right;">
            <span style="color: #1f2937; font-size: 14px; font-weight: 500;">${data.companyName || 'company'}</span>
          </td>
-       </tr>`
+       </tr>
+       ${data.companyEIK ? `<tr>
+         <td style="padding: 14px 0;">
+           <span style="color: #6b7280; font-size: 14px;">🏢 EIK</span>
+         </td>
+         <td style="padding: 14px 0; text-align: right;">
+           <span style="color: #1f2937; font-size: 14px; font-weight: 500;">${data.companyEIK}</span>
+         </td>
+       </tr>` : ''}`
     : '';
 
   return `
@@ -339,7 +356,7 @@ function generateConfirmationEmailHTML_EN(data: BookingEmailData): string {
     
     <!-- Header - Compact with Solid Brand Blue -->
     <div class="email-header" style="background-color: #053790; padding: 18px 20px; text-align: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
-      <img class="header-logo" src="https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/email.png" alt="SkyParking" style="max-width: 160px; height: auto; display: inline-block;" />
+      <img class="header-logo" src="https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/email_header.png" alt="SkyParking" style="max-width: 160px; height: auto; display: inline-block;" />
     </div>
 
     <!-- Confirmation Statement -->
