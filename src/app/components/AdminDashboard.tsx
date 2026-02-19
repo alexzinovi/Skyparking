@@ -26,6 +26,8 @@ import {
   History,
   Key,
   AlertTriangle,
+  ChevronLeft,
+  ChevronRight,
   Users,
   Shield,
   Percent,
@@ -66,6 +68,7 @@ const bg = {
   pricingTab: "Ценообразуване",
   discountsTab: "Промо кодове",
   settingsTab: "Настройки",
+  calendarTab: "Календар",
   
   // Booking details
   customer: "Клиент",
@@ -223,6 +226,27 @@ const bg = {
   userCreated: "Потребителят е създаден успешно",
   userUpdated: "Потребителят е обновен успешно",
   resetPassword: "Нова парола (оставете празно за запазване на старата)",
+  
+  // Calendar
+  previousMonth: "Предишен месец",
+  nextMonth: "Следващ месец",
+  monday: "Пон",
+  tuesday: "Вто",
+  wednesday: "Сря",
+  thursday: "Чет",
+  friday: "Пет",
+  saturday: "Съб",
+  sunday: "Нед",
+  capacityForDate: "Капацитет за",
+  carsWithKeys: "Коли с ключове",
+  carsWithoutKeys: "Коли без ключове",
+  totalCars: "Общо коли",
+  availableSpots: "Свободни места",
+  capacityStatus: "Статус на капацитета",
+  lowOccupancy: "Нисък",
+  mediumOccupancy: "Среден",
+  highOccupancy: "Висок",
+  fullOccupancy: "Пълен",
 };
 
 interface StatusChange {
@@ -295,7 +319,7 @@ interface CapacityDay {
   wouldFit: boolean;
 }
 
-type TabType = "new" | "confirmed" | "arrived" | "completed" | "cancelled" | "no-show" | "archive" | "all" | "users" | "pricing" | "discounts" | "settings";
+type TabType = "new" | "confirmed" | "arrived" | "completed" | "cancelled" | "no-show" | "archive" | "all" | "users" | "pricing" | "discounts" | "settings" | "calendar";
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -341,6 +365,10 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
   const [usersLoading, setUsersLoading] = useState(false);
   const [editingUser, setEditingUser] = useState<UserType | null>(null);
   const [isAddingUser, setIsAddingUser] = useState(false);
+  
+  // Calendar state
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [userFormData, setUserFormData] = useState<Partial<UserType & { password?: string }>>({});
 
   // Fetch all bookings
@@ -987,6 +1015,56 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
     }
   };
 
+  // Calendar helper functions
+  const getDaysInMonth = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay(); // 0 = Sunday
+    
+    return { daysInMonth, startingDayOfWeek, year, month };
+  };
+  
+  const calculateCapacityForDate = (dateStr: string) => {
+    const overlappingBookings = bookings.filter(b => {
+      if (b.status !== 'confirmed' && b.status !== 'arrived') return false;
+      
+      const bookingArrival = new Date(b.arrivalDate);
+      const bookingDeparture = new Date(b.departureDate);
+      const currentDate = new Date(dateStr);
+      
+      return bookingArrival <= currentDate && currentDate < bookingDeparture;
+    });
+    
+    let nonKeysCount = 0;
+    let keysCount = 0;
+    
+    overlappingBookings.forEach(b => {
+      const carCount = b.numberOfCars || 1;
+      if (b.carKeys) {
+        keysCount += carCount;
+      } else {
+        nonKeysCount += carCount;
+      }
+    });
+    
+    const totalCount = nonKeysCount + keysCount;
+    const percentage = totalCount > 0 ? (totalCount / 200) * 100 : 0;
+    
+    return {
+      nonKeysCount,
+      keysCount,
+      totalCount,
+      percentage,
+      isLow: percentage < 50,
+      isMedium: percentage >= 50 && percentage < 80,
+      isHigh: percentage >= 80 && percentage < 100,
+      isFull: percentage >= 100,
+    };
+  };
+
   // Get tab counts
   const getTabCounts = () => {
     return {
@@ -1285,6 +1363,17 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                   <Settings className="inline h-5 w-5 sm:h-6 sm:w-6 mr-1" />
                   {bg.settingsTab}
                 </button>
+                <button
+                  onClick={() => setActiveTab("calendar")}
+                  className={`px-4 sm:px-6 py-4 sm:py-5 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors ${
+                    activeTab === "calendar"
+                      ? "border-purple-500 text-purple-600"
+                      : "border-transparent text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  <Calendar className="inline h-5 w-5 sm:h-6 sm:w-6 mr-1" />
+                  {bg.calendarTab}
+                </button>
               </>
             )}
           </div>
@@ -1413,6 +1502,176 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
         ) : activeTab === "pricing" ? (
           /* ========== PRICING TAB ========== */
           <PricingManager sessionToken={localStorage.getItem("skyparking-token") || ""} />
+        ) : activeTab === "calendar" ? (
+          /* ========== CALENDAR TAB ========== */
+          <Card className="p-6">
+            {/* Month Navigation */}
+            <div className="flex items-center justify-between mb-6">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  const newMonth = new Date(currentMonth);
+                  newMonth.setMonth(newMonth.getMonth() - 1);
+                  setCurrentMonth(newMonth);
+                }}
+              >
+                <ChevronLeft className="h-5 w-5" />
+                {bg.previousMonth}
+              </Button>
+              
+              <h2 className="text-2xl font-bold">
+                {currentMonth.toLocaleDateString('bg-BG', { month: 'long', year: 'numeric' })}
+              </h2>
+              
+              <Button
+                variant="outline"
+                onClick={() => {
+                  const newMonth = new Date(currentMonth);
+                  newMonth.setMonth(newMonth.getMonth() + 1);
+                  setCurrentMonth(newMonth);
+                }}
+              >
+                {bg.nextMonth}
+                <ChevronRight className="h-5 w-5" />
+              </Button>
+            </div>
+
+            {/* Calendar Grid */}
+            <div className="mb-6">
+              {/* Day headers */}
+              <div className="grid grid-cols-7 gap-2 mb-2">
+                <div className="text-center font-semibold p-2">{bg.monday}</div>
+                <div className="text-center font-semibold p-2">{bg.tuesday}</div>
+                <div className="text-center font-semibold p-2">{bg.wednesday}</div>
+                <div className="text-center font-semibold p-2">{bg.thursday}</div>
+                <div className="text-center font-semibold p-2">{bg.friday}</div>
+                <div className="text-center font-semibold p-2">{bg.saturday}</div>
+                <div className="text-center font-semibold p-2">{bg.sunday}</div>
+              </div>
+
+              {/* Calendar days */}
+              <div className="grid grid-cols-7 gap-2">
+                {(() => {
+                  const { daysInMonth, startingDayOfWeek, year, month } = getDaysInMonth(currentMonth);
+                  const days = [];
+                  
+                  // Adjust for Monday start (0 = Monday in our case, but JS Date has 0 = Sunday)
+                  const adjustedStart = startingDayOfWeek === 0 ? 6 : startingDayOfWeek - 1;
+                  
+                  // Empty cells before month starts
+                  for (let i = 0; i < adjustedStart; i++) {
+                    days.push(<div key={`empty-${i}`} className="p-2"></div>);
+                  }
+                  
+                  // Days of the month
+                  for (let day = 1; day <= daysInMonth; day++) {
+                    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    const capacity = calculateCapacityForDate(dateStr);
+                    const isSelected = selectedDate === dateStr;
+                    const isToday = dateStr === new Date().toISOString().split('T')[0];
+                    
+                    let bgColor = 'bg-white';
+                    if (capacity.isFull) bgColor = 'bg-red-100 border-red-300';
+                    else if (capacity.isHigh) bgColor = 'bg-yellow-100 border-yellow-300';
+                    else if (capacity.isMedium) bgColor = 'bg-blue-100 border-blue-300';
+                    else if (capacity.totalCount > 0) bgColor = 'bg-green-100 border-green-300';
+                    
+                    days.push(
+                      <button
+                        key={day}
+                        onClick={() => setSelectedDate(dateStr)}
+                        className={`p-3 border-2 rounded-lg hover:shadow-md transition-all ${bgColor} ${
+                          isSelected ? 'ring-2 ring-blue-500 shadow-lg' : ''
+                        } ${isToday ? 'font-bold border-[#073590]' : ''}`}
+                      >
+                        <div className="text-lg font-medium mb-1">{day}</div>
+                        <div className="text-xs">
+                          {capacity.totalCount > 0 ? `${capacity.totalCount}/200` : '-'}
+                        </div>
+                      </button>
+                    );
+                  }
+                  
+                  return days;
+                })()}
+              </div>
+            </div>
+
+            {/* Legend */}
+            <div className="flex flex-wrap gap-4 text-sm mb-6 p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 bg-white border-2 rounded"></div>
+                <span>Свободно</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 bg-green-100 border-2 border-green-300 rounded"></div>
+                <span>&lt;50%</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 bg-blue-100 border-2 border-blue-300 rounded"></div>
+                <span>50-79%</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 bg-yellow-100 border-2 border-yellow-300 rounded"></div>
+                <span>80-99%</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 bg-red-100 border-2 border-red-300 rounded"></div>
+                <span>≥100%</span>
+              </div>
+            </div>
+
+            {/* Selected Date Details */}
+            {selectedDate && (() => {
+              const capacity = calculateCapacityForDate(selectedDate);
+              const availableSpots = 200 - capacity.totalCount;
+              
+              return (
+                <Card className="p-6 bg-gradient-to-br from-blue-50 to-purple-50">
+                  <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                    <Calendar className="h-6 w-6" />
+                    {bg.capacityForDate} {formatDateDisplay(selectedDate)}
+                  </h3>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="bg-white p-4 rounded-lg shadow">
+                      <div className="text-gray-600 text-sm mb-1">{bg.carsWithoutKeys}</div>
+                      <div className="text-3xl font-bold text-blue-600">{capacity.nonKeysCount}/180</div>
+                    </div>
+                    
+                    <div className="bg-white p-4 rounded-lg shadow">
+                      <div className="text-gray-600 text-sm mb-1">{bg.carsWithKeys}</div>
+                      <div className="text-3xl font-bold text-purple-600">{capacity.keysCount}/20</div>
+                    </div>
+                    
+                    <div className="bg-white p-4 rounded-lg shadow">
+                      <div className="text-gray-600 text-sm mb-1">{bg.totalCars}</div>
+                      <div className="text-3xl font-bold text-gray-800">{capacity.totalCount}/200</div>
+                    </div>
+                    
+                    <div className="bg-white p-4 rounded-lg shadow">
+                      <div className="text-gray-600 text-sm mb-1">{bg.availableSpots}</div>
+                      <div className={`text-3xl font-bold ${availableSpots <= 0 ? 'text-red-600' : availableSpots < 40 ? 'text-yellow-600' : 'text-green-600'}`}>
+                        {availableSpots}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Status Indicator */}
+                  <div className="mt-6 p-4 rounded-lg text-center text-lg font-semibold" style={{
+                    backgroundColor: capacity.isFull ? '#fee' : capacity.isHigh ? '#ffc' : capacity.isMedium ? '#def' : '#efe'
+                  }}>
+                    {bg.capacityStatus}: {
+                      capacity.isFull ? bg.fullOccupancy :
+                      capacity.isHigh ? bg.highOccupancy :
+                      capacity.isMedium ? bg.mediumOccupancy :
+                      bg.lowOccupancy
+                    }
+                  </div>
+                </Card>
+              );
+            })()}
+          </Card>
         ) : activeTab === "users" ? (
           /* ========== USERS TAB ========== */
           <>

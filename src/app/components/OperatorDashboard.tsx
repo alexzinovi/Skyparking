@@ -32,6 +32,8 @@ import {
   Undo,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   RefreshCw
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "./ui/dialog";
@@ -90,7 +92,7 @@ interface Booking {
   originalDepartureTime?: string;
 }
 
-type TabType = "new" | "confirmed" | "arriving" | "leaving" | "exits" | "summary" | "revenue" | "archive";
+type TabType = "new" | "confirmed" | "arriving" | "leaving" | "exits" | "summary" | "revenue" | "archive" | "calendar";
 type ShiftType = "day" | "night";
 
 interface OperatorDashboardProps {
@@ -343,6 +345,56 @@ function generateTimeSlots(): string[] {
   return slots;
 }
 
+// Calendar helper functions
+function getDaysInMonth(date: Date) {
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const daysInMonth = lastDay.getDate();
+  const startingDayOfWeek = firstDay.getDay(); // 0 = Sunday
+  
+  return { daysInMonth, startingDayOfWeek, year, month };
+}
+
+function calculateCapacityForDate(bookings: Booking[], dateStr: string) {
+  const overlappingBookings = bookings.filter(b => {
+    if (b.status !== 'confirmed' && b.status !== 'arrived') return false;
+    
+    const bookingArrival = new Date(b.arrivalDate);
+    const bookingDeparture = new Date(b.departureDate);
+    const currentDate = new Date(dateStr);
+    
+    return bookingArrival <= currentDate && currentDate < bookingDeparture;
+  });
+  
+  let nonKeysCount = 0;
+  let keysCount = 0;
+  
+  overlappingBookings.forEach(b => {
+    const carCount = b.numberOfCars || 1;
+    if (b.carKeys) {
+      keysCount += carCount;
+    } else {
+      nonKeysCount += carCount;
+    }
+  });
+  
+  const totalCount = nonKeysCount + keysCount;
+  const percentage = totalCount > 0 ? (totalCount / TOTAL_CAPACITY) * 100 : 0;
+  
+  return {
+    nonKeysCount,
+    keysCount,
+    totalCount,
+    percentage,
+    isLow: percentage < 50,
+    isMedium: percentage >= 50 && percentage < 80,
+    isHigh: percentage >= 80 && percentage < 100,
+    isFull: percentage >= 100,
+  };
+}
+
 export function OperatorDashboard({ onLogout, currentUser, permissions }: OperatorDashboardProps) {
   const [activeTab, setActiveTab] = useState<TabType>("arriving");
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -373,6 +425,10 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
   
   // Filter for exits tab
   const [exitDate, setExitDate] = useState(getTodayDate());
+  
+  // Calendar state
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   // Undo system
   interface UndoAction {
@@ -1572,6 +1628,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
               { id: "archive", label: "Архив", count: archivedBookings.length },
               { id: "summary", label: "Обобщение" },
               { id: "revenue", label: "Приходи" },
+              { id: "calendar", label: "Календар" },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -2095,6 +2152,180 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                     </Card>
                   ))
                 )}
+              </div>
+            )}
+
+            {/* Calendar */}
+            {activeTab === "calendar" && (
+              <div className="space-y-6">
+                <Card className="p-6">
+                  {/* Month Navigation */}
+                  <div className="flex items-center justify-between mb-6">
+                    <Button
+                      onClick={() => {
+                        const newMonth = new Date(currentMonth);
+                        newMonth.setMonth(newMonth.getMonth() - 1);
+                        setCurrentMonth(newMonth);
+                      }}
+                      className="text-lg"
+                    >
+                      <ChevronLeft className="h-5 w-5 mr-2" />
+                      Предишен
+                    </Button>
+                    
+                    <h2 className="text-2xl font-bold">
+                      {currentMonth.toLocaleDateString('bg-BG', { month: 'long', year: 'numeric' })}
+                    </h2>
+                    
+                    <Button
+                      onClick={() => {
+                        const newMonth = new Date(currentMonth);
+                        newMonth.setMonth(newMonth.getMonth() + 1);
+                        setCurrentMonth(newMonth);
+                      }}
+                      className="text-lg"
+                    >
+                      Следващ
+                      <ChevronRight className="h-5 w-5 ml-2" />
+                    </Button>
+                  </div>
+
+                  {/* Calendar Grid */}
+                  <div className="mb-6">
+                    {/* Day headers */}
+                    <div className="grid grid-cols-7 gap-2 mb-2">
+                      <div className="text-center font-semibold p-2">Пон</div>
+                      <div className="text-center font-semibold p-2">Вто</div>
+                      <div className="text-center font-semibold p-2">Сря</div>
+                      <div className="text-center font-semibold p-2">Чет</div>
+                      <div className="text-center font-semibold p-2">Пет</div>
+                      <div className="text-center font-semibold p-2">Съб</div>
+                      <div className="text-center font-semibold p-2">Нед</div>
+                    </div>
+
+                    {/* Calendar days */}
+                    <div className="grid grid-cols-7 gap-2">
+                      {(() => {
+                        const { daysInMonth, startingDayOfWeek, year, month } = getDaysInMonth(currentMonth);
+                        const days = [];
+                        
+                        // Adjust for Monday start
+                        const adjustedStart = startingDayOfWeek === 0 ? 6 : startingDayOfWeek - 1;
+                        
+                        // Empty cells before month starts
+                        for (let i = 0; i < adjustedStart; i++) {
+                          days.push(<div key={`empty-${i}`} className="p-2"></div>);
+                        }
+                        
+                        // Days of the month
+                        for (let day = 1; day <= daysInMonth; day++) {
+                          const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                          const capacity = calculateCapacityForDate(bookings, dateStr);
+                          const isSelected = selectedDate === dateStr;
+                          const isToday = dateStr === new Date().toISOString().split('T')[0];
+                          
+                          let bgColor = 'bg-white';
+                          if (capacity.isFull) bgColor = 'bg-red-100 border-red-300';
+                          else if (capacity.isHigh) bgColor = 'bg-yellow-100 border-yellow-300';
+                          else if (capacity.isMedium) bgColor = 'bg-blue-100 border-blue-300';
+                          else if (capacity.totalCount > 0) bgColor = 'bg-green-100 border-green-300';
+                          
+                          days.push(
+                            <button
+                              key={day}
+                              onClick={() => setSelectedDate(dateStr)}
+                              className={`p-3 border-2 rounded-lg hover:shadow-md transition-all ${bgColor} ${
+                                isSelected ? 'ring-2 ring-blue-500 shadow-lg' : ''
+                              } ${isToday ? 'font-bold border-[#073590]' : ''}`}
+                            >
+                              <div className="text-lg font-medium mb-1">{day}</div>
+                              <div className="text-xs">
+                                {capacity.totalCount > 0 ? `${capacity.totalCount}/${TOTAL_CAPACITY}` : '-'}
+                              </div>
+                            </button>
+                          );
+                        }
+                        
+                        return days;
+                      })()}
+                    </div>
+                  </div>
+
+                  {/* Legend */}
+                  <div className="flex flex-wrap gap-4 text-sm mb-6 p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-white border-2 rounded"></div>
+                      <span>Свободно</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-green-100 border-2 border-green-300 rounded"></div>
+                      <span>&lt;50%</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-blue-100 border-2 border-blue-300 rounded"></div>
+                      <span>50-79%</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-yellow-100 border-2 border-yellow-300 rounded"></div>
+                      <span>80-99%</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-red-100 border-2 border-red-300 rounded"></div>
+                      <span>≥100%</span>
+                    </div>
+                  </div>
+
+                  {/* Selected Date Details */}
+                  {selectedDate && (() => {
+                    const capacity = calculateCapacityForDate(bookings, selectedDate);
+                    const availableSpots = TOTAL_CAPACITY - capacity.totalCount;
+                    
+                    return (
+                      <Card className="p-6 bg-gradient-to-br from-blue-50 to-purple-50">
+                        <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                          <Calendar className="h-6 w-6" />
+                          Капацитет за {formatDateDisplay(selectedDate)}
+                        </h3>
+                        
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          <div className="bg-white p-4 rounded-lg shadow">
+                            <div className="text-gray-600 text-sm mb-1">Без ключове</div>
+                            <div className="text-3xl font-bold text-blue-600">{capacity.nonKeysCount}/{BASE_CAPACITY}</div>
+                          </div>
+                          
+                          <div className="bg-white p-4 rounded-lg shadow">
+                            <div className="text-gray-600 text-sm mb-1">С ключове</div>
+                            <div className="text-3xl font-bold text-purple-600">{capacity.keysCount}/{OVERFLOW_CAPACITY}</div>
+                          </div>
+                          
+                          <div className="bg-white p-4 rounded-lg shadow">
+                            <div className="text-gray-600 text-sm mb-1">Общо коли</div>
+                            <div className="text-3xl font-bold text-gray-800">{capacity.totalCount}/{TOTAL_CAPACITY}</div>
+                          </div>
+                          
+                          <div className="bg-white p-4 rounded-lg shadow">
+                            <div className="text-gray-600 text-sm mb-1">Свободни места</div>
+                            <div className={`text-3xl font-bold ${availableSpots <= 0 ? 'text-red-600' : availableSpots < 40 ? 'text-yellow-600' : 'text-green-600'}`}>
+                              {availableSpots}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Status Indicator */}
+                        <div className="mt-6 p-4 rounded-lg text-center text-lg font-semibold" style={{
+                          backgroundColor: capacity.isFull ? '#fee' : capacity.isHigh ? '#ffc' : capacity.isMedium ? '#def' : '#efe'
+                        }}>
+                          Статус: {
+                            capacity.isFull ? 'Пълен' :
+                            capacity.isHigh ? 'Висок' :
+                            capacity.isMedium ? 'Среден' :
+                            'Нисък'
+                          }
+                        </div>
+                      </Card>
+                    );
+                  })()}
+                </Card>
               </div>
             )}
           </>
