@@ -1716,6 +1716,52 @@ app.delete("/make-server-47a4914e/users/:id", async (c) => {
   }
 });
 
+// Diagnostic endpoint to see all users with full details (admin only)
+app.get("/make-server-47a4914e/users/diagnostic", async (c) => {
+  try {
+    const sessionToken = c.req.header("X-Session-Token");
+    if (!sessionToken) {
+      return c.json({ success: false, message: "Unauthorized" }, 401);
+    }
+    
+    const currentUser = await users.verifySessionToken(sessionToken);
+    
+    if (!currentUser || !users.hasPermission(currentUser, "manage_users")) {
+      return c.json({ success: false, message: "Insufficient permissions" }, 403);
+    }
+    
+    // Get all users with ALL fields
+    const allUsers = await users.getAllUsers();
+    
+    // Map users to show all relevant info
+    const diagnosticInfo = allUsers.map(u => ({
+      id: u.id,
+      username: u.username || "(NO USERNAME)",
+      fullName: u.fullName,
+      email: u.email,
+      role: u.role,
+      isActive: u.isActive,
+      createdBy: u.createdBy || "(NO CREATOR)",
+      createdAt: u.createdAt,
+      lastLogin: u.lastLogin || "(NEVER)",
+      // Check if should be deleted
+      shouldDelete: (!u.username || u.username.trim() === '' || (!u.isActive && !u.createdBy))
+    }));
+    
+    const invalidCount = diagnosticInfo.filter(u => u.shouldDelete).length;
+    
+    return c.json({ 
+      success: true, 
+      totalUsers: allUsers.length,
+      invalidUsers: invalidCount,
+      users: diagnosticInfo 
+    });
+  } catch (error) {
+    console.log("Diagnostic error:", error);
+    return c.json({ success: false, message: "Failed to get diagnostic info" }, 500);
+  }
+});
+
 // Cleanup invalid users (admin only) - force delete without validation
 app.post("/make-server-47a4914e/users/cleanup-invalid", async (c) => {
   try {

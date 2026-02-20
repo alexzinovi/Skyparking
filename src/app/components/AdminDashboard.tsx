@@ -758,10 +758,42 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
 
   // Clean up invalid users
   const cleanupInvalidUsers = async () => {
-    if (!confirm("Това ще изтрие всички невалидни потребители (без потребителско име или неактивни системни потребители). Продължавате ли?")) {
-      return;
+    try {
+      // First, run diagnostic to see what we're dealing with
+      const token = localStorage.getItem("skyparking-token");
+      const diagnosticResponse = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/users/diagnostic`,
+        {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${publicAnonKey}`,
+            "X-Session-Token": token || "",
+          },
+        }
+      );
+
+      const diagnosticData = await diagnosticResponse.json();
+      if (diagnosticData.success) {
+        console.log("=== USER DIAGNOSTIC ===");
+        console.log(`Total users: ${diagnosticData.totalUsers}`);
+        console.log(`Invalid users found: ${diagnosticData.invalidUsers}`);
+        console.log("All users:", diagnosticData.users);
+        console.log("Users marked for deletion:", diagnosticData.users.filter((u: any) => u.shouldDelete));
+        
+        if (diagnosticData.invalidUsers === 0) {
+          toast.info("Няма невалидни потребители за изтриване");
+          return;
+        }
+        
+        if (!confirm(`Намерени са ${diagnosticData.invalidUsers} невалидни потребители. Виж конзолата за детайли. Изтрий ли ги?`)) {
+          return;
+        }
+      }
+    } catch (error) {
+      console.error("Diagnostic error:", error);
     }
 
+    // Proceed with cleanup
     try {
       const token = localStorage.getItem("skyparking-token");
       const response = await fetch(
@@ -1781,7 +1813,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                 className="border-red-200 text-red-600 hover:bg-red-50"
               >
                 <Trash2 className="mr-2 h-4 w-4" />
-                Изчисти невалидни потребители
+                Диагностика и изчистване
               </Button>
               <Button onClick={() => { setIsAddingUser(true); setUserFormData({ role: "operator", isActive: true }); }}>
                 <Plus className="mr-2 h-4 w-4" />
