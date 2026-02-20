@@ -45,14 +45,31 @@ function generateUserId(): string {
 // Create initial admin user if none exists
 export async function ensureAdminUser() {
   console.log("🔧 Ensuring admin user exists...");
+  
+  // FIRST: Check if sandeparking user already exists via username mapping
+  const existingSandeparking = await kv.get("username:sandeparking");
+  if (existingSandeparking) {
+    console.log("✅ Admin user 'sandeparking' already exists with ID:", existingSandeparking);
+    // Verify the user record actually exists
+    const userRecord = await kv.get(`user:${existingSandeparking}`);
+    if (userRecord) {
+      console.log("✅ User record verified");
+      return;
+    } else {
+      console.log("⚠️ Username mapping exists but user record missing, will recreate");
+      // Clean up orphaned mapping
+      await kv.del("username:sandeparking");
+    }
+  }
+  
+  // Get all users to check count
   const users = await kv.getByPrefix("user:");
   console.log("Found", users.length, "existing users");
   
-  // Check if admin user with old credentials exists
+  // Check if admin user with old credentials exists and needs migration
   const oldAdminId = await kv.get("username:admin");
   if (oldAdminId) {
     console.log("Found old admin user, updating credentials...");
-    // Update old admin user to new credentials
     const oldAdmin = await kv.get(`user:${oldAdminId}`) as User;
     if (oldAdmin) {
       // Delete old username mapping
@@ -63,21 +80,15 @@ export async function ensureAdminUser() {
       oldAdmin.passwordHash = hashPassword("Sashoepichaga98!");
       
       // Save with new username mapping
-      await kv.set(`user:${oldAdminId}`, oldAdmin);
-      await kv.set("username:sandeparking", oldAdminId);
+      await kv.set(`user:${oldAdmin.id}`, oldAdmin);
+      await kv.set("username:sandeparking", oldAdmin.id);
       
-      console.log("✅ Updated admin user to new credentials: sandeparking");
+      console.log("✅ Migrated old admin user to new credentials: sandeparking");
       return;
     }
   }
   
-  // Check if sandeparking user already exists
-  const existingSandeparking = await kv.get("username:sandeparking");
-  if (existingSandeparking) {
-    console.log("✅ Admin user 'sandeparking' already exists");
-    return;
-  }
-  
+  // Only create new admin if NO users exist at all
   if (users.length === 0) {
     console.log("No users found, creating initial admin...");
     const adminId = generateUserId();
@@ -93,27 +104,13 @@ export async function ensureAdminUser() {
     };
     
     await kv.set(`user:${adminId}`, adminUser);
-    await kv.set(`username:sandeparking`, adminId); // Username -> ID mapping
+    await kv.set(`username:sandeparking`, adminId);
     
     console.log("✅ Created initial admin user: sandeparking with ID:", adminId);
   } else {
-    console.log("Users exist but no sandeparking user - creating...");
-    const adminId = generateUserId();
-    const adminUser: User = {
-      id: adminId,
-      username: "sandeparking",
-      passwordHash: hashPassword("Sashoepichaga98!"),
-      fullName: "System Administrator",
-      email: "admin@skyparking.bg",
-      role: "admin",
-      isActive: true,
-      createdAt: new Date().toISOString()
-    };
-    
-    await kv.set(`user:${adminId}`, adminUser);
-    await kv.set(`username:sandeparking`, adminId);
-    
-    console.log("✅ Created admin user: sandeparking with ID:", adminId);
+    console.log("⚠️ Users exist but no sandeparking user found - this shouldn't happen");
+    console.log("⚠️ NOT creating duplicate admin to prevent issues");
+    console.log("⚠️ Please check your user records manually or delete all users to recreate");
   }
 }
 
@@ -245,7 +242,7 @@ export async function deleteUser(userId: string): Promise<{ success: boolean; me
       const allUsers = await getAllUsers();
       const adminCount = allUsers.filter(u => u.role === "admin" && u.isActive).length;
       if (adminCount <= 1) {
-        return { success: false, message: "Не може д�� изтриете последния администратор" };
+        return { success: false, message: "Не може да изтриете последния администратор" };
       }
     }
     

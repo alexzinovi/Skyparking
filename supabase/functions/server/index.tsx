@@ -1733,10 +1733,25 @@ app.post("/make-server-47a4914e/users/cleanup-invalid", async (c) => {
     // Get all users
     const allUsers = await users.getAllUsers();
     
-    // Find invalid users (no username or empty username)
-    const invalidUsers = allUsers.filter(user => !user.username || user.username.trim() === '');
+    // Find invalid users (no username or empty username, or inactive users created by system)
+    const invalidUsers = allUsers.filter(user => {
+      // Invalid if no username or empty username
+      if (!user.username || user.username.trim() === '') {
+        return true;
+      }
+      // Invalid if user is inactive AND was created by system (no createdBy field)
+      if (!user.isActive && !user.createdBy) {
+        return true;
+      }
+      return false;
+    });
     
-    console.log(`Found ${invalidUsers.length} invalid users:`, invalidUsers.map(u => ({ id: u.id, username: u.username })));
+    console.log(`Found ${invalidUsers.length} invalid users:`, invalidUsers.map(u => ({ 
+      id: u.id, 
+      username: u.username, 
+      isActive: u.isActive,
+      createdBy: u.createdBy 
+    })));
     
     let successCount = 0;
     let failCount = 0;

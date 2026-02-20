@@ -756,6 +756,38 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
     }
   };
 
+  // Clean up invalid users
+  const cleanupInvalidUsers = async () => {
+    if (!confirm("Това ще изтрие всички невалидни потребители (без потребителско име или неактивни системни потребители). Продължавате ли?")) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("skyparking-token");
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/users/cleanup-invalid`,
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${publicAnonKey}`,
+            "X-Session-Token": token || "",
+          },
+        }
+      );
+
+      const data = await response.json();
+      if (data.success) {
+        toast.success(data.message || `Изтрити са ${data.deleted} невалидни потребители`);
+        fetchUsers();
+      } else {
+        toast.error(data.message || "Грешка при изчистване на невалидни потребители");
+      }
+    } catch (error) {
+      console.error("Cleanup error:", error);
+      toast.error("Грешка при изчистване на невалидни потребители");
+    }
+  };
+
   // ============= END USER MANAGEMENT FUNCTIONS =============
 
   // Delete booking
@@ -1742,7 +1774,15 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
           /* ========== USERS TAB ========== */
           <>
             {/* Users Actions Bar */}
-            <div className="mb-6 flex justify-end items-center">
+            <div className="mb-6 flex justify-between items-center gap-3">
+              <Button 
+                onClick={cleanupInvalidUsers} 
+                variant="outline"
+                className="border-red-200 text-red-600 hover:bg-red-50"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Изчисти невалидни потребители
+              </Button>
               <Button onClick={() => { setIsAddingUser(true); setUserFormData({ role: "operator", isActive: true }); }}>
                 <Plus className="mr-2 h-4 w-4" />
                 {bg.addUser}
