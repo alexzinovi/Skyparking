@@ -2,21 +2,45 @@ import { useLanguage } from "@/app/components/LanguageContext";
 import { Button } from "@/app/components/ui/button";
 import { useState } from "react";
 import { X } from "lucide-react";
+import { useNavigate, useLocation } from "react-router";
 
 export function Header() {
   const { t, language, setLanguage } = useLanguage();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const scrollToSection = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth", block: "start" });
+    // If not on homepage, navigate to homepage first
+    if (location.pathname !== "/") {
+      navigate("/");
+      // Wait for navigation then scroll
+      setTimeout(() => {
+        const element = document.getElementById(id);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 100);
+    } else {
+      const element = document.getElementById(id);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     }
-    setIsMenuOpen(false); // Close menu after clicking
+    setIsMenuOpen(false);
+  };
+
+  const handleNavigate = (path: string) => {
+    navigate(path);
+    setIsMenuOpen(false);
   };
 
   const handleLogoClick = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (location.pathname === "/") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      navigate("/");
+    }
   };
 
   return (
@@ -126,28 +150,40 @@ export function Header() {
           {/* Navigation Items */}
           <nav className="flex flex-col px-6 py-4 gap-4">
             <button
-              onClick={() => scrollToSection("features")}
+              onClick={() => handleNavigate("/services")}
               className="text-white hover:text-[#ffd700] transition-colors font-medium text-left py-3 px-4 hover:bg-white/5 rounded-lg"
             >
-              {t("navFeatures")}
+              {t("navServices")}
             </button>
             <button
-              onClick={() => scrollToSection("booking")}
+              onClick={() => handleNavigate("/pricing")}
               className="text-white hover:text-[#ffd700] transition-colors font-medium text-left py-3 px-4 hover:bg-white/5 rounded-lg"
             >
-              {t("navBooking")}
+              {t("navPricing")}
             </button>
             <button
-              onClick={() => scrollToSection("contact")}
+              onClick={() => handleNavigate("/how-it-works")}
+              className="text-white hover:text-[#ffd700] transition-colors font-medium text-left py-3 px-4 hover:bg-white/5 rounded-lg"
+            >
+              {t("navHowItWorks")}
+            </button>
+            <button
+              onClick={() => handleNavigate("/faq")}
+              className="text-white hover:text-[#ffd700] transition-colors font-medium text-left py-3 px-4 hover:bg-white/5 rounded-lg"
+            >
+              {t("navFAQ")}
+            </button>
+            <button
+              onClick={() => handleNavigate("/contact")}
               className="text-white hover:text-[#ffd700] transition-colors font-medium text-left py-3 px-4 hover:bg-white/5 rounded-lg"
             >
               {t("navContact")}
             </button>
             <button
-              onClick={() => scrollToSection("location")}
+              onClick={() => handleNavigate("/booking")}
               className="text-white hover:text-[#ffd700] transition-colors font-medium text-left py-3 px-4 hover:bg-white/5 rounded-lg"
             >
-              {t("navLocation")}
+              {t("navBooking")}
             </button>
           </nav>
         </div>

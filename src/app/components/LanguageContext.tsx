@@ -21,6 +21,10 @@ const translations = {
     navBooking: "Резервация",
     navContact: "Контакти",
     navLocation: "Локация",
+    navServices: "Услуги",
+    navPricing: "Цени",
+    navHowItWorks: "Как работи",
+    navFAQ: "Често задавани въпроси",
     callNow: "Обади се",
     
     // Features
@@ -149,7 +153,7 @@ const translations = {
     discount: "отстъпка",
     
     // Toast Messages
-    checkDates: "Моля, проверете д��тите и часовете",
+    checkDates: "Моля, проверете дтите и часовете",
     bookingConfirmed: "Резервация потвърдена! Сума: €",
     paymentProcessing: ". Обработка на плащането...",
     inquirySuccess: "Благодарим за вашето запитване! Ще се свържем с вас скоро.",
@@ -195,6 +199,10 @@ const translations = {
     navBooking: "Booking",
     navContact: "Contact",
     navLocation: "Location",
+    navServices: "Services",
+    navPricing: "Pricing",
+    navHowItWorks: "How It Works",
+    navFAQ: "FAQ",
     callNow: "Call Now",
     
     // Features

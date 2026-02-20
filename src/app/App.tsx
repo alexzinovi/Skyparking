@@ -4,7 +4,6 @@ import { Toaster } from "sonner";
 import { AdminDashboard } from "./components/AdminDashboard";
 import { OperatorDashboard } from "./components/OperatorDashboard";
 import { LoginScreen } from "./components/LoginScreen";
-import { LanguageProvider } from "./components/LanguageContext";
 import { router } from "./routes";
 
 interface User {
@@ -137,11 +136,9 @@ export default function App() {
 
   // Render main site with LanguageProvider - wrap everything here
   return (
-    <LanguageProvider>
-      <div className="min-h-screen bg-white">
-        <Toaster />
-        <RouterProvider router={router} />
-      </div>
-    </LanguageProvider>
+    <div className="min-h-screen bg-white">
+      <Toaster />
+      <RouterProvider router={router} />
+    </div>
   );
 }
