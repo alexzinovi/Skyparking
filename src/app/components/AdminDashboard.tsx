@@ -193,7 +193,7 @@ const bg = {
   carKeysNotesPlaceholder: "Напр.: Ключове оставени в офиса, паркирана в зона B...",
   
   // Capacity
-  capacityWarning: "⚠️ Предупреждение за ка��ацитет",
+  capacityWarning: "⚠️ Предупреждение за ка���ацитет",
   capacityExceeded: "Капацитетът е надвишен",
   capacityDetails: "Детайли за капацитета",
   date: "Дата",
@@ -808,7 +808,16 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
       );
 
       const data = await response.json();
+      console.log("=== CLEANUP RESPONSE ===", data);
+      
       if (data.success) {
+        console.log(`✅ Deleted: ${data.deleted}, Failed: ${data.failed}`);
+        if (data.deletedUsers) {
+          console.log("Deleted users:", data.deletedUsers);
+        }
+        if (data.failedUsers) {
+          console.log("Failed users:", data.failedUsers);
+        }
         toast.success(data.message || `Изтрити са ${data.deleted} невалидни потребители`);
         fetchUsers();
       } else {
