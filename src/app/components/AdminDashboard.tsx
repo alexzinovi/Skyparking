@@ -713,6 +713,13 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
 
   // Delete user
   const deleteUser = async (userId: string) => {
+    // Validate userId before attempting delete
+    if (!userId || userId === 'undefined' || userId.trim() === '') {
+      console.error("❌ Attempted to delete user with invalid ID:", userId);
+      toast.error("Невалиден потребител - не може да се изтрие");
+      return;
+    }
+    
     if (!confirm(bg.deleteUserConfirm)) return;
 
     const token = localStorage.getItem("skyparking-token");
@@ -1858,21 +1865,25 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setEditingUser(user);
-                            setUserFormData({ ...user, password: undefined });
-                          }}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        {user.id !== currentUser.id && (
+                        {user.id && user.username && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setEditingUser(user);
+                              setUserFormData({ ...user, password: undefined });
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {user.id && user.id !== currentUser.id && (
                           <Button
                             variant="destructive"
                             size="sm"
                             onClick={() => deleteUser(user.id)}
+                            disabled={!user.username || user.username.trim() === ''}
+                            title={!user.username ? "Невалиден потребител - изтрийте чрез 'Диагностика и изчистване'" : ""}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>

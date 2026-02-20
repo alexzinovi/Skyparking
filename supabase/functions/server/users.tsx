@@ -46,7 +46,10 @@ function generateUserId(): string {
 export async function ensureAdminUser() {
   console.log("🔧 Ensuring admin user exists...");
   
-  // FIRST: Check if sandeparking user already exists via username mapping
+  // FIRST: Clean up any null/invalid users before doing anything else
+  await cleanupInvalidUsers();
+  
+  // THEN: Check if sandeparking user already exists via username mapping
   const existingSandeparking = await kv.get("username:sandeparking");
   if (existingSandeparking) {
     console.log("✅ Admin user 'sandeparking' already exists with ID:", existingSandeparking);
@@ -100,7 +103,8 @@ export async function ensureAdminUser() {
       email: "admin@skyparking.bg",
       role: "admin",
       isActive: true,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      createdBy: "System"
     };
     
     await kv.set(`user:${adminId}`, adminUser);
@@ -111,6 +115,54 @@ export async function ensureAdminUser() {
     console.log("⚠️ Users exist but no sandeparking user found - this shouldn't happen");
     console.log("⚠️ NOT creating duplicate admin to prevent issues");
     console.log("⚠️ Please check your user records manually or delete all users to recreate");
+  }
+}
+
+// Clean up invalid users (called on server startup)
+async function cleanupInvalidUsers(): Promise<void> {
+  try {
+    const allUsers = await kv.getByPrefix("user:");
+    
+    const invalidUsers = allUsers.filter(user => {
+      // Invalid if no username or empty username
+      if (!user.username || user.username.trim() === '') {
+        return true;
+      }
+      // Invalid if user is inactive AND was created by system (no createdBy field)
+      if (!user.isActive && !user.createdBy) {
+        return true;
+      }
+      return false;
+    });
+    
+    if (invalidUsers.length === 0) {
+      console.log("✅ No invalid users found during startup cleanup");
+      return;
+    }
+    
+    console.log(`🧹 Found ${invalidUsers.length} invalid users, cleaning up...`);
+    
+    for (const user of invalidUsers) {
+      try {
+        console.log(`🗑️ Deleting invalid user: ID=${user.id}, username="${user.username || '(empty)'}"`);
+        
+        // Delete user record
+        await kv.del(`user:${user.id}`);
+        
+        // Delete username mapping if it exists
+        if (user.username && user.username.trim() !== '') {
+          await kv.del(`username:${user.username}`);
+        }
+        
+        console.log(`✅ Deleted invalid user: ${user.id}`);
+      } catch (error) {
+        console.error(`❌ Failed to delete invalid user ${user.id}:`, error);
+      }
+    }
+    
+    console.log(`✅ Startup cleanup complete: removed ${invalidUsers.length} invalid users`);
+  } catch (error) {
+    console.error("❌ Startup cleanup error:", error);
   }
 }
 
@@ -163,6 +215,30 @@ export async function createUser(userData: {
   role: UserRole;
 }, createdBy: string): Promise<{ success: boolean; message?: string; user?: User }> {
   try {
+    // CRITICAL: Validate that username is not null/undefined/empty
+    if (!userData.username || userData.username.trim() === '') {
+      console.error("❌ Attempted to create user with invalid username:", userData.username);
+      return { success: false, message: "Потребителското име е задължително" };
+    }
+    
+    // Validate password
+    if (!userData.password || userData.password.trim() === '') {
+      console.error("❌ Attempted to create user with invalid password");
+      return { success: false, message: "Паролата е задължителна" };
+    }
+    
+    // Validate fullName
+    if (!userData.fullName || userData.fullName.trim() === '') {
+      console.error("❌ Attempted to create user with invalid fullName");
+      return { success: false, message: "Пълното име е задължително" };
+    }
+    
+    // Validate email
+    if (!userData.email || userData.email.trim() === '') {
+      console.error("❌ Attempted to create user with invalid email");
+      return { success: false, message: "Имейлът е задължителен" };
+    }
+    
     // Check if username already exists
     const existingUserId = await kv.get(`username:${userData.username}`);
     if (existingUserId) {
@@ -177,15 +253,17 @@ export async function createUser(userData: {
     const userId = generateUserId();
     const user: User = {
       id: userId,
-      username: userData.username,
+      username: userData.username.trim(),
       passwordHash: hashPassword(userData.password),
-      fullName: userData.fullName,
-      email: userData.email,
+      fullName: userData.fullName.trim(),
+      email: userData.email.trim(),
       role: userData.role,
       isActive: true,
       createdAt: new Date().toISOString(),
       createdBy
     };
+    
+    console.log(`✅ Creating new user: ${user.username} (${user.role}) by ${createdBy}`);
     
     await kv.set(`user:${userId}`, user);
     await kv.set(`username:${userData.username}`, userId);
