@@ -365,7 +365,8 @@ function calculateCapacityForDate(bookings: Booking[], dateStr: string) {
     const bookingDeparture = new Date(b.departureDate);
     const currentDate = new Date(dateStr);
     
-    return bookingArrival <= currentDate && currentDate < bookingDeparture;
+    // Include departure date - a booking occupies space from arrival through departure (inclusive)
+    return bookingArrival <= currentDate && currentDate <= bookingDeparture;
   });
   
   let nonKeysCount = 0;
@@ -380,6 +381,17 @@ function calculateCapacityForDate(bookings: Booking[], dateStr: string) {
     }
   });
   
+  // Calculate leaving count - bookings departing on this date (same logic as Exits tab)
+  const leavingBookings = bookings.filter(b => {
+    // Exclude cancelled, no-show, and already checked-out
+    if (b.status === 'cancelled' || b.status === 'no-show' || b.status === 'checked-out') return false;
+    
+    // Check if departure date matches
+    return b.departureDate === dateStr;
+  });
+  
+  const leavingCount = leavingBookings.reduce((sum, b) => sum + (b.numberOfCars || 1), 0);
+  
   const totalCount = nonKeysCount + keysCount;
   const percentage = totalCount > 0 ? (totalCount / TOTAL_CAPACITY) * 100 : 0;
   
@@ -387,6 +399,7 @@ function calculateCapacityForDate(bookings: Booking[], dateStr: string) {
     nonKeysCount,
     keysCount,
     totalCount,
+    leavingCount,
     percentage,
     isLow: percentage < 50,
     isMedium: percentage >= 50 && percentage < 80,
@@ -2289,7 +2302,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                           Капацитет за {formatDateDisplay(selectedDate)}
                         </h3>
                         
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                           <div className="bg-white p-4 rounded-lg shadow">
                             <div className="text-gray-600 text-sm mb-1">Без ключове</div>
                             <div className="text-3xl font-bold text-blue-600">{capacity.nonKeysCount}/{BASE_CAPACITY}</div>
@@ -2310,6 +2323,11 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                             <div className={`text-3xl font-bold ${availableSpots <= 0 ? 'text-red-600' : availableSpots < 40 ? 'text-yellow-600' : 'text-green-600'}`}>
                               {availableSpots}
                             </div>
+                          </div>
+                          
+                          <div className="bg-white p-4 rounded-lg shadow">
+                            <div className="text-gray-600 text-sm mb-1">Напускащи днес</div>
+                            <div className="text-3xl font-bold text-orange-600">{capacity.leavingCount}</div>
                           </div>
                         </div>
                         
