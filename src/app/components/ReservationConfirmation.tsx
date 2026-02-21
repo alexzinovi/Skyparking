@@ -124,7 +124,7 @@ export function ReservationConfirmation({ booking, onBackToHome }: ReservationCo
   ].filter(Boolean);
 
   return (
-    <div className="min-h-screen bg-gray-100 py-12 px-4" ref={containerRef}>
+    <div className="min-h-screen bg-gray-100 pt-24 md:pt-32 pb-12 px-4" ref={containerRef}>{/* Added pt-24 md:pt-32 for header clearance */}
       <div className="max-w-4xl mx-auto">
         {/* Success Header */}
         <div className="text-center mb-8">

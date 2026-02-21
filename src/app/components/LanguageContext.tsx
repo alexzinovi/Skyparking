@@ -25,6 +25,7 @@ const translations = {
     navPricing: "Цени",
     navHowItWorks: "Как работи",
     navFAQ: "Често задавани въпроси",
+    navAbout: "За нас",
     callNow: "Обади се",
     
     // Features
@@ -134,7 +135,7 @@ const translations = {
     
     // Contact Form
     haveQuestions: "Имате въпроси?",
-    inquiryDesc: "Изпратете ни вашето запитване и ще отговорим възможно най-скоро",
+    inquiryDesc: "Изпратете ни вашето запитване и ще ��тговорим възможно най-скоро",
     name: "Име",
     phoneOptional: "Телефонен номер (по избор)",
     message: "Съобщение",
@@ -203,6 +204,7 @@ const translations = {
     navPricing: "Pricing",
     navHowItWorks: "How It Works",
     navFAQ: "FAQ",
+    navAbout: "About Us",
     callNow: "Call Now",
     
     // Features

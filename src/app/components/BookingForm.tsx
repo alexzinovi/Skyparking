@@ -289,11 +289,6 @@ export function BookingForm() {
     <section id="booking" className="py-16 bg-gray-100">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">{t("reservation")}</h2>
-            <p className="text-sm text-gray-500">{t("reservationSubtitle")}</p>
-          </div>
-
           <Card className="p-6 md:p-12 shadow-lg bg-white">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
               {/* Number of Cars Selection */}

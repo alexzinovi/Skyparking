@@ -52,7 +52,7 @@ export function HowItWorksPage() {
     <div className="min-h-screen bg-gray-50">
       <Header />
       
-      <div className="pt-24 pb-16 px-4">
+      <div className="pt-24 md:pt-32 pb-16 px-4">{/* Added md:pt-32 for desktop to clear the taller header */}
         <div className="max-w-5xl mx-auto">
           <h1 className="text-4xl font-bold text-center mb-4" style={{ color: '#073590' }}>
             {language === 'bg' ? 'Как Работи SkyParking?' : 'How Does SkyParking Work?'}
@@ -196,7 +196,7 @@ export function HowItWorksPage() {
                 </h4>
                 <p className="text-gray-700">
                   {language === 'bg'
-                    ? 'Трансферът до летището отнема само 5 минути. Препоръчваме да пристиг��ете 45-60 минути преди полета.'
+                    ? 'Трансферът до летището отнема само 5 минути. Препоръчваме да пристигете 45-60 минути преди полета.'
                     : 'The transfer to the airport takes only 5 minutes. We recommend arriving 45-60 minutes before your flight.'}
                 </p>
               </div>

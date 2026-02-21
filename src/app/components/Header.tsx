@@ -51,12 +51,12 @@ export function Header() {
             {/* Hamburger Menu Button - Left */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="flex flex-col gap-1.5 w-8 h-8 justify-center items-center transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-[#ffd700] rounded-lg p-1"
+              className="flex flex-col gap-1.5 w-10 h-10 justify-center items-center transition-all hover:scale-110 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#ffd700] rounded-2xl p-2 backdrop-blur-sm"
               aria-label="Toggle menu"
             >
-              <span className="w-6 h-0.5 bg-[#ffd700] rounded-full"></span>
-              <span className="w-6 h-0.5 bg-[#ffd700] rounded-full"></span>
-              <span className="w-6 h-0.5 bg-[#ffd700] rounded-full"></span>
+              <span className="w-6 h-1 bg-[#ffd700] rounded-full shadow-sm"></span>
+              <span className="w-6 h-1 bg-[#ffd700] rounded-full shadow-sm"></span>
+              <span className="w-6 h-1 bg-[#ffd700] rounded-full shadow-sm"></span>
             </button>
 
             {/* Logo - Center */}
@@ -150,6 +150,12 @@ export function Header() {
           {/* Navigation Items */}
           <nav className="flex flex-col px-6 py-4 gap-4">
             <button
+              onClick={() => handleNavigate("/booking")}
+              className="text-white hover:text-[#ffd700] transition-colors font-medium text-left py-3 px-4 hover:bg-white/5 rounded-lg"
+            >
+              {t("navBooking")}
+            </button>
+            <button
               onClick={() => handleNavigate("/services")}
               className="text-white hover:text-[#ffd700] transition-colors font-medium text-left py-3 px-4 hover:bg-white/5 rounded-lg"
             >
@@ -174,16 +180,16 @@ export function Header() {
               {t("navFAQ")}
             </button>
             <button
+              onClick={() => handleNavigate("/about")}
+              className="text-white hover:text-[#ffd700] transition-colors font-medium text-left py-3 px-4 hover:bg-white/5 rounded-lg"
+            >
+              {t("navAbout")}
+            </button>
+            <button
               onClick={() => handleNavigate("/contact")}
               className="text-white hover:text-[#ffd700] transition-colors font-medium text-left py-3 px-4 hover:bg-white/5 rounded-lg"
             >
               {t("navContact")}
-            </button>
-            <button
-              onClick={() => handleNavigate("/booking")}
-              className="text-white hover:text-[#ffd700] transition-colors font-medium text-left py-3 px-4 hover:bg-white/5 rounded-lg"
-            >
-              {t("navBooking")}
             </button>
           </nav>
         </div>

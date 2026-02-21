@@ -17,7 +17,7 @@ export function ContactPage() {
     <div className="min-h-screen bg-gray-50">
       <Header />
       
-      <div className="pt-24 pb-16 px-4">
+      <div className="pt-24 md:pt-32 pb-16 px-4">{/* Added md:pt-32 for desktop to clear the taller header */}
         <div className="max-w-5xl mx-auto">
           <h1 className="text-4xl font-bold text-center mb-4" style={{ color: '#073590' }}>
             {language === 'bg' ? 'Свържете се с Нас' : 'Contact Us'}

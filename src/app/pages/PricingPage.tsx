@@ -16,7 +16,7 @@ export function PricingPage() {
     <div className="min-h-screen bg-gray-50">
       <Header />
       
-      <div className="pt-24 pb-16 px-4">
+      <div className="pt-24 md:pt-32 pb-16 px-4">{/* Added md:pt-32 for desktop to clear the taller header */}
         <div className="max-w-4xl mx-auto">
           <h1 className="text-4xl font-bold text-center mb-4" style={{ color: '#073590' }}>
             {language === 'bg' ? 'Цени за Паркиране' : 'Parking Prices'}
@@ -60,17 +60,17 @@ export function PricingPage() {
                   <svg className="w-6 h-6 mr-2 flex-shrink-0" style={{ color: '#f1c933' }} fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  <span>{language === 'bg' ? 'Охранявана територия' : 'Secured premises'}</span>
+                  <span>{language === 'bg' ? 'Онлайн резервация' : 'Online booking'}</span>
                 </li>
                 <li className="flex items-start">
                   <svg className="w-6 h-6 mr-2 flex-shrink-0" style={{ color: '#f1c933' }} fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  <span>{language === 'bg' ? 'Онлайн резервация' : 'Online booking'}</span>
+                  <span>{language === 'bg' ? 'Без предплащане' : 'No prepayment required'}</span>
                 </li>
               </ul>
               <div className="bg-yellow-50 rounded-lg p-4 border-2" style={{ borderColor: '#f1c933' }}>
-                <p className="text-sm font-semibold text-center" style={{ color: '#073590' }}>
+                <p className="font-semibold text-center text-[13px]" style={{ color: '#073590' }}>
                   {language === 'bg' 
                     ? 'За по-дълги периоди (3 седмици и повече) моля обадете се на +359 886 616 991'
                     : 'For longer periods (3 weeks and above) please call us at +359 886 616 991'}

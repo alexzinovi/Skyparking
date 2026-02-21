@@ -8,6 +8,7 @@ import { ServicesPage } from "./pages/ServicesPage";
 import { HowItWorksPage } from "./pages/HowItWorksPage";
 import { BookingPage } from "./pages/BookingPage";
 import { FAQPage } from "./pages/FAQPage";
+import { AboutPage } from "./pages/AboutPage";
 import { LanguageProvider } from "./components/LanguageContext";
 
 // Root layout that wraps all routes with LanguageProvider
@@ -66,6 +67,10 @@ export const router = createBrowserRouter([
       {
         path: "/faq",
         element: <FAQPage />,
+      },
+      {
+        path: "/about",
+        element: <AboutPage />,
       },
       {
         path: "*",

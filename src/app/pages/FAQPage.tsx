@@ -246,23 +246,18 @@ export function FAQPage() {
       {/* Header */}
       <Header />
       
-      {/* Page Header */}
-      <div className="pt-32 pb-8 bg-[#073590]">
-        <div className="container mx-auto px-4">
-          <h1 className="text-3xl md:text-4xl font-bold text-white text-center mb-3">
+      <div className="pt-24 md:pt-32 pb-16 px-4">
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-4xl font-bold text-center mb-4" style={{ color: '#073590' }}>
             {language === 'bg' ? 'Често задавани въпроси' : 'Frequently Asked Questions'}
           </h1>
-          <p className="text-white/90 text-center max-w-2xl mx-auto">
+          
+          <p className="text-center text-gray-600 mb-12 text-lg">
             {language === 'bg' 
               ? 'Отговори на най-често задаваните въпроси за паркиране в SkyParking'
               : 'Answers to the most frequently asked questions about parking at SkyParking'}
           </p>
-        </div>
-      </div>
-
-      {/* FAQ Content */}
-      <div className="py-12">
-        <div className="container mx-auto px-4 max-w-4xl">
+          
           <div className="space-y-4">
             {faqData.map((faq, index) => (
               <div 
