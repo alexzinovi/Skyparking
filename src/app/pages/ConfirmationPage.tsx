@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from "react-router";
 import { ReservationConfirmation } from "../components/ReservationConfirmation";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useLanguage } from "../components/LanguageContext";
 import { Header } from "../components/Header";
 
@@ -16,6 +16,7 @@ export function ConfirmationPage() {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const booking = location.state?.booking;
+  const conversionFired = useRef(false);
 
   // If no booking data, redirect to home
   useEffect(() => {
@@ -24,16 +25,16 @@ export function ConfirmationPage() {
     }
   }, [booking, navigate]);
 
-  // Track conversion when page loads with valid booking
+  // Track conversion when page loads with valid booking (fire only once)
   useEffect(() => {
-    if (booking && typeof window.gtag === 'function') {
-      // Fire the conversion event
+    if (booking && typeof window.gtag === 'function' && !conversionFired.current) {
+      // Fire the conversion event with the new conversion label
       window.gtag('event', 'conversion', {
-        'send_to': 'AW-17964080992/XDtCCOW8vfsbEOC--PVC',
+        'send_to': 'AW-17964080992/jT2ECNHH1_wbEOC--PVC',
         'value': 1.0,
-        'currency': 'EUR',
-        'transaction_id': ''
+        'currency': 'EUR'
       });
+      conversionFired.current = true;
       console.log('Google Ads conversion event fired for booking:', booking.confirmationNumber);
     }
   }, [booking]);
