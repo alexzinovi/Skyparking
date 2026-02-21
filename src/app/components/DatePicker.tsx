@@ -59,7 +59,12 @@ export function DatePicker({ value, onChange, minDate, label, error, id }: DateP
             onSelect={handleSelect}
             locale={locale}
             disabled={(date) => {
-              if (minDate && date < minDate) return true;
+              if (minDate) {
+                // Compare dates only (ignore time) - allow today, block past dates
+                const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+                const minDateOnly = new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate());
+                if (dateOnly < minDateOnly) return true;
+              }
               return false;
             }}
             initialFocus

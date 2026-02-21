@@ -1204,7 +1204,8 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
       const bookingDeparture = new Date(b.departureDate);
       const currentDate = new Date(dateStr);
       
-      return bookingArrival <= currentDate && currentDate < bookingDeparture;
+      // Include departure date - a booking occupies space from arrival through departure (inclusive)
+      return bookingArrival <= currentDate && currentDate <= bookingDeparture;
     });
     
     let nonKeysCount = 0;
