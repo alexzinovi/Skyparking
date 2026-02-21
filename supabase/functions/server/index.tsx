@@ -338,8 +338,8 @@ app.get("/make-server-47a4914e/health", (c) => {
 // Admin login endpoint with security
 app.post("/make-server-47a4914e/admin/login", async (c) => {
   try {
-    // Ensure admin user exists
-    await users.ensureAdminUser();
+    // DO NOT call ensureAdminUser() here - it only runs on server startup
+    // Calling it on every login was creating duplicate null users!
     
     const { username, password } = await c.req.json();
     
@@ -1595,6 +1595,111 @@ app.get("/make-server-47a4914e/auth/verify", async (c) => {
   } catch (error) {
     console.log("Verify token error:", error);
     return c.json({ success: false, message: "Token verification error" }, 500);
+  }
+});
+
+// EMERGENCY: Force cleanup all invalid users immediately (admin only)
+app.post("/make-server-47a4914e/users/emergency-cleanup", async (c) => {
+  try {
+    const sessionToken = c.req.header("X-Session-Token");
+    if (!sessionToken) {
+      return c.json({ success: false, message: "Unauthorized" }, 401);
+    }
+    
+    const currentUser = await users.verifySessionToken(sessionToken);
+    
+    if (!currentUser || !users.hasPermission(currentUser, "manage_users")) {
+      return c.json({ success: false, message: "Insufficient permissions" }, 403);
+    }
+    
+    console.log("🚨 EMERGENCY CLEANUP INITIATED");
+    
+    // Get ALL entries from KV store with "user:" prefix
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL"),
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),
+    );
+    
+    const { data: allUserEntries, error } = await supabase
+      .from("kv_store_47a4914e")
+      .select("key, value")
+      .like("key", "user:%");
+    
+    if (error) {
+      console.error("Error fetching users:", error);
+      return c.json({ success: false, message: "Failed to fetch users" }, 500);
+    }
+    
+    console.log(`📊 Found ${allUserEntries?.length || 0} total user entries`);
+    
+    const invalidUserKeys: string[] = [];
+    const validUsers: any[] = [];
+    
+    for (const entry of allUserEntries || []) {
+      const user = entry.value;
+      const isInvalid = !user.username || user.username.trim() === '' || (!user.isActive && !user.createdBy);
+      
+      if (isInvalid) {
+        console.log(`❌ INVALID USER: key=${entry.key}, username="${user.username || '(null)'}", id=${user.id || '(no id)'}`);
+        invalidUserKeys.push(entry.key);
+      } else {
+        validUsers.push(user);
+      }
+    }
+    
+    console.log(`🗑️ Deleting ${invalidUserKeys.length} invalid users...`);
+    
+    // Delete all invalid users in one batch operation
+    if (invalidUserKeys.length > 0) {
+      const { error: deleteError } = await supabase
+        .from("kv_store_47a4914e")
+        .delete()
+        .in("key", invalidUserKeys);
+      
+      if (deleteError) {
+        console.error("Error deleting invalid users:", deleteError);
+        return c.json({ success: false, message: "Failed to delete invalid users" }, 500);
+      }
+    }
+    
+    // Also clean up any orphaned username mappings
+    const { data: usernameMappings } = await supabase
+      .from("kv_store_47a4914e")
+      .select("key, value")
+      .like("key", "username:%");
+    
+    const orphanedMappings: string[] = [];
+    for (const mapping of usernameMappings || []) {
+      const userId = mapping.value;
+      const userExists = validUsers.some(u => u.id === userId);
+      
+      if (!userExists) {
+        console.log(`🗑️ Orphaned username mapping: ${mapping.key} -> ${userId}`);
+        orphanedMappings.push(mapping.key);
+      }
+    }
+    
+    if (orphanedMappings.length > 0) {
+      await supabase
+        .from("kv_store_47a4914e")
+        .delete()
+        .in("key", orphanedMappings);
+      
+      console.log(`✅ Deleted ${orphanedMappings.length} orphaned username mappings`);
+    }
+    
+    console.log(`✅ EMERGENCY CLEANUP COMPLETE: Deleted ${invalidUserKeys.length} invalid users + ${orphanedMappings.length} orphaned mappings`);
+    
+    return c.json({ 
+      success: true, 
+      deleted: invalidUserKeys.length,
+      orphanedMappings: orphanedMappings.length,
+      validUsersRemaining: validUsers.length,
+      message: `Успешно изтрити ${invalidUserKeys.length} невалидни потребители и ${orphanedMappings.length} невалидни връзки`
+    });
+  } catch (error) {
+    console.error("Emergency cleanup error:", error);
+    return c.json({ success: false, message: "Emergency cleanup failed: " + error }, 500);
   }
 });
 

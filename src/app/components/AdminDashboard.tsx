@@ -836,6 +836,43 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
     }
   };
 
+  // EMERGENCY: Force delete ALL null users immediately
+  const emergencyCleanup = async () => {
+    if (!confirm("🚨 EMERGENCY CLEANUP 🚨\n\nТова ще изтрие ВСИЧКИ невалидни потребители директно от базата данни.\n\nПродължи?")) {
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem("skyparking-token");
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/users/emergency-cleanup`,
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${publicAnonKey}`,
+            "X-Session-Token": token || "",
+          },
+        }
+      );
+
+      const data = await response.json();
+      console.log("=== EMERGENCY CLEANUP RESPONSE ===", data);
+      
+      if (data.success) {
+        console.log(`✅ Deleted: ${data.deleted} invalid users`);
+        console.log(`✅ Deleted: ${data.orphanedMappings} orphaned mappings`);
+        console.log(`✅ Valid users remaining: ${data.validUsersRemaining}`);
+        toast.success(`🎉 ${data.message}`);
+        fetchUsers();
+      } else {
+        toast.error(data.message || "Emergency cleanup failed");
+      }
+    } catch (error) {
+      console.error("Emergency cleanup error:", error);
+      toast.error("Emergency cleanup failed");
+    }
+  };
+
   // ============= END USER MANAGEMENT FUNCTIONS =============
 
   // Delete booking
@@ -1822,15 +1859,25 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
           /* ========== USERS TAB ========== */
           <>
             {/* Users Actions Bar */}
-            <div className="mb-6 flex justify-between items-center gap-3">
-              <Button 
-                onClick={cleanupInvalidUsers} 
-                variant="outline"
-                className="border-red-200 text-red-600 hover:bg-red-50"
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Диагностика и изчистване
-              </Button>
+            <div className="mb-6 flex justify-between items-center gap-3 flex-wrap">
+              <div className="flex gap-3">
+                <Button 
+                  onClick={cleanupInvalidUsers} 
+                  variant="outline"
+                  className="border-red-200 text-red-600 hover:bg-red-50"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Диагностика и изчистване
+                </Button>
+                <Button 
+                  onClick={emergencyCleanup} 
+                  variant="destructive"
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  🚨 EMERGENCY CLEANUP
+                </Button>
+              </div>
               <Button onClick={() => { setIsAddingUser(true); setUserFormData({ role: "operator", isActive: true }); }}>
                 <Plus className="mr-2 h-4 w-4" />
                 {bg.addUser}
