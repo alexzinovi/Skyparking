@@ -804,3 +804,147 @@ ${data.needsInvoice ? `Фактура за: ${data.companyName || 'фирма'}`
     };
   }
 }
+
+// Contact inquiry data interface
+interface ContactInquiryData {
+  name: string;
+  phone: string;
+  email: string;
+  subject: string;
+  message: string;
+  language: 'bg' | 'en';
+}
+
+// Send contact inquiry email
+export async function sendContactInquiryEmail(data: ContactInquiryData): Promise<{ success: boolean; error?: string }> {
+  try {
+    const apiKey = Deno.env.get('RESEND_API_KEY');
+    
+    if (!apiKey) {
+      console.error('RESEND_API_KEY not configured');
+      return { success: false, error: 'Email service not configured' };
+    }
+
+    const fromEmail = 'SkyParking <reservations@skyparking.bg>';
+    const toEmail = 'info@skyparking.bg';
+    
+    const emailHTML = `
+<!DOCTYPE html>
+<html lang="${data.language}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${data.language === 'bg' ? 'Ново запитване' : 'New Inquiry'} - SkyParking</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f5f5f5; font-family: Arial, sans-serif;">
+  <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+    
+    <!-- Header -->
+    <div style="background-color: #073590; padding: 30px; text-align: center;">
+      <h1 style="margin: 0; color: #f1c933; font-size: 28px;">SkyParking</h1>
+      <p style="margin: 10px 0 0 0; color: #ffffff; font-size: 16px;">
+        ${data.language === 'bg' ? 'Ново запитване от клиент' : 'New Customer Inquiry'}
+      </p>
+    </div>
+
+    <!-- Content -->
+    <div style="padding: 40px 30px;">
+      
+      <h2 style="margin: 0 0 20px 0; color: #073590; font-size: 22px;">
+        ${data.language === 'bg' ? '📧 Детайли на запитването' : '📧 Inquiry Details'}
+      </h2>
+
+      <!-- Subject Box -->
+      <div style="background-color: #f1c933; padding: 20px; margin: 20px 0; border-radius: 8px;">
+        <h3 style="margin: 0 0 10px 0; font-size: 16px; color: #073590;">
+          ${data.language === 'bg' ? 'Тема:' : 'Subject:'}
+        </h3>
+        <p style="margin: 0; font-size: 18px; font-weight: bold; color: #000000;">
+          ${data.subject}
+        </p>
+      </div>
+
+      <!-- Customer Details -->
+      <div style="background-color: #e8f4fd; border-left: 4px solid #073590; padding: 20px; margin: 25px 0; border-radius: 4px;">
+        <h3 style="margin: 0 0 15px 0; font-size: 18px; color: #333333;">
+          ${data.language === 'bg' ? '👤 Информация за контакт' : '👤 Contact Information'}
+        </h3>
+        <p style="margin: 10px 0; font-size: 16px;"><strong>${data.language === 'bg' ? 'Име:' : 'Name:'}</strong> ${data.name}</p>
+        <p style="margin: 10px 0; font-size: 16px;"><strong>📧 Email:</strong> <a href="mailto:${data.email}" style="color: #073590;">${data.email}</a></p>
+        <p style="margin: 10px 0; font-size: 16px;"><strong>📞 ${data.language === 'bg' ? 'Телефон:' : 'Phone:'}</strong> <a href="tel:${data.phone}" style="color: #073590;">${data.phone}</a></p>
+      </div>
+
+      <!-- Message -->
+      <div style="background-color: #f9f9f9; border-left: 4px solid #f1c933; padding: 20px; margin: 25px 0; border-radius: 4px;">
+        <h3 style="margin: 0 0 15px 0; font-size: 18px; color: #333333;">
+          ${data.language === 'bg' ? '💬 Съобщение' : '💬 Message'}
+        </h3>
+        <p style="margin: 0; font-size: 16px; line-height: 1.6; white-space: pre-wrap; color: #333333;">
+          ${data.message}
+        </p>
+      </div>
+
+      <!-- Action Note -->
+      <div style="background-color: #fffbeb; border: 1px solid #f59e0b; padding: 15px; margin: 25px 0; border-radius: 4px;">
+        <p style="margin: 0; font-size: 14px; color: #92400e;">
+          ${data.language === 'bg' 
+            ? '⚠️ Моля, отговорете на този клиент възможно най-скоро.' 
+            : '⚠️ Please respond to this customer as soon as possible.'}
+        </p>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div style="background-color: #333333; color: #ffffff; padding: 20px; text-align: center; font-size: 14px;">
+      <p style="margin: 0;">© 2026 SkyParking - ${data.language === 'bg' ? 'Система за управление' : 'Management System'}</p>
+    </div>
+
+  </div>
+</body>
+</html>
+    `.trim();
+
+    const subject = data.language === 'bg' 
+      ? `📨 Ново запитване: ${data.subject}`
+      : `📨 New Inquiry: ${data.subject}`;
+
+    const plainText = `
+${data.language === 'bg' ? 'Ново запитване' : 'New Inquiry'} - SkyParking
+
+${data.language === 'bg' ? 'Тема:' : 'Subject:'} ${data.subject}
+
+${data.language === 'bg' ? 'Информация за контакт:' : 'Contact Information:'}
+${data.language === 'bg' ? 'Име:' : 'Name:'} ${data.name}
+Email: ${data.email}
+${data.language === 'bg' ? 'Телефон:' : 'Phone:'} ${data.phone}
+
+${data.language === 'bg' ? 'Съобщение:' : 'Message:'}
+${data.message}
+
+${data.language === 'bg' 
+  ? 'Моля, отговорете на този клиент възможно най-скоро.' 
+  : 'Please respond to this customer as soon as possible.'}
+    `.trim();
+
+    console.log(`Sending contact inquiry email to ${toEmail}`);
+
+    const result = await resend.emails.send({
+      from: fromEmail,
+      to: toEmail,
+      subject: subject,
+      html: emailHTML,
+      text: plainText,
+    });
+
+    console.log('Contact inquiry email sent successfully:', result);
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Failed to send contact inquiry email:', error);
+    return { 
+      success: false, 
+      error: error.message || 'Failed to send contact inquiry' 
+    };
+  }
+}

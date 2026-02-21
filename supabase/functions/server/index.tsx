@@ -2053,4 +2053,47 @@ app.put("/make-server-47a4914e/settings", async (c) => {
   }
 });
 
+// Contact inquiry endpoint
+app.post("/make-server-47a4914e/contact/inquiry", async (c) => {
+  try {
+    const data = await c.req.json();
+    
+    // Basic validation
+    if (!data.name || !data.email || !data.phone || !data.subject || !data.message) {
+      return c.json({ 
+        success: false, 
+        message: "All fields are required" 
+      }, 400);
+    }
+    
+    // Send inquiry email
+    const { sendContactInquiryEmail } = await import("./email-service.tsx");
+    const result = await sendContactInquiryEmail({
+      name: data.name,
+      phone: data.phone,
+      email: data.email,
+      subject: data.subject,
+      message: data.message,
+      language: data.language || 'bg'
+    });
+    
+    if (result.success) {
+      console.log(`✅ Contact inquiry email sent successfully from ${data.email}`);
+      return c.json({ success: true });
+    } else {
+      console.error(`❌ Failed to send contact inquiry email: ${result.error}`);
+      return c.json({ 
+        success: false, 
+        message: result.error || "Failed to send message" 
+      }, 500);
+    }
+  } catch (error) {
+    console.error("Contact inquiry error:", error);
+    return c.json({ 
+      success: false, 
+      message: "Failed to send message" 
+    }, 500);
+  }
+});
+
 Deno.serve(app.fetch);
