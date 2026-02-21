@@ -118,9 +118,12 @@ export function BookingForm() {
 
   // Auto-calculate price when dates change
   useEffect(() => {
-    const price = calculatePrice(arrivalDate, arrivalTime, departureDate, departureTime, numberOfCars);
-    setTotalPrice(price);
-    setBasePrice(price); // Store base price for discount calculation
+    async function updatePrice() {
+      const price = await calculatePrice(arrivalDate, arrivalTime, departureDate, departureTime, numberOfCars);
+      setTotalPrice(price);
+      setBasePrice(price); // Store base price for discount calculation
+    }
+    updatePrice();
   }, [arrivalDate, arrivalTime, departureDate, departureTime, numberOfCars]);
 
   // Auto-populate VAT number when VAT is checked and tax number exists

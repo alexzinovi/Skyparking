@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { Card } from "./ui/card";
+import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import { Button } from "./ui/button";
-import { DollarSign, Save, RotateCcw, Loader2 } from "lucide-react";
+import { Save, RotateCcw, Loader2, DollarSign } from "lucide-react";
 import { toast } from "sonner";
+import { refreshPricingConfig } from "../utils/pricing";
 
 const projectId = "dbybybmjjeeocoecaewv";
 const publicAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRieWJ5Ym1qamVlb2NvZWNhZXd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODgxMzAsImV4cCI6MjA4MjA2NDEzMH0.fMZ3Yi5gZpE6kBBz-y1x0FKZcGczxSJZ9jL-Zeau340";
@@ -85,6 +86,7 @@ export function PricingManager({ sessionToken }: PricingManagerProps) {
       const data = await response.json();
       if (data.success) {
         setOriginalPricing(JSON.parse(JSON.stringify(pricing))); // Update original
+        await refreshPricingConfig(); // Clear frontend pricing cache
         toast.success("Pricing updated successfully");
       } else {
         toast.error(data.message || "Failed to update pricing");
