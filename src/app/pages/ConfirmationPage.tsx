@@ -4,10 +4,10 @@ import { useEffect } from "react";
 import { useLanguage } from "../components/LanguageContext";
 import { Header } from "../components/Header";
 
-// Declare gtag_report_conversion function from index.html
+// Declare gtag function from Google Ads
 declare global {
   interface Window {
-    gtag_report_conversion: (url?: string) => boolean;
+    gtag: (command: string, targetOrAction: string, params?: Record<string, any>) => void;
   }
 }
 
@@ -26,9 +26,15 @@ export function ConfirmationPage() {
 
   // Track conversion when page loads with valid booking
   useEffect(() => {
-    if (booking && typeof window.gtag_report_conversion === 'function') {
-      // Call conversion tracking
-      window.gtag_report_conversion();
+    if (booking && typeof window.gtag === 'function') {
+      // Fire the conversion event
+      window.gtag('event', 'conversion', {
+        'send_to': 'AW-17964080992/XDtCCOW8vfsbEOC--PVC',
+        'value': 1.0,
+        'currency': 'EUR',
+        'transaction_id': ''
+      });
+      console.log('Google Ads conversion event fired for booking:', booking.confirmationNumber);
     }
   }, [booking]);
 
