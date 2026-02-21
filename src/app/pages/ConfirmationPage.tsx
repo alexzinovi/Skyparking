@@ -30,7 +30,7 @@ export function ConfirmationPage() {
     if (booking && typeof window.gtag === 'function' && !conversionFired.current) {
       // Fire the conversion event with the new conversion label
       window.gtag('event', 'conversion', {
-        'send_to': 'AW-17964080992/jT2ECNHH1_wbEOC--PVC',
+        'send_to': 'AW-17964080992/qwSRCLGqyvwbEOC--PVC',
         'value': 1.0,
         'currency': 'EUR'
       });
