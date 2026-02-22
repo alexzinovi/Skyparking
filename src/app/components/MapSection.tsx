@@ -25,7 +25,7 @@ export function MapSection() {
           </div>
 
           <Card className="overflow-hidden">
-            <div className="relative w-full h-[450px]">
+            <div className="relative w-full h-[500px] block">
               <iframe
                 src="https://www.google.com/maps?q=Ulitsa+Nedelcho+Bonchev+30,+Sofia,+Bulgaria&output=embed"
                 width="100%"
@@ -35,6 +35,7 @@ export function MapSection() {
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
                 title="SkyParking Location"
+                className="block"
               ></iframe>
             </div>
             

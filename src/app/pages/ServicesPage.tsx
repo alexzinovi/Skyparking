@@ -74,8 +74,8 @@ export function ServicesPage() {
               : 'At SkyParking we offer a complete set of services for the comfort and safety of our customers'}
           </p>
 
-          {/* Services Grid */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+          {/* Main Services Grid */}
+          <div className="grid md:grid-cols-2 gap-8 mb-16">
             {services.map((service, index) => (
               <div key={index} className="bg-white rounded-lg shadow-lg p-8 hover:shadow-xl transition-shadow">
                 <div className="w-16 h-16 rounded-full flex items-center justify-center mb-6" style={{ backgroundColor: '#f1c933' }}>
@@ -89,80 +89,6 @@ export function ServicesPage() {
                 </p>
               </div>
             ))}
-          </div>
-
-          {/* Premium Service Section */}
-          <div className="bg-gradient-to-r from-blue-900 to-blue-700 rounded-xl shadow-2xl p-12 mb-12 text-white">
-            <div className="max-w-4xl mx-auto">
-              <h2 className="text-3xl font-bold mb-6 text-center">
-                {language === 'bg' ? 'Премиум Услуга "Ключове"' : 'Premium "Car Keys" Service'}
-              </h2>
-              <p className="text-xl mb-8 text-center text-blue-100">
-                {language === 'bg'
-                  ? 'Максимално удобство - оставяте ключовете, ние паркираме вашия автомобил'
-                  : 'Maximum convenience - leave your keys, we park your car'}
-              </p>
-
-              <div className="grid md:grid-cols-2 gap-8">
-                <div className="bg-white bg-opacity-10 rounded-lg p-6 backdrop-blur">
-                  <h3 className="text-xl font-semibold mb-4" style={{ color: '#f1c933' }}>
-                    {language === 'bg' ? 'Как Работи?' : 'How It Works?'}
-                  </h3>
-                  <ul className="space-y-3">
-                    <li className="flex items-start">
-                      <span className="font-bold mr-2" style={{ color: '#f1c933' }}>1.</span>
-                      <span>{language === 'bg' ? 'Пристигате и оставяте ключовете на автомобила' : 'You arrive and leave your car keys'}</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="font-bold mr-2" style={{ color: '#f1c933' }}>2.</span>
-                      <span>{language === 'bg' ? 'Наш служител паркира автомобила на сигурно място' : 'Our staff parks your car in a secure location'}</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="font-bold mr-2" style={{ color: '#f1c933' }}>3.</span>
-                      <span>{language === 'bg' ? 'При завръщането ви автомобилът е готов да тръгнете' : 'Upon return your car is ready to go'}</span>
-                    </li>
-                  </ul>
-                </div>
-
-                <div className="bg-white bg-opacity-10 rounded-lg p-6 backdrop-blur">
-                  <h3 className="text-xl font-semibold mb-4" style={{ color: '#f1c933' }}>
-                    {language === 'bg' ? 'Предимства' : 'Benefits'}
-                  </h3>
-                  <ul className="space-y-3">
-                    <li className="flex items-start">
-                      <CheckCircle className="w-5 h-5 mr-2 flex-shrink-0" style={{ color: '#f1c933' }} />
-                      <span>{language === 'bg' ? 'Спестявате време' : 'Save time'}</span>
-                    </li>
-                    <li className="flex items-start">
-                      <CheckCircle className="w-5 h-5 mr-2 flex-shrink-0" style={{ color: '#f1c933' }} />
-                      <span>{language === 'bg' ? 'Без притеснения за паркиране' : 'No parking worries'}</span>
-                    </li>
-                    <li className="flex items-start">
-                      <CheckCircle className="w-5 h-5 mr-2 flex-shrink-0" style={{ color: '#f1c933' }} />
-                      <span>{language === 'bg' ? 'Автомобилът е готов пи връщане' : 'Car ready upon return'}</span>
-                    </li>
-                    <li className="flex items-start">
-                      <CheckCircle className="w-5 h-5 mr-2 flex-shrink-0" style={{ color: '#f1c933' }} />
-                      <span>{language === 'bg' ? 'Оптимално използване на пространството' : 'Optimal space usage'}</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-
-              <div className="text-center mt-8">
-                <div className="inline-block">
-                  <div className="text-sm font-semibold mb-2" style={{ color: '#f1c933' }}>
-                    {language === 'bg' ? 'ЗА ЦЕНИ:' : 'FOR PRICING:'}
-                  </div>
-                  <p className="text-lg font-semibold mb-2">
-                    {language === 'bg' ? 'Моля обадете се на:' : 'Please call:'}
-                  </p>
-                  <div className="text-3xl font-bold">
-                    +359 886 616 991
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* Additional Benefits */}

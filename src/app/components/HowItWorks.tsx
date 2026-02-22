@@ -111,7 +111,7 @@ export function HowItWorks() {
                     <h3 className="text-xl font-bold mb-3" style={{ color: '#073590' }}>
                       {language === 'bg' ? step.titleBg : step.titleEn}
                     </h3>
-                    <p className="text-gray-700 text-sm leading-relaxed">
+                    <p className="text-gray-700 text-sm leading-relaxed text-justify">
                       {language === 'bg' ? step.descBg : step.descEn}
                     </p>
                   </div>
