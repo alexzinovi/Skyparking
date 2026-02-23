@@ -2,7 +2,7 @@ import { Header } from "../components/Header";
 import { useLanguage } from "../components/LanguageContext";
 import { useNavigate } from "react-router";
 import { useEffect } from "react";
-import { Shield, Clock, Car, MapPin, CreditCard, CheckCircle } from "lucide-react";
+import { Shield, Clock, Car, MapPin, CreditCard, CheckCircle, Fuel, BatteryCharging, CircleDot, Key, XCircle, Droplets } from "lucide-react";
 
 export function ServicesPage() {
   const { t, language } = useLanguage();
@@ -30,7 +30,7 @@ export function ServicesPage() {
     },
     {
       icon: Clock,
-      titleBg: 'Денонощна Работа',
+      titleBg: 'Отворено 24/7',
       titleEn: '24/7 Service',
       descBg: 'Работим денонощно, без почивни дни - винаги сме на разположение за вас',
       descEn: 'Open 24/7, no days off - we\'re always available for you',
@@ -58,6 +58,51 @@ export function ServicesPage() {
     },
   ];
 
+  const additionalBenefits = [
+    {
+      icon: XCircle,
+      titleBg: 'Безплатна Отмяна',
+      titleEn: 'Free Cancellation',
+      descBg: 'До 24 часа преди резервацията без допълнителни такси',
+      descEn: 'Up to 24 hours before reservation without additional fees',
+    },
+    {
+      icon: Droplets,
+      titleBg: 'Измиване на Автомобила',
+      titleEn: 'Car Wash',
+      descBg: 'Професионално измиване на автомобила при поискване',
+      descEn: 'Professional car wash service available upon request',
+    },
+    {
+      icon: Fuel,
+      titleBg: 'Зареждане на Гориво',
+      titleEn: 'Fuel Refill',
+      descBg: 'Услуга за зареждане на гориво при поискване',
+      descEn: 'Fuel refill service available upon request',
+    },
+    {
+      icon: BatteryCharging,
+      titleBg: 'Зареждане на Акумулатор',
+      titleEn: 'Battery Charging',
+      descBg: 'Помощ при изтощен акумулатор на вашия автомобил',
+      descEn: 'Assistance with dead battery for your vehicle',
+    },
+    {
+      icon: CircleDot,
+      titleBg: 'Проверка на Гумите',
+      titleEn: 'Tire Check',
+      descBg: 'Безплатна проверка на налягането и състоянието на гумите',
+      descEn: 'Free tire pressure and condition check',
+    },
+    {
+      icon: Key,
+      titleBg: 'Съхранение на Ключове',
+      titleEn: 'Key Storage',
+      descBg: 'Сигурно съхранение на ключовете от автомобила ви',
+      descEn: 'Secure storage of your car keys',
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
@@ -68,7 +113,7 @@ export function ServicesPage() {
             {language === 'bg' ? 'Нашите Услуги' : 'Our Services'}
           </h1>
           
-          <p className="text-center text-gray-600 mb-12 text-lg max-w-3xl mx-auto">
+          <p className="text-center text-gray-600 mb-12 max-w-3xl mx-auto text-[16px]">
             {language === 'bg' 
               ? 'В SkyParking предлагаме пълен набор от услуги за удобството и сигурността на нашите клиенти' 
               : 'At SkyParking we offer a complete set of services for the comfort and safety of our customers'}
@@ -92,55 +137,24 @@ export function ServicesPage() {
           </div>
 
           {/* Additional Benefits */}
-          <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
-            <h2 className="text-2xl font-bold mb-6 text-center" style={{ color: '#073590' }}>
+          <div className="mb-16">
+            <h2 className="text-4xl font-bold text-center mb-12" style={{ color: '#073590' }}>
               {language === 'bg' ? 'Допълнителни Удобства' : 'Additional Benefits'}
             </h2>
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="flex items-start">
-                <div className="w-2 h-2 rounded-full mt-2 mr-3 flex-shrink-0" style={{ backgroundColor: '#f1c933' }} />
-                <div>
-                  <h4 className="font-semibold mb-1">{language === 'bg' ? 'Безплатна Отмяна' : 'Free Cancellation'}</h4>
-                  <p className="text-gray-600 text-sm">
-                    {language === 'bg' 
-                      ? 'До 24 часа преди резервацията без допълнителни такси'
-                      : 'Up to 24 hours before reservation without additional fees'}
+            <div className="grid md:grid-cols-2 gap-8">
+              {additionalBenefits.map((benefit, index) => (
+                <div key={index} className="bg-white rounded-lg shadow-lg p-8 hover:shadow-xl transition-shadow">
+                  <div className="w-16 h-16 rounded-full flex items-center justify-center mb-6" style={{ backgroundColor: '#f1c933' }}>
+                    <benefit.icon className="w-8 h-8" style={{ color: '#073590' }} />
+                  </div>
+                  <h3 className="text-xl font-bold mb-3" style={{ color: '#073590' }}>
+                    {language === 'bg' ? benefit.titleBg : benefit.titleEn}
+                  </h3>
+                  <p className="text-gray-700 leading-relaxed">
+                    {language === 'bg' ? benefit.descBg : benefit.descEn}
                   </p>
                 </div>
-              </div>
-              <div className="flex items-start">
-                <div className="w-2 h-2 rounded-full mt-2 mr-3 flex-shrink-0" style={{ backgroundColor: '#f1c933' }} />
-                <div>
-                  <h4 className="font-semibold mb-1">{language === 'bg' ? 'Измиване на Автомобили' : 'Car Wash'}</h4>
-                  <p className="text-gray-600 text-sm">
-                    {language === 'bg' 
-                      ? 'Възможност за измиване на автомобила при поискване'
-                      : 'Car wash service available upon request'}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="w-2 h-2 rounded-full mt-2 mr-3 flex-shrink-0" style={{ backgroundColor: '#f1c933' }} />
-                <div>
-                  <h4 className="font-semibold mb-1">{language === 'bg' ? 'Дългосрочен Паркинг' : 'Long-term Parking'}</h4>
-                  <p className="text-gray-600 text-sm">
-                    {language === 'bg' 
-                      ? 'Специални отстъпки за резервации над 7 дни'
-                      : 'Special discounts for bookings over 7 days'}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="w-2 h-2 rounded-full mt-2 mr-3 flex-shrink-0" style={{ backgroundColor: '#f1c933' }} />
-                <div>
-                  <h4 className="font-semibold mb-1">{language === 'bg' ? 'Телефонна Резервация' : 'Phone Booking'}</h4>
-                  <p className="text-gray-600 text-sm">
-                    {language === 'bg' 
-                      ? 'Можете да резервирате и по телефона 24/7'
-                      : 'You can also book by phone 24/7'}
-                  </p>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
 

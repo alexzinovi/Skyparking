@@ -116,14 +116,15 @@ export function BookingForm() {
     return () => clearTimeout(checkAutofill);
   }, [setValue]);
 
-  // Auto-calculate price when dates change
+  // Auto-calculate price when dates change (with debouncing for better performance)
   useEffect(() => {
-    async function updatePrice() {
+    const timeoutId = setTimeout(async () => {
       const price = await calculatePrice(arrivalDate, arrivalTime, departureDate, departureTime, numberOfCars);
       setTotalPrice(price);
       setBasePrice(price); // Store base price for discount calculation
-    }
-    updatePrice();
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timeoutId);
   }, [arrivalDate, arrivalTime, departureDate, departureTime, numberOfCars]);
 
   // Auto-populate VAT number when VAT is checked and tax number exists

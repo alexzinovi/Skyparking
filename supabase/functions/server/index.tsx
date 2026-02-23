@@ -55,10 +55,37 @@ const DEFAULT_PRICING = {
   longTermRate: 2.8      // Days 31+
 };
 
-// Get pricing configuration
+// Server-side cache for pricing config
+let cachedPricingConfig: any = null;
+let lastPricingFetch = 0;
+const PRICING_CACHE_TTL = 60000; // 1 minute cache
+
+// Get pricing configuration with caching
 async function getPricingConfig() {
-  const config = await kv.get("pricing:config");
-  return config || DEFAULT_PRICING;
+  const now = Date.now();
+  
+  // Return cached pricing if available and not expired
+  if (cachedPricingConfig && (now - lastPricingFetch) < PRICING_CACHE_TTL) {
+    return cachedPricingConfig;
+  }
+  
+  try {
+    const config = await kv.get("pricing:config");
+    const pricing = config || DEFAULT_PRICING;
+    
+    // Update cache
+    cachedPricingConfig = pricing;
+    lastPricingFetch = now;
+    
+    return pricing;
+  } catch (error) {
+    console.error("Error fetching pricing from KV:", error);
+    // If cache exists, use it even if expired
+    if (cachedPricingConfig) {
+      return cachedPricingConfig;
+    }
+    return DEFAULT_PRICING;
+  }
 }
 
 // Calculate price based on number of days
@@ -1244,6 +1271,10 @@ app.put("/make-server-47a4914e/pricing", async (c) => {
     }
     
     await kv.set("pricing:config", newPricing);
+    
+    // Invalidate server cache
+    cachedPricingConfig = newPricing;
+    lastPricingFetch = Date.now();
     
     console.log(`Pricing updated by ${currentUser.fullName}`);
     

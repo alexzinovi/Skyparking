@@ -18,7 +18,27 @@ const DEFAULT_PRICING: PricingConfig = {
     7: 38,
     8: 40,
     9: 42,
-    10: 46
+    10: 46,
+    11: 48,
+    12: 50,
+    13: 52,
+    14: 54,
+    15: 56,
+    16: 58,
+    17: 60,
+    18: 62,
+    19: 64,
+    20: 66,
+    21: 68,
+    22: 70,
+    23: 72,
+    24: 74,
+    25: 76,
+    26: 78,
+    27: 80,
+    28: 82,
+    29: 84,
+    30: 86
   },
   longTermRate: 2.8
 };
@@ -26,32 +46,105 @@ const DEFAULT_PRICING: PricingConfig = {
 // Cache for pricing config
 let cachedPricing: PricingConfig | null = null;
 let pricingFetchPromise: Promise<PricingConfig> | null = null;
+let isPricingInitialized = false;
 
-// Fetch pricing from server
+const PRICING_CACHE_KEY = 'skyparking_pricing_cache';
+const PRICING_CACHE_TIMESTAMP_KEY = 'skyparking_pricing_cache_timestamp';
+const CACHE_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes
+
+// Load pricing from localStorage cache
+function loadPricingFromCache(): PricingConfig | null {
+  try {
+    const cached = localStorage.getItem(PRICING_CACHE_KEY);
+    const timestamp = localStorage.getItem(PRICING_CACHE_TIMESTAMP_KEY);
+    
+    if (cached && timestamp) {
+      const age = Date.now() - parseInt(timestamp);
+      if (age < CACHE_EXPIRY_MS) {
+        console.log("📦 Loading pricing from localStorage cache");
+        return JSON.parse(cached);
+      }
+    }
+  } catch (error) {
+    console.warn("Failed to load pricing from cache:", error);
+  }
+  return null;
+}
+
+// Save pricing to localStorage cache
+function savePricingToCache(pricing: PricingConfig): void {
+  try {
+    localStorage.setItem(PRICING_CACHE_KEY, JSON.stringify(pricing));
+    localStorage.setItem(PRICING_CACHE_TIMESTAMP_KEY, Date.now().toString());
+  } catch (error) {
+    console.warn("Failed to save pricing to cache:", error);
+  }
+}
+
+// Fetch pricing from server with timeout
 async function fetchPricingConfig(): Promise<PricingConfig> {
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
     const response = await fetch(
       `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/pricing`,
       {
         headers: {
           "Authorization": `Bearer ${publicAnonKey}`,
         },
+        signal: controller.signal,
       }
     );
+    
+    clearTimeout(timeoutId);
     
     if (response.ok) {
       const data = await response.json();
       if (data.success && data.pricing) {
         console.log("✅ Fetched pricing from server:", data.pricing);
         cachedPricing = data.pricing;
+        isPricingInitialized = true;
+        savePricingToCache(data.pricing); // Save to localStorage
         return data.pricing;
       }
     }
     
-    console.warn("Failed to fetch pricing, using defaults");
+    console.warn("Failed to fetch pricing from server, checking cache");
+    
+    // Try localStorage cache
+    const cachedData = loadPricingFromCache();
+    if (cachedData) {
+      cachedPricing = cachedData;
+      isPricingInitialized = true;
+      return cachedData;
+    }
+    
+    // Fall back to defaults
+    console.warn("Using default pricing");
+    cachedPricing = DEFAULT_PRICING;
+    isPricingInitialized = true;
     return DEFAULT_PRICING;
   } catch (error) {
-    console.error("Error fetching pricing:", error);
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.warn("⏱️ Pricing fetch timeout - checking cache");
+    } else {
+      console.error("❌ Error fetching pricing:", error);
+    }
+    
+    // Try localStorage cache on error
+    const cachedData = loadPricingFromCache();
+    if (cachedData) {
+      console.log("✅ Using cached pricing from localStorage");
+      cachedPricing = cachedData;
+      isPricingInitialized = true;
+      return cachedData;
+    }
+    
+    // Final fallback to defaults
+    console.warn("⚠️ Using default pricing as fallback");
+    cachedPricing = DEFAULT_PRICING;
+    isPricingInitialized = true;
     return DEFAULT_PRICING;
   }
 }
@@ -80,6 +173,17 @@ async function getPricingConfig(): Promise<PricingConfig> {
 export async function refreshPricingConfig(): Promise<void> {
   cachedPricing = null;
   pricingFetchPromise = null;
+  isPricingInitialized = false;
+  
+  // Clear localStorage cache
+  try {
+    localStorage.removeItem(PRICING_CACHE_KEY);
+    localStorage.removeItem(PRICING_CACHE_TIMESTAMP_KEY);
+    console.log("🔄 Cleared pricing cache, fetching fresh data...");
+  } catch (error) {
+    console.warn("Failed to clear cache:", error);
+  }
+  
   await getPricingConfig();
 }
 
@@ -122,4 +226,31 @@ export async function calculatePrice(
   console.log(`💰 Price per car: €${pricePerCar}, Total: €${pricePerCar * numberOfCars}`);
   
   return pricePerCar * numberOfCars;
+}
+
+// Preload pricing config (call this on app initialization)
+export function preloadPricing(): void {
+  if (!isPricingInitialized && !pricingFetchPromise) {
+    console.log("🚀 Preloading pricing configuration...");
+    
+    // Try loading from localStorage first for instant availability
+    const cachedData = loadPricingFromCache();
+    if (cachedData) {
+      cachedPricing = cachedData;
+      isPricingInitialized = true;
+      console.log("⚡ Pricing instantly available from cache");
+      
+      // Still fetch from server in background to update cache
+      fetchPricingConfig().catch(err => {
+        console.warn("Background pricing fetch failed:", err);
+      });
+    } else {
+      // No cache, fetch from server
+      getPricingConfig().then(() => {
+        console.log("✅ Pricing preloaded and ready");
+      }).catch(err => {
+        console.error("Pricing preload failed:", err);
+      });
+    }
+  }
 }

@@ -5,6 +5,7 @@ import { AdminDashboard } from "./components/AdminDashboard";
 import { OperatorDashboard } from "./components/OperatorDashboard";
 import { LoginScreen } from "./components/LoginScreen";
 import { router } from "./routes";
+import { preloadPricing } from "./utils/pricing";
 
 interface User {
   id: string;
@@ -21,6 +22,11 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [permissions, setPermissions] = useState<string[]>([]);
   const [isVerifying, setIsVerifying] = useState(true);
+
+  // Preload pricing on app initialization
+  useEffect(() => {
+    preloadPricing();
+  }, []);
 
   // Disable Chrome's automatic translation - we have our own bilingual system
   useEffect(() => {

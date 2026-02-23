@@ -77,7 +77,7 @@ export function HowItWorksPage() {
                       <h3 className="text-2xl font-bold mb-3" style={{ color: '#073590' }}>
                         {t(step.titleKey)}
                       </h3>
-                      <p className="text-gray-700 text-lg leading-relaxed">
+                      <p className="text-gray-700 text-lg leading-relaxed text-justify">
                         {index === 0 ? (
                           <>
                             {t("onlineTelephoneBookingText1")}{" "}
@@ -144,7 +144,7 @@ export function HowItWorksPage() {
                 </h4>
                 <p className="text-gray-700">
                   {language === 'bg'
-                    ? 'Трансферът до летището отнема само 5 минути. Препоръчваме да пристигате 45-60 минути преди полета.'
+                    ? 'Трансферът до терминал 1 и 2 отнеме 5 минути при нормални условия. Препоръчваме Ви да пристигнете около 2 часа и половина преди Вашия полет.'
                     : 'The transfer to the airport takes only 5 minutes. We recommend arriving 45-60 minutes before your flight.'}
                 </p>
               </div>
@@ -154,7 +154,7 @@ export function HowItWorksPage() {
                 </h4>
                 <p className="text-gray-700">
                   {language === 'bg'
-                    ? 'Да! Имаме видеонаблюдение 24/7, охранявана територия и пълна застраховка. Вашият автомобил е в сигурни ръце.'
+                    ? 'Да! Имаме 24/7 видеонаблюдение, охранител и система за сигурност. Вашият автомобил е в сигурни ръце.'
                     : 'Yes! We have 24/7 video surveillance, secured premises and full insurance. Your car is in safe hands.'}
                 </p>
               </div>
@@ -164,7 +164,7 @@ export function HowItWorksPage() {
                 </h4>
                 <p className="text-gray-700">
                   {language === 'bg'
-                    ? 'Да, можете да отмените безплатно ��о 24 часа преди началната дата на резервацията без никакви такси.'
+                    ? 'Да, може да отмените вашата резервация напълно безплатно.'
                     : 'Yes, you can cancel for free up to 24 hours before the start date of your reservation without any fees.'}
                 </p>
               </div>
