@@ -583,10 +583,10 @@ export async function sendConfirmationEmail(data: BookingEmailData): Promise<{ s
       ? generateConfirmationEmailHTML_EN(data) 
       : generateConfirmationEmailHTML_BG(data);
 
-    // Subject line based on language
+    // Subject line based on language - avoid spam trigger words
     const subject = language === 'en'
-      ? `✅ Booking Confirmation ${data.bookingId} - SkyParking`
-      : `✅ Потвърждение на резервация ${data.bookingId} - SkyParking`;
+      ? `Your SkyParking Reservation ${data.bookingId}`
+      : `Вашата резервация за SkyParking ${data.bookingId}`;
 
     // Plain text version based on language
     const textBG = `
@@ -607,13 +607,14 @@ export async function sendConfirmationEmail(data: BookingEmailData): Promise<{ s
 Благодарим Ви, че избрахте SkyParking!
 
 За въпроси: ${data.phone}
-Email: bookings@skyparking.bg
+Email: reservations@skyparking.bg
+Уеб: https://www.skyparking.bg
     `.trim();
 
     const textEN = `
 Hello ${data.name},
 
-Your parking reservation near Sofia Airport is confirmed!
+Your parking reservation near Sofia Airport has been confirmed.
 
 Booking Number: ${data.bookingId}
 Arrival: ${formatDateDisplay(data.arrivalDate)} at ${data.arrivalTime}
@@ -628,7 +629,8 @@ Payment on arrival.
 Thank you for choosing SkyParking!
 
 For questions: ${data.phone}
-Email: bookings@skyparking.bg
+Email: reservations@skyparking.bg
+Web: https://www.skyparking.bg
     `.trim();
 
     const plainText = language === 'en' ? textEN : textBG;
@@ -641,6 +643,13 @@ Email: bookings@skyparking.bg
       subject: subject,
       html: emailHTML,
       text: plainText,
+      // Add reply-to header for better deliverability
+      reply_to: 'reservations@skyparking.bg',
+      // Add headers to improve deliverability
+      headers: {
+        'X-Entity-Ref-ID': data.bookingId,
+        'List-Unsubscribe': '<mailto:reservations@skyparking.bg?subject=unsubscribe>',
+      }
     });
 
     console.log('Email sent successfully:', result);

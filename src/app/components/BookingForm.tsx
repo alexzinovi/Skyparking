@@ -120,11 +120,27 @@ export function BookingForm() {
   useEffect(() => {
     const timeoutId = setTimeout(async () => {
       const price = await calculatePrice(arrivalDate, arrivalTime, departureDate, departureTime, numberOfCars);
-      setTotalPrice(price);
       setBasePrice(price); // Store base price for discount calculation
+      
+      // If there's an applied discount, recalculate the discounted price
+      if (price && appliedDiscount) {
+        let discountedPrice = price;
+        if (appliedDiscount.discountType === 'percentage') {
+          discountedPrice = price * (1 - appliedDiscount.discountValue / 100);
+        } else if (appliedDiscount.discountType === 'fixed') {
+          discountedPrice = Math.max(0, price - appliedDiscount.discountValue);
+        }
+        // Round to 2 decimal places to avoid floating point errors
+        discountedPrice = Math.round(discountedPrice * 100) / 100;
+        setTotalPrice(discountedPrice);
+      } else {
+        // No discount applied, use base price
+        setTotalPrice(price);
+      }
     }, 300); // 300ms debounce
 
     return () => clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [arrivalDate, arrivalTime, departureDate, departureTime, numberOfCars]);
 
   // Auto-populate VAT number when VAT is checked and tax number exists
@@ -184,6 +200,8 @@ export function BookingForm() {
         } else if (result.discount.discountType === 'fixed') {
           discountedPrice = Math.max(0, basePrice - result.discount.discountValue);
         }
+        // Round to 2 decimal places to avoid floating point errors
+        discountedPrice = Math.round(discountedPrice * 100) / 100;
       }
       setTotalPrice(discountedPrice);
       
@@ -398,7 +416,7 @@ export function BookingForm() {
                       </p>
                       <div className="flex flex-col gap-1">
                         <div className="flex items-baseline gap-2">
-                          <span className="text-5xl font-bold text-[#073590]">€{totalPrice}</span>
+                          <span className="text-5xl font-bold text-[#073590]">€{totalPrice.toFixed(2)}</span>
                           {numberOfCars > 1 && (
                             <span className="text-xl text-gray-500">(€{(totalPrice / numberOfCars).toFixed(2)} {t("perCar")})</span>
                           )}
