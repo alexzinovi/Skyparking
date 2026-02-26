@@ -1,6 +1,7 @@
 import { Header } from "../components/Header";
 import { BookingForm } from "../components/BookingForm";
 import { useLanguage } from "../components/LanguageContext";
+import { SEO } from "../components/SEO";
 import { useEffect } from "react";
 
 export function BookingPage() {
@@ -35,6 +36,17 @@ export function BookingPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* SEO component for dynamic canonical URL */}
+      <SEO 
+        title={language === 'bg' ? 'Резервация - SkyParking Летище София' : 'Reservation - SkyParking Sofia Airport'}
+        description={language === 'bg' 
+          ? 'Резервирайте вашето място в SkyParking. Без предплащане - плащате при пристигане. Безплатен трансфер до летището.'
+          : 'Reserve your spot at SkyParking. No prepayment - pay on arrival. Free transfer to the airport.'
+        }
+        canonical="https://skyparking.bg/booking"
+        ogImage="https://skyparking.bg/og-image.jpg"
+      />
+      
       {/* Header */}
       <Header />
       

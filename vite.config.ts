@@ -16,4 +16,18 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    // Optimize chunk size and splitting
+    chunkSizeWarningLimit: 1000, // Increase limit to 1000 KB for warnings
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Split vendor code into separate chunks
+          'react-vendor': ['react', 'react-dom', 'react-router'],
+          'supabase-vendor': ['@supabase/supabase-js'],
+          'ui-vendor': ['date-fns', 'recharts', 'lucide-react'],
+        },
+      },
+    },
+  },
 })

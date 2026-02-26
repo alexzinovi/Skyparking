@@ -85,7 +85,7 @@ function savePricingToCache(pricing: PricingConfig): void {
 async function fetchPricingConfig(): Promise<PricingConfig> {
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // Reduced to 5 second timeout
     
     const response = await fetch(
       `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/pricing`,
@@ -102,7 +102,7 @@ async function fetchPricingConfig(): Promise<PricingConfig> {
     if (response.ok) {
       const data = await response.json();
       if (data.success && data.pricing) {
-        console.log("✅ Fetched pricing from server:", data.pricing);
+        console.log("✅ Fetched pricing from server");
         cachedPricing = data.pricing;
         isPricingInitialized = true;
         savePricingToCache(data.pricing); // Save to localStorage
@@ -110,7 +110,7 @@ async function fetchPricingConfig(): Promise<PricingConfig> {
       }
     }
     
-    console.warn("Failed to fetch pricing from server, checking cache");
+    console.log("📦 Server pricing unavailable, using cache");
     
     // Try localStorage cache
     const cachedData = loadPricingFromCache();
@@ -121,28 +121,28 @@ async function fetchPricingConfig(): Promise<PricingConfig> {
     }
     
     // Fall back to defaults
-    console.warn("Using default pricing");
+    console.log("⚙️ Using default pricing");
     cachedPricing = DEFAULT_PRICING;
     isPricingInitialized = true;
     return DEFAULT_PRICING;
   } catch (error) {
+    // Don't log timeout as error - it's expected sometimes
     if (error instanceof Error && error.name === 'AbortError') {
-      console.warn("⏱️ Pricing fetch timeout - checking cache");
+      console.log("📦 Using cached pricing");
     } else {
-      console.error("❌ Error fetching pricing:", error);
+      console.log("📦 Network issue, using cached pricing");
     }
     
     // Try localStorage cache on error
     const cachedData = loadPricingFromCache();
     if (cachedData) {
-      console.log("✅ Using cached pricing from localStorage");
       cachedPricing = cachedData;
       isPricingInitialized = true;
       return cachedData;
     }
     
     // Final fallback to defaults
-    console.warn("⚠️ Using default pricing as fallback");
+    console.log("⚙️ Using default pricing");
     cachedPricing = DEFAULT_PRICING;
     isPricingInitialized = true;
     return DEFAULT_PRICING;

@@ -6,42 +6,52 @@ import { BookingForm } from "../components/BookingForm";
 import { Reviews } from "../components/Reviews";
 import { MapSection } from "../components/MapSection";
 import { useLanguage } from "../components/LanguageContext";
+import { SEO } from "../components/SEO";
 import { useEffect } from "react";
 
 export function HomePage() {
   const { t, language } = useLanguage();
 
+  // Set favicon once on mount (not dependent on language changes)
+  useEffect(() => {
+    // Set favicon using Supabase image with cross-browser compatibility
+    // Only do this once when component mounts
+    const existingIcons = document.querySelectorAll('link[rel*="icon"]');
+    
+    // Check if our favicon is already set
+    const faviconUrl = 'https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/favicon.png';
+    const alreadySet = Array.from(existingIcons).some(icon => 
+      icon.getAttribute('href')?.startsWith(faviconUrl)
+    );
+    
+    if (!alreadySet) {
+      // Remove old icons
+      existingIcons.forEach(icon => icon.remove());
+      
+      // Add multiple favicon formats for cross-browser compatibility
+      const iconTypes = [
+        { rel: 'icon', type: 'image/png', sizes: '32x32' },
+        { rel: 'icon', type: 'image/png', sizes: '16x16' },
+        { rel: 'shortcut icon', type: 'image/png' },
+        { rel: 'apple-touch-icon', sizes: '180x180' },
+        { rel: 'icon' } // Generic fallback for older browsers
+      ];
+      
+      iconTypes.forEach(({ rel, type, sizes }) => {
+        const link = document.createElement('link');
+        link.rel = rel;
+        if (type) link.type = type;
+        if (sizes) link.setAttribute('sizes', sizes);
+        link.href = faviconUrl;
+        document.head.appendChild(link);
+      });
+    }
+  }, []); // Empty dependency array - only run once on mount
+
   // Update document title and meta tags based on language
   useEffect(() => {
     // Set page title
     document.title = t("heroTitle");
-    
-    // Set favicon using Supabase image with cross-browser compatibility
-    // Remove ALL existing favicon-related links first
-    const existingIcons = document.querySelectorAll('link[rel*="icon"]');
-    existingIcons.forEach(icon => icon.remove());
-    
-    // Use your uploaded favicon from Supabase with cache-busting
-    const cacheBuster = `?v=${Date.now()}`;
-    const faviconUrl = `https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/favicon.png${cacheBuster}`;
-    
-    // Add multiple favicon formats for cross-browser compatibility
-    const iconTypes = [
-      { rel: 'icon', type: 'image/png', sizes: '32x32' },
-      { rel: 'icon', type: 'image/png', sizes: '16x16' },
-      { rel: 'shortcut icon', type: 'image/png' },
-      { rel: 'apple-touch-icon', sizes: '180x180' },
-      { rel: 'icon' } // Generic fallback for older browsers
-    ];
-    
-    iconTypes.forEach(({ rel, type, sizes }) => {
-      const link = document.createElement('link');
-      link.rel = rel;
-      if (type) link.type = type;
-      if (sizes) link.setAttribute('sizes', sizes);
-      link.href = faviconUrl;
-      document.head.appendChild(link);
-    });
     
     // Set or update meta description
     const metaDescription = document.querySelector('meta[name="description"]');
@@ -104,10 +114,86 @@ export function HomePage() {
     
     // Set language attribute on html element
     document.documentElement.lang = language;
+
+    // Add or update JSON-LD structured data for ParkingFacility
+    const structuredDataId = 'homepage-structured-data';
+    let structuredDataScript = document.getElementById(structuredDataId);
+    
+    if (!structuredDataScript) {
+      structuredDataScript = document.createElement('script');
+      structuredDataScript.id = structuredDataId;
+      structuredDataScript.type = 'application/ld+json';
+      document.head.appendChild(structuredDataScript);
+    }
+    
+    const structuredData = {
+      "@context": "https://schema.org",
+      "@type": "ParkingFacility",
+      "name": "SkyParking",
+      "image": "https://skyparking.bg/og-image.jpg",
+      "url": "https://skyparking.bg/",
+      "telephone": "+359886616991",
+      "email": "info@skyparking.bg",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Ulitsa Nedelcho Bonchev 30",
+        "addressLocality": "Sofia",
+        "addressCountry": "BG"
+      },
+      "areaServed": {
+        "@type": "Place",
+        "name": "Sofia Airport"
+      },
+      "priceRange": "€",
+      "description": language === 'bg' 
+        ? "Сигурен и достъпен паркинг на 5 минути от Летище София Терминал 1 и 2. Безплатен трансфер, видеонаблюдение 24/7."
+        : "Secure and affordable parking 5 minutes from Sofia Airport Terminal 1 and 2. Free transfer, 24/7 video surveillance.",
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 42.6977,
+        "longitude": 23.3219
+      },
+      "openingHours": "Mo,Tu,We,Th,Fr,Sa,Su 00:00-23:59",
+      "sameAs": [
+        "https://www.facebook.com/share/1AvUJmhjvq",
+        "https://www.instagram.com/skyparking.bg"
+      ],
+      "amenityFeature": [
+        {
+          "@type": "LocationFeatureSpecification",
+          "name": "24/7 Security"
+        },
+        {
+          "@type": "LocationFeatureSpecification",
+          "name": "Free Shuttle Service"
+        },
+        {
+          "@type": "LocationFeatureSpecification",
+          "name": "Video Surveillance"
+        },
+        {
+          "@type": "LocationFeatureSpecification",
+          "name": "Online Booking"
+        }
+      ]
+    };
+    
+    structuredDataScript.textContent = JSON.stringify(structuredData);
   }, [t, language]);
 
   return (
     <div>
+      {/* SEO component for dynamic canonical URL */}
+      <SEO 
+        title={t("heroTitle")}
+        description={language === 'bg' 
+          ? 'Сигурен и достъпен паркинг на 5 минути от Летище София Терминал 1 и 2. Безплатен трансфер, видеонаблюдение 24/7, онлайн резервация. SkyParking - вашето доверено решение за паркиране.'
+          : 'Secure and affordable parking 5 minutes from Sofia Airport Terminal 1 and 2. Free transfer, 24/7 video surveillance, online booking. SkyParking - your trusted parking solution.'
+        }
+        canonical="https://skyparking.bg/"
+        ogImage="https://skyparking.bg/og-image.jpg"
+      />
+      
       {/* Header */}
       <Header />
       
