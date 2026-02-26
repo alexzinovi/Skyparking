@@ -193,7 +193,7 @@ const bg = {
   carKeysNotesPlaceholder: "Напр.: Ключове оставени в офиса, паркирана в зона B...",
   
   // Capacity
-  capacityWarning: "⚠️ Предупреждение за ка����ацитет",
+  capacityWarning: "⚠️ Предупреждение за ка�����ацитет",
   capacityExceeded: "Капацитетът е надвишен",
   capacityDetails: "Детайли за капацитета",
   date: "Дата",
@@ -470,8 +470,9 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
           const bookingDeparture = new Date(b.departureDate);
           const currentDate = new Date(dateStr);
           
-          // Check if this date falls within the booking period
-          return bookingArrival <= currentDate && currentDate < bookingDeparture;
+          // Include departure date - a booking occupies space from arrival through departure (inclusive)
+          // This matches the calendar logic where cars scheduled to leave still count as occupying space
+          return bookingArrival <= currentDate && currentDate <= bookingDeparture;
         });
         
         // Count non-keys and keys bookings
