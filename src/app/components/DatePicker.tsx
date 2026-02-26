@@ -14,9 +14,10 @@ interface DatePickerProps {
   label?: string;
   error?: string;
   id?: string;
+  defaultMonth?: Date; // Optional: specify which month to show initially when picker opens
 }
 
-export function DatePicker({ value, onChange, minDate, label, error, id }: DatePickerProps) {
+export function DatePicker({ value, onChange, minDate, label, error, id, defaultMonth }: DatePickerProps) {
   const [open, setOpen] = useState(false);
   const { language } = useLanguage();
   
@@ -58,6 +59,7 @@ export function DatePicker({ value, onChange, minDate, label, error, id }: DateP
             selected={value}
             onSelect={handleSelect}
             locale={locale}
+            defaultMonth={defaultMonth || value || minDate || new Date()} // Show month based on defaultMonth, current value, minDate, or today
             disabled={(date) => {
               if (minDate) {
                 // Compare dates only (ignore time) - allow today, block past dates

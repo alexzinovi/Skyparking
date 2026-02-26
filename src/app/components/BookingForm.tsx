@@ -390,6 +390,7 @@ export function BookingForm() {
                       }
                     }}
                     minDate={arrivalDateObj || new Date()}
+                    defaultMonth={arrivalDateObj || new Date()} // Auto-open to arrival month
                     error={errors.departureDate?.message}
                   />
 
