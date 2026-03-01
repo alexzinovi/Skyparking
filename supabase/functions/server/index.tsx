@@ -21,36 +21,36 @@ const MAX_TOTAL_SPOTS = MAX_SPOTS + KEYS_OVERFLOW_SPOTS; // 200
 // Default pricing configuration
 const DEFAULT_PRICING = {
   dailyPrices: {
-    1: 15,
-    2: 20,
-    3: 25,
-    4: 28,
-    5: 30,
-    6: 35,
-    7: 38,
-    8: 40,
-    9: 42,
-    10: 46,
-    11: 50,
-    12: 54,
-    13: 58,
-    14: 62,
-    15: 66,
-    16: 70,
-    17: 74,
-    18: 78,
-    19: 82,
-    20: 86,
-    21: 90,
-    22: 94,
-    23: 98,
-    24: 102,
-    25: 106,
-    26: 110,
-    27: 114,
-    28: 118,
-    29: 122,
-    30: 126
+    1: 10,
+    2: 15,
+    3: 19,
+    4: 21,
+    5: 23,
+    6: 25,
+    7: 28,
+    8: 30,
+    9: 32,
+    10: 34,
+    11: 36,
+    12: 38,
+    13: 40,
+    14: 43,
+    15: 46,
+    16: 49,
+    17: 52,
+    18: 55,
+    19: 57,
+    20: 59,
+    21: 61,
+    22: 63,
+    23: 65,
+    24: 67,
+    25: 69,
+    26: 71,
+    27: 73,
+    28: 75,
+    29: 77,
+    30: 79
   },
   longTermRate: 2.8      // Days 31+
 };
@@ -72,6 +72,13 @@ async function getPricingConfig() {
   try {
     const config = await kv.get("pricing:config");
     const pricing = config || DEFAULT_PRICING;
+    
+    // Log the pricing source for debugging
+    if (config) {
+      console.log("✅ Using pricing from database (pricing:config)");
+    } else {
+      console.log("⚠️ No pricing found in database, using DEFAULT_PRICING fallback");
+    }
     
     // Update cache
     cachedPricingConfig = pricing;

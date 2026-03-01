@@ -36,6 +36,16 @@ export function PricingManager({ sessionToken }: PricingManagerProps) {
     setError(null);
     try {
       console.log("Fetching pricing from backend...");
+      
+      // Force clear frontend cache to get fresh data
+      try {
+        localStorage.removeItem('skyparking_pricing_cache');
+        localStorage.removeItem('skyparking_pricing_cache_timestamp');
+        console.log("🧹 Cleared frontend pricing cache");
+      } catch (e) {
+        console.warn("Could not clear cache:", e);
+      }
+      
       const response = await fetch(
         `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/pricing`,
         {
@@ -47,7 +57,7 @@ export function PricingManager({ sessionToken }: PricingManagerProps) {
 
       console.log("Pricing response status:", response.status);
       const data = await response.json();
-      console.log("Pricing data:", data);
+      console.log("Pricing data from server:", JSON.stringify(data.pricing?.dailyPrices || {}, null, 2));
       
       if (data.success) {
         setPricing(data.pricing);
