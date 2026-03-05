@@ -482,7 +482,62 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
   const [manualPrice, setManualPrice] = useState<string>("");
   const [calculatedPrice, setCalculatedPrice] = useState<number>(0);
 
-  const shiftRange = useMemo(() => getShiftTimeRange(selectedShift), [selectedShift]);
+  // Shift preview state
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [previewShiftOffset, setPreviewShiftOffset] = useState(0); // -1 for previous, 1 for next, etc.
+  const [showAutoResetMessage, setShowAutoResetMessage] = useState(false);
+
+  // Auto-reset timer for preview mode (60 seconds)
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (isPreviewMode) {
+      timer = setTimeout(() => {
+        setIsPreviewMode(false);
+        setPreviewShiftOffset(0);
+        setShowAutoResetMessage(true);
+        // Hide message after 2 seconds
+        setTimeout(() => setShowAutoResetMessage(false), 2000);
+      }, 60000); // 60 seconds
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [isPreviewMode, previewShiftOffset]);
+
+  // Calculate shift range based on preview mode
+  const shiftRange = useMemo(() => {
+    if (isPreviewMode && previewShiftOffset !== 0) {
+      // Calculate preview shift
+      const baseDate = new Date();
+      
+      // Each shift is 12 hours, so offset by 12 hours * offset
+      baseDate.setHours(baseDate.getHours() + (previewShiftOffset * 12));
+      
+      const hour = baseDate.getHours();
+      const shift = hour >= SHIFT_CONFIG.day.start && hour < SHIFT_CONFIG.day.end ? "day" : "night";
+      
+      return getShiftTimeRange(shift, baseDate);
+    }
+    return getShiftTimeRange(selectedShift);
+  }, [selectedShift, isPreviewMode, previewShiftOffset]);
+
+  // Navigate to previous shift
+  const goToPreviousShift = () => {
+    setIsPreviewMode(true);
+    setPreviewShiftOffset(prev => prev - 1);
+  };
+
+  // Navigate to next shift
+  const goToNextShift = () => {
+    setIsPreviewMode(true);
+    setPreviewShiftOffset(prev => prev + 1);
+  };
+
+  // Return to active shift
+  const returnToActiveShift = () => {
+    setIsPreviewMode(false);
+    setPreviewShiftOffset(0);
+  };
 
   // Fetch bookings
   const fetchBookings = async (showLoadingSpinner = false, silent = true) => {
@@ -1263,6 +1318,121 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
     };
   }, [bookings, shiftRange]);
 
+  // Helper: Get occupancy color based on Calendar logic
+  // Green: < 50%, Blue: 50-79%, Yellow: 80-99%, Red: >= 100%
+  const getOccupancyColor = (percentage: number): { text: string; bar: string } => {
+    if (percentage >= 100) return { text: 'text-red-600', bar: 'bg-red-500' };
+    if (percentage >= 80) return { text: 'text-yellow-600', bar: 'bg-yellow-500' };
+    if (percentage >= 50) return { text: 'text-blue-600', bar: 'bg-blue-500' };
+    return { text: 'text-green-600', bar: 'bg-green-500' };
+  };
+
+  // Calculate current occupancy for the displayed shift date
+  const currentOccupancy = useMemo(() => {
+    // Get the date we're looking at (today for active shift, or shift start date for preview)
+    const targetDate = new Date(shiftRange.start);
+    const dateString = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
+    
+    // Count only cars that have actually arrived (physically in parking lot)
+    // A car is in the parking lot if: status = 'arrived' AND arrivalDate <= today AND departureDate >= today
+    const carsInParking = bookings.filter(b => 
+      b.status === 'arrived' &&
+      b.arrivalDate <= dateString &&
+      b.departureDate >= dateString
+    ).reduce((sum, b) => sum + (b.numberOfCars || 1), 0);
+    
+    // Calculate percentage based on actual cars in parking (not confirmed reservations)
+    const percentage = carsInParking > 0 ? Math.round((carsInParking / BASE_CAPACITY) * 100) : 0;
+    const availableSpots = BASE_CAPACITY - carsInParking;
+    
+    return {
+      carsInParking,
+      percentage,
+      availableSpots,
+      total: BASE_CAPACITY
+    };
+  }, [bookings, shiftRange]);
+
+  // Calculate peak occupancy for the current shift (for preview mode)
+  // Calculate peak arrivals and peak departures for preview mode
+  const peakAnalytics = useMemo(() => {
+    if (!isPreviewMode) return null;
+
+    // Get all hours in the shift
+    const startTime = new Date(shiftRange.start);
+    const endTime = new Date(shiftRange.end);
+    const hours = [];
+    
+    for (let time = new Date(startTime); time < endTime; time.setHours(time.getHours() + 1)) {
+      hours.push(new Date(time));
+    }
+
+    // Track arrivals and departures by hour
+    const arrivalsByHour: { [hour: string]: number } = {};
+    const departuresByHour: { [hour: string]: number } = {};
+
+    hours.forEach((hourStart) => {
+      const hourStr = String(hourStart.getHours()).padStart(2, '0');
+      
+      // Count arrivals in this hour
+      const arrivalsInHour = bookings.filter(b => {
+        if (b.status === 'cancelled' || b.status === 'no-show' || b.status === 'declined') return false;
+        const arrivalDateTime = new Date(`${b.arrivalDate}T${b.arrivalTime}`);
+        const arrivalHour = arrivalDateTime.getHours();
+        return arrivalHour === parseInt(hourStr) && arrivalDateTime >= startTime && arrivalDateTime < endTime;
+      }).reduce((sum, b) => sum + (b.numberOfCars || 1), 0);
+
+      // Count departures in this hour
+      const departuresInHour = bookings.filter(b => {
+        if (b.status === 'cancelled' || b.status === 'no-show' || b.status === 'declined') return false;
+        const departureDateTime = new Date(`${b.departureDate}T${b.departureTime}`);
+        const departureHour = departureDateTime.getHours();
+        return departureHour === parseInt(hourStr) && departureDateTime >= startTime && departureDateTime < endTime;
+      }).reduce((sum, b) => sum + (b.numberOfCars || 1), 0);
+
+      arrivalsByHour[hourStr] = arrivalsInHour;
+      departuresByHour[hourStr] = departuresInHour;
+    });
+
+    // Find peak arrival hour
+    let peakArrivalHour = '00';
+    let peakArrivalCount = 0;
+    Object.entries(arrivalsByHour).forEach(([hour, count]) => {
+      if (count > peakArrivalCount) {
+        peakArrivalCount = count;
+        peakArrivalHour = hour;
+      }
+    });
+
+    // Find peak departure hour
+    let peakDepartureHour = '00';
+    let peakDepartureCount = 0;
+    Object.entries(departuresByHour).forEach(([hour, count]) => {
+      if (count > peakDepartureCount) {
+        peakDepartureCount = count;
+        peakDepartureHour = hour;
+      }
+    });
+
+    // Format time ranges
+    const peakArrivalNextHour = String((parseInt(peakArrivalHour) + 1) % 24).padStart(2, '0');
+    const peakArrivalRange = `${peakArrivalHour}:00 – ${peakArrivalNextHour}:00`;
+
+    const peakDepartureNextHour = String((parseInt(peakDepartureHour) + 1) % 24).padStart(2, '0');
+    const peakDepartureRange = `${peakDepartureHour}:00 – ${peakDepartureNextHour}:00`;
+
+    return {
+      peakArrivals: {
+        timeRange: peakArrivalRange,
+        count: peakArrivalCount
+      },
+      peakDepartures: {
+        timeRange: peakDepartureRange,
+        count: peakDepartureCount
+      }
+    };
+  }, [bookings, shiftRange, isPreviewMode]);
+
   // Calculate revenue statistics
   const revenueStats = useMemo(() => {
     // Expected revenue: ALL bookings (confirmed, arrived, checked-out) that arrive during this shift
@@ -1540,21 +1710,6 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                 <span className="text-lg text-gray-600 font-medium">
                   {currentUser.fullName} ({currentUser.role})
                 </span>
-                <button
-                  onClick={toggleShift}
-                  className="flex items-center gap-3 px-4 sm:px-5 py-2 sm:py-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors cursor-pointer"
-                  title="Кликнете за смяна на смяна"
-                >
-                  {selectedShift === "day" ? <Sun className="w-6 h-6 text-orange-600" /> : <Moon className="w-6 h-6 text-indigo-600" />}
-                  <div className="text-left">
-                    <div className="text-base font-semibold text-gray-700">
-                      {SHIFT_CONFIG[selectedShift].label}
-                    </div>
-                    <div className="text-base text-gray-600">
-                      {formatShiftDisplay(shiftRange)}
-                    </div>
-                  </div>
-                </button>
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
@@ -1594,6 +1749,152 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
               </Button>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Auto-reset notification */}
+      {showAutoResetMessage && (
+        <div className="fixed bottom-4 right-4 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg text-sm z-50 animate-fade-in">
+          Върнато към активната смяна
+        </div>
+      )}
+
+      {/* Shift Status Bar - Clean Operations Control UI v3 */}
+      <div className="bg-gray-50 border-b py-3">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          {/* Compact Shift Header with ДНЕС button */}
+          <div className="flex items-center justify-between mb-3 bg-white rounded-lg border border-gray-200 px-4 py-2.5">
+            <div className="flex items-center gap-3">
+              {!isPreviewMode && <span className="text-green-500 text-base">●</span>}
+              {isPreviewMode && <span className="text-base">👁</span>}
+              <div>
+                <div className="font-bold text-gray-900 uppercase text-base leading-tight">
+                  {isPreviewMode ? 'ПРЕГЛЕД НА СМЯНА' : SHIFT_CONFIG[shiftRange.shift].label}
+                </div>
+                <div className="text-sm text-gray-600">
+                  {formatShiftDisplay(shiftRange).replace(/\/\d{4}/g, '')}
+                </div>
+                {isPreviewMode && (
+                  <div className="text-xs text-gray-500 mt-0.5">
+                    (не е активната смяна)
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={goToPreviousShift}
+                className="flex items-center gap-1.5 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 px-4 py-2 rounded transition-colors font-medium"
+                title="Предишна смяна"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                <span>Предишна</span>
+              </button>
+              <button
+                onClick={returnToActiveShift}
+                className={`text-sm px-4 py-2 rounded transition-colors font-bold ${
+                  !isPreviewMode
+                    ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                    : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
+                }`}
+                title="Днешна смяна"
+              >
+                ДНЕС
+              </button>
+              <button
+                onClick={goToNextShift}
+                className="flex items-center gap-1.5 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 px-4 py-2 rounded transition-colors font-medium"
+                title="Следваща смяна"
+              >
+                <span>Следваща</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Main KPI Blocks - Compact Layout (70-80px height) */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+            {/* Block 1 - ARRIVALS */}
+            <div className="bg-white rounded-lg border border-gray-200 px-4 py-3">
+              <div className="text-xs font-bold text-gray-500 mb-1 tracking-wide uppercase">
+                ПРИСТИГАНИЯ
+              </div>
+              <div className="text-2xl font-bold text-gray-900 leading-none">
+                {summaryStats.actual.arrived} <span className="text-lg font-normal text-gray-400">от</span> {summaryStats.expected.arriving}
+              </div>
+            </div>
+
+            {/* Block 2 - DEPARTURES */}
+            <div className="bg-white rounded-lg border border-gray-200 px-4 py-3">
+              <div className="text-xs font-bold text-gray-500 mb-1 tracking-wide uppercase">
+                НАПУСКАНИЯ
+              </div>
+              <div className="text-2xl font-bold text-gray-900 leading-none">
+                {summaryStats.actual.left} <span className="text-lg font-normal text-gray-400">от</span> {summaryStats.expected.leaving}
+              </div>
+            </div>
+
+            {/* Block 3 - CARS IN PARKING */}
+            <div className="bg-white rounded-lg border border-gray-200 px-4 py-3 relative overflow-hidden">
+              {/* Colored indicator bar on left */}
+              {(() => {
+                const colors = getOccupancyColor(currentOccupancy.percentage);
+                return <div className={`absolute left-0 top-0 bottom-0 w-1 ${colors.bar}`}></div>;
+              })()}
+              <div className="pl-2">
+                <div className="text-xs font-bold text-gray-500 mb-1 tracking-wide uppercase">
+                  КОЛИ В ПАРКИНГА
+                </div>
+                <div className="text-2xl font-bold text-gray-900 leading-none mb-1">
+                  {currentOccupancy.carsInParking}
+                </div>
+                {(() => {
+                  const colors = getOccupancyColor(currentOccupancy.percentage);
+                  return (
+                    <>
+                      <div className={`text-sm font-semibold ${colors.text}`}>
+                        Заетост: {currentOccupancy.percentage}%
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        Свободни места: {currentOccupancy.availableSpots}
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
+
+          {/* Preview Mode: Peak Information (Separated) */}
+          {isPreviewMode && peakAnalytics && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Peak Arrivals */}
+              <div className="bg-white rounded-lg border border-gray-200 px-4 py-3">
+                <div className="text-xs font-bold text-gray-500 mb-1 tracking-wide uppercase">
+                  ПИК ПРИСТИГАНИЯ
+                </div>
+                <div className="text-lg font-bold text-gray-900 leading-tight">
+                  {peakAnalytics.peakArrivals.timeRange}
+                </div>
+                <div className="text-sm text-gray-600 mt-0.5">
+                  {peakAnalytics.peakArrivals.count} коли
+                </div>
+              </div>
+
+              {/* Peak Departures */}
+              <div className="bg-white rounded-lg border border-gray-200 px-4 py-3">
+                <div className="text-xs font-bold text-gray-500 mb-1 tracking-wide uppercase">
+                  ПИК НАПУСКАНИЯ
+                </div>
+                <div className="text-lg font-bold text-gray-900 leading-tight">
+                  {peakAnalytics.peakDepartures.timeRange}
+                </div>
+                <div className="text-sm text-gray-600 mt-0.5">
+                  {peakAnalytics.peakDepartures.count} коли
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -1637,9 +1938,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
               { id: "confirmed", label: "Потвърдени", count: confirmedBookings.length },
               { id: "arriving", label: "Пристигащи днес", count: arrivingToday.length },
               { id: "leaving", label: "Напускащи днес", count: leavingToday.length },
-              { id: "exits", label: "Изходи", count: exitingCustomers.length },
               { id: "archive", label: "Архив", count: archivedBookings.length },
-              { id: "summary", label: "Обобщение" },
               { id: "revenue", label: "Приходи" },
               { id: "calendar", label: "Календар" },
             ].map((tab) => (
@@ -1915,7 +2214,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
               <div className="space-y-5">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-3xl font-semibold">Напускащи днес</h2>
-                  <Badge variant="secondary" className="text-lg py-2 px-4">{leavingToday.length} резервации</Badge>
+                  <Badge variant="secondary" className="text-lg py-2 px-4">{leavingToday.length} резе��вации</Badge>
                 </div>
                 {leavingToday.length === 0 ? (
                   <Card className="p-16 text-center text-gray-500 text-xl">
