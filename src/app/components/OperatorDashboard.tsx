@@ -1329,9 +1329,18 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
 
   // Calculate current occupancy for the displayed shift date
   const currentOccupancy = useMemo(() => {
-    // Get the date we're looking at (today for active shift, or shift start date for preview)
-    const targetDate = new Date(shiftRange.start);
-    const dateString = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
+    // For current shift, use today's actual date
+    // For preview mode, use the date from the shift range
+    let dateString: string;
+    
+    if (isPreviewMode && previewShiftOffset !== 0) {
+      // In preview mode, extract the date from the shift start
+      const targetDate = new Date(shiftRange.start);
+      dateString = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
+    } else {
+      // For current shift (active mode), always use today's date
+      dateString = getTodayDate();
+    }
     
     // Count only cars that have actually arrived (physically in parking lot)
     // A car is in the parking lot if: status = 'arrived' AND arrivalDate <= today AND departureDate >= today
@@ -1351,7 +1360,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
       availableSpots,
       total: BASE_CAPACITY
     };
-  }, [bookings, shiftRange]);
+  }, [bookings, shiftRange, isPreviewMode, previewShiftOffset]);
 
   // Calculate peak occupancy for the current shift (for preview mode)
   // Calculate peak arrivals and peak departures for preview mode
