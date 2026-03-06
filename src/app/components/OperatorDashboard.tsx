@@ -92,7 +92,7 @@ interface Booking {
   originalDepartureTime?: string;
 }
 
-type TabType = "new" | "confirmed" | "arriving" | "leaving" | "exits" | "summary" | "revenue" | "archive" | "calendar";
+type TabType = "new" | "confirmed" | "arriving" | "leaving" | "exits" | "summary" | "revenue" | "all" | "calendar";
 type ShiftType = "day" | "night";
 
 interface OperatorDashboardProps {
@@ -431,6 +431,9 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
   
   // Search functionality
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // Status filter for "all" tab
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   
   // Filters for confirmed tab
   const [filterStartDate, setFilterStartDate] = useState("");
@@ -795,20 +798,75 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
       });
   }, [bookings, exitDate, searchQuery]);
   
-  // Archive bookings (checked-out, cancelled, no-show)
-  const archivedBookings = useMemo(() => {
-    return bookings
-      .filter(b => 
-        (b.status === "checked-out" || b.status === "cancelled" || b.status === "no-show") &&
-        filterBySearch(b)
-      )
-      .sort((a, b) => {
-        // Sort by departure date/time, newest first
-        const aTime = new Date(`${a.departureDate}T${a.departureTime}`).getTime();
-        const bTime = new Date(`${b.departureDate}T${b.departureTime}`).getTime();
-        return bTime - aTime; // Newest first
-      });
-  }, [bookings, searchQuery]);
+  // All bookings with status filter
+  const allBookings = useMemo(() => {
+    let filtered = bookings.filter(b => filterBySearch(b));
+    
+    // Apply status filter
+    if (statusFilter !== "all") {
+      if (statusFilter === "in-parking") {
+        filtered = filtered.filter(b => b.status === "arrived");
+      } else if (statusFilter === "late") {
+        filtered = filtered.filter(b => b.isLate);
+      } else {
+        filtered = filtered.filter(b => b.status === statusFilter);
+      }
+    }
+    
+    return filtered.sort((a, b) => {
+      // Sort by arrival date/time, newest first
+      const aTime = new Date(`${a.arrivalDate}T${a.arrivalTime}`).getTime();
+      const bTime = new Date(`${b.arrivalDate}T${b.arrivalTime}`).getTime();
+      return bTime - aTime; // Newest first
+    });
+  }, [bookings, searchQuery, statusFilter]);
+
+  // Helper function to get status badge for a booking
+  const getStatusBadge = (booking: Booking) => {
+    const badges = [];
+    
+    // Status badge
+    switch (booking.status) {
+      case "new":
+        badges.push(<Badge key="status" className="bg-yellow-500 text-base py-1 px-3">🆕 Нова</Badge>);
+        break;
+      case "confirmed":
+        badges.push(<Badge key="status" className="bg-green-600 text-base py-1 px-3">✅ Потвърдена</Badge>);
+        break;
+      case "arrived":
+        badges.push(<Badge key="status" className="bg-blue-600 text-base py-1 px-3">🚗 В паркинга</Badge>);
+        break;
+      case "checked-out":
+        badges.push(<Badge key="status" className="bg-gray-600 text-base py-1 px-3">✔️ Напуснал</Badge>);
+        break;
+      case "cancelled":
+        badges.push(<Badge key="status" variant="destructive" className="text-base py-1 px-3">❌ Отказана</Badge>);
+        break;
+      case "declined":
+        badges.push(<Badge key="status" variant="destructive" className="text-base py-1 px-3">🚫 Отхвърлена</Badge>);
+        break;
+      case "no-show":
+        badges.push(<Badge key="status" variant="secondary" className="text-base py-1 px-3">⭕ Не се яви</Badge>);
+        break;
+    }
+    
+    // Late badge
+    if (booking.isLate) {
+      badges.push(<Badge key="late" className="bg-orange-600 text-base py-1 px-3">⏰ Закъсняла</Badge>);
+    }
+    
+    // Car keys badge
+    if (booking.carKeys) {
+      badges.push(<Badge key="keys" variant="secondary" className="text-base py-1 px-3">🔑 С ключове</Badge>);
+    }
+    
+    // Invoice badge
+    if (booking.needsInvoice) {
+      badges.push(<Badge key="invoice" variant="outline" className="text-base py-1 px-3 bg-yellow-50 border-yellow-300"><FileText className="w-4 h-4 inline mr-1" />Фактура</Badge>);
+    }
+    
+    return badges;
+  };
 
   // Accept new reservation
   const handleAcceptReservation = async (booking: Booking) => {
@@ -1931,7 +1989,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
           {searchQuery && (
             <div className="mt-3 text-base text-gray-600">
               Намерени резултати: <span className="font-semibold">
-                {newBookings.length + confirmedBookings.length + arrivingToday.length + leavingToday.length + exitingCustomers.length + archivedBookings.length}
+                {newBookings.length + confirmedBookings.length + arrivingToday.length + leavingToday.length + exitingCustomers.length + allBookings.length}
               </span>
             </div>
           )}
@@ -1947,7 +2005,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
               { id: "confirmed", label: "Потвърдени", count: confirmedBookings.length },
               { id: "arriving", label: "Пристигащи днес", count: arrivingToday.length },
               { id: "leaving", label: "Напускащи днес", count: leavingToday.length },
-              { id: "archive", label: "Архив", count: archivedBookings.length },
+              { id: "all", label: "Всички", count: allBookings.length },
               { id: "revenue", label: "Приходи" },
               { id: "calendar", label: "Календар" },
             ].map((tab) => (
@@ -2414,17 +2472,38 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
               </div>
             )}
 
-            {/* Archive */}
-            {activeTab === "archive" && (
+            {/* All Bookings */}
+            {activeTab === "all" && (
               <div className="space-y-6">
-                <h2 className="text-3xl font-semibold mb-6">Архив</h2>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+                  <h2 className="text-3xl font-semibold">Всички резервации</h2>
+                  
+                  {/* Status Filter */}
+                  <div className="flex items-center gap-3">
+                    <Filter className="w-5 h-5 text-gray-500" />
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                      className="px-4 py-2 text-base border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 bg-white"
+                    >
+                      <option value="all">Всички статуси</option>
+                      <option value="new">🆕 Нови</option>
+                      <option value="confirmed">✅ Потвърдени</option>
+                      <option value="in-parking">🚗 В паркинга</option>
+                      <option value="checked-out">✔️ Напуснали</option>
+                      <option value="cancelled">❌ Отказани</option>
+                      <option value="no-show">⭕ Не се явиха</option>
+                      <option value="late">⏰ Закъснели</option>
+                    </select>
+                  </div>
+                </div>
                 
-                {archivedBookings.length === 0 ? (
+                {allBookings.length === 0 ? (
                   <Card className="p-16 text-center text-gray-500 text-xl">
-                    {searchQuery ? `Няма резултати за "${searchQuery}"` : "Няма резервации в архива"}
+                    {searchQuery ? `Няма резултати за "${searchQuery}"` : statusFilter !== "all" ? "Няма резервации с този статус" : "Няма резервации"}
                   </Card>
                 ) : (
-                  archivedBookings.map(booking => (
+                  allBookings.map(booking => (
                     <Card key={booking.id} className="p-6">
                       <div className="flex flex-col sm:flex-row items-start justify-between gap-5">
                         <div className="flex-1 w-full">
@@ -2438,25 +2517,17 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                           <div className="flex flex-wrap items-center gap-3 mb-4">
                             <User className="w-6 h-6 text-gray-500" />
                             <span className="font-bold text-2xl">{booking.name}</span>
-                            {booking.status === "checked-out" && (
-                              <Badge className="bg-gray-600 text-base py-2 px-4">Напуснал</Badge>
-                            )}
-                            {booking.status === "cancelled" && (
-                              <Badge variant="destructive" className="text-base py-2 px-4">Отказан</Badge>
-                            )}
-                            {booking.status === "no-show" && (
-                              <Badge variant="secondary" className="text-base py-2 px-4">Не се яви</Badge>
-                            )}
-                            {booking.carKeys && (
-                              <Badge variant="secondary" className="text-base py-1 px-3">
-                                🔑 С ключове
-                              </Badge>
-                            )}
+                            {/* Status badges */}
+                            <div className="flex flex-wrap gap-2">
+                              {getStatusBadge(booking)}
+                            </div>
                           </div>
                           <div className="grid grid-cols-2 gap-3 text-lg text-gray-700 font-medium">
                             <div>📞 {booking.phone}</div>
+                            <div>✉️ {booking.email}</div>
                             <div>🚗 {booking.licensePlate}</div>
                             <div>📅 {formatDateDisplay(booking.arrivalDate)} - {formatDateDisplay(booking.departureDate)}</div>
+                            <div>🕐 {booking.arrivalTime} - {booking.departureTime}</div>
                             <div>🚙 {booking.numberOfCars || 1} кола/коли</div>
                             <div>👥 {booking.passengers} пътник(а)</div>
                             <div className="font-bold text-xl">💶 €{booking.finalPrice || booking.totalPrice}</div>
