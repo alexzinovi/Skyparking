@@ -90,6 +90,11 @@ interface Booking {
   lateSurcharge?: number;
   originalDepartureDate?: string;
   originalDepartureTime?: string;
+  editHistory?: Array<{
+    timestamp: string;
+    editor: string;
+    changes: string;
+  }>;
 }
 
 type TabType = "new" | "confirmed" | "arriving" | "leaving" | "exits" | "summary" | "revenue" | "all" | "calendar";
@@ -798,6 +803,20 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
       });
   }, [bookings, exitDate, searchQuery]);
   
+  // Calculate counts for each status
+  const statusCounts = useMemo(() => {
+    return {
+      all: bookings.filter(b => filterBySearch(b)).length,
+      new: bookings.filter(b => b.status === "new" && filterBySearch(b)).length,
+      confirmed: bookings.filter(b => b.status === "confirmed" && filterBySearch(b)).length,
+      inParking: bookings.filter(b => b.status === "arrived" && filterBySearch(b)).length,
+      checkedOut: bookings.filter(b => b.status === "checked-out" && filterBySearch(b)).length,
+      cancelled: bookings.filter(b => b.status === "cancelled" && filterBySearch(b)).length,
+      noShow: bookings.filter(b => b.status === "no-show" && filterBySearch(b)).length,
+      late: bookings.filter(b => b.isLate && filterBySearch(b)).length,
+    };
+  }, [bookings, searchQuery]);
+  
   // All bookings with status filter
   const allBookings = useMemo(() => {
     let filtered = bookings.filter(b => filterBySearch(b));
@@ -1285,6 +1304,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
               ...bookingForm,
               totalPrice,
               updatedBy: currentUser.fullName,
+              editor: currentUser.fullName, // Track who edited the booking
             }),
           }
         );
@@ -2486,14 +2506,14 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                       onChange={(e) => setStatusFilter(e.target.value)}
                       className="px-4 py-2 text-base border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 bg-white"
                     >
-                      <option value="all">Всички статуси</option>
-                      <option value="new">🆕 Нови</option>
-                      <option value="confirmed">✅ Потвърдени</option>
-                      <option value="in-parking">🚗 В паркинга</option>
-                      <option value="checked-out">✔️ Напуснали</option>
-                      <option value="cancelled">❌ Отказани</option>
-                      <option value="no-show">⭕ Не се явиха</option>
-                      <option value="late">⏰ Закъснели</option>
+                      <option value="all">Всички статуси ({statusCounts.all})</option>
+                      <option value="new">🆕 Нови ({statusCounts.new})</option>
+                      <option value="confirmed">✅ Потвърдени ({statusCounts.confirmed})</option>
+                      <option value="in-parking">🚗 В паркинга ({statusCounts.inParking})</option>
+                      <option value="checked-out">✔️ Напуснали ({statusCounts.checkedOut})</option>
+                      <option value="cancelled">❌ Отказани ({statusCounts.cancelled})</option>
+                      <option value="no-show">⭕ Не се явиха ({statusCounts.noShow})</option>
+                      <option value="late">⏰ Закъснели ({statusCounts.late})</option>
                     </select>
                   </div>
                 </div>
@@ -2541,6 +2561,19 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                               </Badge>
                             </div>
                           )}
+                        </div>
+                        <div className="flex flex-col gap-3">
+                          <Button
+                            onClick={() => {
+                              handleEditReservation(booking);
+                              setShowBookingForm(true);
+                            }}
+                            className="h-12 text-base"
+                            variant="outline"
+                          >
+                            <Edit className="w-5 h-5 mr-2" />
+                            Редактирай
+                          </Button>
                         </div>
                       </div>
                     </Card>

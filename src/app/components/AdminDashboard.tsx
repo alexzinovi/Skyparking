@@ -92,6 +92,9 @@ const bg = {
   created: "Създадена",
   updated: "Обновена",
   statusHistory: "История на статусите",
+  editHistory: "История на промените",
+  editedBy: "Редактирана от",
+  changes: "Промени",
   cancelledBy: "Отказана от",
   noShowBy: "Маркирана като не се яви от",
   at: "на",
@@ -353,6 +356,11 @@ interface Booking {
   declinedBy?: string; // Operator who declined
   declinedAt?: string; // Timestamp of decline
   discountCode?: string;
+  editHistory?: Array<{
+    timestamp: string;
+    editor: string;
+    changes: string;
+  }>;
 }
 
 interface CapacityDay {
@@ -926,7 +934,10 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
           "Content-Type": "application/json",
           "Authorization": `Bearer ${publicAnonKey}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          editor: editingBooking ? operatorName : undefined, // Track who edited
+        }),
       });
 
       const data = await response.json();
@@ -2291,6 +2302,30 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                           )}
                         </div>
                       )}
+                    </div>
+                  )}
+
+                  {/* Edit History */}
+                  {booking.editHistory && booking.editHistory.length > 0 && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+                      <div className="flex items-center text-base font-semibold text-blue-900 mb-3">
+                        <Edit className="h-5 w-5 mr-2" />
+                        {bg.editHistory}
+                      </div>
+                      <div className="space-y-3">
+                        {booking.editHistory.map((edit, index) => (
+                          <div key={index} className="bg-white rounded p-3 border border-blue-100">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-medium text-blue-900">{edit.editor}</span>
+                              <span className="text-sm text-gray-600">{formatDateTimeDisplay(edit.timestamp)}</span>
+                            </div>
+                            <div className="text-sm text-gray-700">
+                              <span className="font-semibold">{bg.changes}:</span>
+                              <div className="mt-1 ml-2">{edit.changes}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
 

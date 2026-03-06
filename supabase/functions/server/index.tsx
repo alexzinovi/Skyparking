@@ -653,9 +653,32 @@ app.put("/make-server-47a4914e/bookings/:id", async (c) => {
       return c.json({ success: false, message: "Booking not found" }, 404);
     }
     
+    // Track what fields changed
+    const changes: string[] = [];
+    const fieldsToTrack = ['name', 'email', 'phone', 'licensePlate', 'arrivalDate', 'arrivalTime', 
+                           'departureDate', 'departureTime', 'passengers', 'numberOfCars', 
+                           'totalPrice', 'carKeys', 'status', 'paymentMethod', 'paymentStatus'];
+    
+    for (const field of fieldsToTrack) {
+      if (updates[field] !== undefined && updates[field] !== existing[field]) {
+        changes.push(`${field}: ${existing[field]} → ${updates[field]}`);
+      }
+    }
+    
+    // Add edit history entry if there are changes
+    const editHistory = existing.editHistory || [];
+    if (changes.length > 0 && updates.editor) {
+      editHistory.push({
+        timestamp: new Date().toISOString(),
+        editor: updates.editor,
+        changes: changes.join(', ')
+      });
+    }
+    
     const updated = {
       ...existing,
       ...updates,
+      editHistory,
       updatedAt: new Date().toISOString(),
     };
     
