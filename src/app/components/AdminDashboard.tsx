@@ -639,6 +639,12 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
         break;
       case "confirmed":
         filtered = bookings.filter(b => b.status === "confirmed");
+        // Sort by arrival date ascending (closest to current date first)
+        filtered = filtered.sort((a, b) => {
+          const aTime = new Date(`${a.arrivalDate}T${a.arrivalTime}`).getTime();
+          const bTime = new Date(`${b.arrivalDate}T${b.arrivalTime}`).getTime();
+          return aTime - bTime;
+        });
         break;
       case "arrived":
         filtered = bookings.filter(b => b.status === "arrived");
@@ -1214,7 +1220,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
     let keysCount = 0;
     
     overlappingBookings.forEach(b => {
-      const carCount = b.numberOfCars || 1;
+      const carCount = Number(b.numberOfCars || 1);
       if (b.carKeys) {
         keysCount += carCount;
       } else {

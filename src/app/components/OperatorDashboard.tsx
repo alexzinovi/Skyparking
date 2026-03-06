@@ -1389,7 +1389,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
         const arrivalDateTime = new Date(`${b.arrivalDate}T${b.arrivalTime}`);
         const arrivalHour = arrivalDateTime.getHours();
         return arrivalHour === parseInt(hourStr) && arrivalDateTime >= startTime && arrivalDateTime < endTime;
-      }).reduce((sum, b) => sum + (b.numberOfCars || 1), 0);
+      }).reduce((sum, b) => sum + Number(b.numberOfCars || 1), 0);
 
       // Count departures in this hour
       const departuresInHour = bookings.filter(b => {
@@ -1397,7 +1397,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
         const departureDateTime = new Date(`${b.departureDate}T${b.departureTime}`);
         const departureHour = departureDateTime.getHours();
         return departureHour === parseInt(hourStr) && departureDateTime >= startTime && departureDateTime < endTime;
-      }).reduce((sum, b) => sum + (b.numberOfCars || 1), 0);
+      }).reduce((sum, b) => sum + Number(b.numberOfCars || 1), 0);
 
       arrivalsByHour[hourStr] = arrivalsInHour;
       departuresByHour[hourStr] = departuresInHour;
