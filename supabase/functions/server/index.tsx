@@ -304,7 +304,7 @@ async function calculateCapacity(
         booking.arrivalDate, booking.arrivalTime,
         booking.departureDate, booking.departureTime
       )) {
-        const numberOfCars = booking.numberOfCars || 1;
+        const numberOfCars = Number(booking.numberOfCars || 1);
         if (booking.carKeys) {
           keysCount += numberOfCars;
         } else {

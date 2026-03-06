@@ -207,7 +207,7 @@ const bg = {
   maxCapacity: "Макс. капацитет",
   keysOverflow: "Допълнителен капацитет (с ключове)",
   closeDialog: "Затвори",
-  capacityOverrideWarning: "ВНИМАНИЕ: Приемате резервация над лимита на капацитета!",
+  capacityOverrideWarning: "ВНИМАНИЕ: Приемате рез��рвация над лимита на капацитета!",
   
   // User Management
   addUser: "Добави потребител",
@@ -480,7 +480,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
         let keysCount = 0;
         
         overlappingBookings.forEach(b => {
-          const carCount = b.numberOfCars || 1;
+          const carCount = Number(b.numberOfCars || 1);
           if (b.carKeys) {
             keysCount += carCount;
           } else {
@@ -1231,7 +1231,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
       return b.departureDate === dateStr;
     });
     
-    const leavingCount = leavingBookings.reduce((sum, b) => sum + (b.numberOfCars || 1), 0);
+    const leavingCount = leavingBookings.reduce((sum, b) => sum + Number(b.numberOfCars || 1), 0);
     
     const totalCount = nonKeysCount + keysCount;
     const percentage = totalCount > 0 ? (totalCount / 200) * 100 : 0;

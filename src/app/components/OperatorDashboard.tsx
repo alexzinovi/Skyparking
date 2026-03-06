@@ -210,7 +210,7 @@ function calculateCapacityForDateRange(
 
   // Count total cars (considering numberOfCars)
   const totalCars = overlappingBookings.reduce(
-    (sum, b) => sum + (b.numberOfCars || 1),
+    (sum, b) => sum + Number(b.numberOfCars || 1),
     0
   );
 
@@ -258,14 +258,14 @@ function calculateCapacityForSingleDate(
 
   // Count total cars present on this date
   const totalCars = presentBookings.reduce(
-    (sum, b) => sum + (b.numberOfCars || 1),
+    (sum, b) => sum + Number(b.numberOfCars || 1),
     0
   );
 
   // Count cars leaving on this specific date
   const leavingBookings = presentBookings.filter(b => b.departureDate === targetDate);
   const leavingCars = leavingBookings.reduce(
-    (sum, b) => sum + (b.numberOfCars || 1),
+    (sum, b) => sum + Number(b.numberOfCars || 1),
     0
   );
 
@@ -373,7 +373,7 @@ function calculateCapacityForDate(bookings: Booking[], dateStr: string) {
   let keysCount = 0;
   
   overlappingBookings.forEach(b => {
-    const carCount = b.numberOfCars || 1;
+    const carCount = Number(b.numberOfCars || 1);
     if (b.carKeys) {
       keysCount += carCount;
     } else {
@@ -390,7 +390,7 @@ function calculateCapacityForDate(bookings: Booking[], dateStr: string) {
     return b.departureDate === dateStr;
   });
   
-  const leavingCount = leavingBookings.reduce((sum, b) => sum + (b.numberOfCars || 1), 0);
+  const leavingCount = leavingBookings.reduce((sum, b) => sum + Number(b.numberOfCars || 1), 0);
   
   const totalCount = nonKeysCount + keysCount;
   const percentage = totalCount > 0 ? (totalCount / TOTAL_CAPACITY) * 100 : 0;
@@ -1348,7 +1348,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
       b.status === 'arrived' &&
       b.arrivalDate <= dateString &&
       b.departureDate >= dateString
-    ).reduce((sum, b) => sum + (b.numberOfCars || 1), 0);
+    ).reduce((sum, b) => sum + Number(b.numberOfCars || 1), 0);
     
     // Calculate percentage based on actual cars in parking (not confirmed reservations)
     const percentage = carsInParking > 0 ? Math.round((carsInParking / BASE_CAPACITY) * 100) : 0;
@@ -2227,7 +2227,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                 </div>
                 {leavingToday.length === 0 ? (
                   <Card className="p-16 text-center text-gray-500 text-xl">
-                    {searchQuery ? `Няма резултати за "${searchQuery}"` : "Няма напускащи за тази смяна"}
+                    {searchQuery ? `Няма ре��ултати за "${searchQuery}"` : "Няма напускащи за тази смяна"}
                   </Card>
                 ) : (
                   leavingToday.map(booking => renderBookingCard(booking, "leaving"))
