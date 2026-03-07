@@ -7,13 +7,13 @@ export function MapSection() {
   const { t } = useLanguage();
 
   const handleGoogleMaps = () => {
-    // Opens Google Maps with directions to Ulitsa Nedelcho Bonchev 30
-    window.open("https://www.google.com/maps/dir/?api=1&destination=Ulitsa+Nedelcho+Bonchev+30,Sofia,Bulgaria", "_blank");
+    // Opens official Google Maps location for SkyParking
+    window.open("https://maps.app.goo.gl/Yt6YeQN5ECBSjVme8", "_blank");
   };
 
   const handleWaze = () => {
-    // Opens Waze with directions to Ulitsa Nedelcho Bonchev 30
-    window.open("https://waze.com/ul?q=Ulitsa+Nedelcho+Bonchev+30,Sofia,Bulgaria&navigate=yes", "_blank");
+    // Opens official Waze navigation for SkyParking
+    window.open("https://ul.waze.com/ul?place=ChIJ6eb_yAqHqkARRJP7h2zo5AU&ll=42.67676540%2C23.40033890&navigate=yes&utm_campaign=default&utm_source=waze_website&utm_medium=lm_share_location", "_blank");
   };
 
   return (
@@ -27,7 +27,7 @@ export function MapSection() {
           <Card className="overflow-hidden">
             <div className="relative w-full h-[500px] block">
               <iframe
-                src="https://www.google.com/maps?q=Ulitsa+Nedelcho+Bonchev+30,+Sofia,+Bulgaria&output=embed"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d7592.2122290288835!2d23.400915698865237!3d42.68238258465905!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x40aa870ac8ffe6e9%3A0x5e4e86c87fb9344!2zU2t5UGFya2luZyAtINCf0LDRgNC60LjQvdCzINCb0LXRgtC40YnQtSDQodC-0YTQuNGP!5e1!3m2!1sen!2sbg!4v1772892642254!5m2!1sen!2sbg"
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}

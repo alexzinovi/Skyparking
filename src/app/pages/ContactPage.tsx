@@ -28,11 +28,11 @@ export function ContactPage() {
   }, [language]);
 
   const handleGoogleMaps = () => {
-    window.open("https://www.google.com/maps/dir/?api=1&destination=Ulitsa+Nedelcho+Bonchev+30,Sofia,Bulgaria", "_blank");
+    window.open("https://maps.app.goo.gl/Yt6YeQN5ECBSjVme8", "_blank");
   };
 
   const handleWaze = () => {
-    window.open("https://waze.com/ul?q=Ulitsa+Nedelcho+Bonchev+30,Sofia,Bulgaria&navigate=yes", "_blank");
+    window.open("https://ul.waze.com/ul?place=ChIJ6eb_yAqHqkARRJP7h2zo5AU&ll=42.67676540%2C23.40033890&navigate=yes&utm_campaign=default&utm_source=waze_website&utm_medium=lm_share_location", "_blank");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -175,7 +175,7 @@ export function ContactPage() {
             </h2>
             <div className="aspect-video w-full bg-gray-200 rounded-lg overflow-hidden">
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2932.8657!2d23.399816!3d42.677054!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNDLCsDQwJzM3LjQiTiAyM8KwMjMnNTkuMyJF!5e0!3m2!1sen!2sbg!4v1234567890"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d7592.2122290288835!2d23.400915698865237!3d42.68238258465905!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x40aa870ac8ffe6e9%3A0x5e4e86c87fb9344!2zU2t5UGFya2luZyAtINCf0LDRgNC60LjQvdCzINCb0LXRgtC40YnQtSDQodC-0YTQuNGP!5e1!3m2!1sen!2sbg!4v1772892642254!5m2!1sen!2sbg"
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}

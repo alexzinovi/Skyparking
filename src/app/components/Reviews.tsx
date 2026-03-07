@@ -19,51 +19,39 @@ interface Review {
 const reviews: Review[] = [
   {
     id: 1,
-    name: "Maria Petrova",
-    nameBg: "Мария Петрова",
-    location: "Sofia, Bulgaria",
-    locationBg: "София, България",
+    name: "Yana Markova",
+    nameBg: "Яна Маркова",
+    location: "Google Review",
+    locationBg: "Google Отзив",
     rating: 5,
-    text: "Excellent service! The shuttle was quick and the parking lot is very secure. I felt safe leaving my car there for a week.",
-    textBg: "Отлично обслужване! Шатълът беше бърз и паркингът е много сигурен. Чувствах се спокойна, че оставям колата си там за седмица.",
-    date: "January 2025",
-    dateBg: "Януари 2025"
+    text: "Great place! I recommend it - easy and convenient location, includes two free transfers which were extremely punctual! Safe and well-lit place!",
+    textBg: "Супер място! Препоръчвам лесно и удобно като локация, включва два безплатни трансфера, които бяха изключително точни на време! Безопасно и осветено място !",
+    date: "March 2026",
+    dateBg: "Март 2026"
+  },
+  {
+    id: 2,
+    name: "Milena Ilieva",
+    nameBg: "Милена Илиева",
+    location: "Google Review",
+    locationBg: "Google Отзив",
+    rating: 5,
+    text: "Excellent value for money! Fast and free transfers! Highly recommend!",
+    textBg: "Чудесно съотношение цена-качество! Бързи и безплатни трансфери! Искрено препоръчвам!",
+    date: "February 2026",
+    dateBg: "Февруари 2026"
   },
   {
     id: 3,
-    name: "Elena Dimitrova",
-    nameBg: "Елена Димитрова",
-    location: "Plovdiv, Bulgaria",
-    locationBg: "Пловдив, България",
+    name: "Stanislav Stavrev",
+    nameBg: "Станислав Ставрев",
+    location: "Google Review",
+    locationBg: "Google Отзив",
     rating: 5,
-    text: "Very convenient and reliable. The free shuttle service is a great bonus. My car was exactly where I left it, clean and safe!",
-    textBg: "Много удобно и надеждно. Безплатният трансфер е чудесен бонус. Колата ми беше точно там където я оставих, чиста и в безопасност!",
-    date: "December 2024",
-    dateBg: "Декември 2024"
-  },
-  {
-    id: 4,
-    name: "Stefan Ivanov",
-    nameBg: "Стефан Иванов",
-    location: "Varna, Bulgaria",
-    locationBg: "Варна, България",
-    rating: 5,
-    text: "Used SkyParking for my business trip. Everything was smooth - from booking to pick-up. Will definitely use again!",
-    textBg: "Използвах SkyParking за моето бизнес пътуване. Всичко беше гладко - от резервацията до вземането. Определено ще ползвам отново!",
-    date: "January 2025",
-    dateBg: "Януари 2025"
-  },
-  {
-    id: 6,
-    name: "Georgi Todorov",
-    nameBg: "Георги Тодоров",
-    location: "Sofia, Bulgaria",
-    locationBg: "София, България",
-    rating: 5,
-    text: "Great value for money! Much cheaper than airport parking and just as convenient. 24/7 surveillance gives peace of mind.",
-    textBg: "Чудесно съотношение цена-качество! Много по-евтино от летищния паркинг и също толкова удобно. 24/7 наблюдението дава спокойствие.",
-    date: "January 2025",
-    dateBg: "Януари 2025"
+    text: "Absolutely amazing customer service !!! I was about to miss my flight, but the transport driver managed to save my vacation. Thank you!",
+    textBg: "Абсолютно невероятно обслужване на клиенти!!! Щях да изпусна полета си, но шофьорът на трансфера успя да спаси ваканцията ми. Благодаря!",
+    date: "March 2026",
+    dateBg: "Март 2026"
   }
 ];
 
@@ -147,12 +135,26 @@ export function Reviews() {
           <h2 className="text-4xl font-bold text-[#1a1a2e] mb-4">
             {language === "bg" ? "Какво Казват Нашите Клиенти" : "What Our Customers Say"}
           </h2>
-          <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+          <p className="text-gray-600 text-lg max-w-2xl mx-auto mb-3">
             {language === "bg" 
               ? "Хиляди доволни клиенти се доверяват на нас за своето паркиране"
               : "Thousands of satisfied customers trust us with their parking"}
           </p>
-          <div className="flex items-center justify-center gap-2 mt-4">
+          
+          {/* Google Reviews Badge */}
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <svg className="w-6 h-6" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" fill="#FFC107"/>
+              <path d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C16.318 4 9.656 8.337 6.306 14.691z" fill="#FF3D00"/>
+              <path d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0124 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z" fill="#4CAF50"/>
+              <path d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 01-4.087 5.571l.003-.002l6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z" fill="#1976D2"/>
+            </svg>
+            <span className="text-sm font-semibold" style={{ color: '#073590' }}>
+              {language === "bg" ? "Google Отзиви" : "Google Reviews"}
+            </span>
+          </div>
+          
+          <div className="flex items-center justify-center gap-2">
             <div className="flex">
               {[1, 2, 3, 4, 5].map((star) => (
                 <Star key={star} className="h-6 w-6 fill-[#ffd700] text-[#ffd700]" />
@@ -175,16 +177,26 @@ export function Reviews() {
           {/* Desktop Reviews Grid */}
           <div className="hidden md:grid md:grid-cols-3 gap-6 px-8">
             {visibleReviews.map((review) => (
-              <Card key={review.id} className="p-6 hover:shadow-xl transition-shadow duration-300 border-2 border-transparent hover:border-[#ffd700]">
+              <Card key={review.id} className="p-6 hover:shadow-xl transition-shadow duration-300 border-2 border-transparent hover:border-[#ffd700] relative">
+                {/* Google Badge on Card */}
+                <div className="absolute top-4 right-4">
+                  <svg className="w-4 h-4" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" fill="#FFC107"/>
+                    <path d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C16.318 4 9.656 8.337 6.306 14.691z" fill="#FF3D00"/>
+                    <path d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0124 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z" fill="#4CAF50"/>
+                    <path d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 01-4.087 5.571l.003-.002l6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z" fill="#1976D2"/>
+                  </svg>
+                </div>
+                
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#1a1a2e] to-[#ffd700] flex items-center justify-center text-white font-bold text-lg">
+                  <div className="w-12 h-12 rounded-full bg-[#f1c933] flex items-center justify-center font-bold text-lg" style={{ color: '#073590' }}>
                     {(language === "bg" ? review.nameBg : review.name).charAt(0)}
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-[#1a1a2e]">
+                    <h3 className="font-semibold" style={{ color: '#073590' }}>
                       {language === "bg" ? review.nameBg : review.name}
                     </h3>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-xs text-gray-500">
                       {language === "bg" ? review.locationBg : review.location}
                     </p>
                   </div>
@@ -219,16 +231,26 @@ export function Reviews() {
           >
             {loopedReviews.map((review, index) => (
               <div key={`review-${index}`} className="snap-center flex-shrink-0 w-full">
-                <Card className="p-6 border-2 border-transparent">
+                <Card className="p-6 border-2 border-transparent relative">
+                  {/* Google Badge on Card */}
+                  <div className="absolute top-4 right-4">
+                    <svg className="w-4 h-4" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" fill="#FFC107"/>
+                      <path d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C16.318 4 9.656 8.337 6.306 14.691z" fill="#FF3D00"/>
+                      <path d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0124 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z" fill="#4CAF50"/>
+                      <path d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 01-4.087 5.571l.003-.002l6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z" fill="#1976D2"/>
+                    </svg>
+                  </div>
+                  
                   <div className="flex items-center gap-4 mb-4">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#1a1a2e] to-[#ffd700] flex items-center justify-center text-white font-bold text-lg">
+                    <div className="w-12 h-12 rounded-full bg-[#f1c933] flex items-center justify-center font-bold text-lg" style={{ color: '#073590' }}>
                       {(language === "bg" ? review.nameBg : review.name).charAt(0)}
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-semibold text-[#1a1a2e]">
+                      <h3 className="font-semibold" style={{ color: '#073590' }}>
                         {language === "bg" ? review.nameBg : review.name}
                       </h3>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-xs text-gray-500">
                         {language === "bg" ? review.locationBg : review.location}
                       </p>
                     </div>
@@ -272,6 +294,27 @@ export function Reviews() {
           >
             <ChevronRight className="h-6 w-6" />
           </button>
+        </div>
+        
+        {/* View All on Google Button */}
+        <div className="text-center mt-10">
+          <a
+            href="https://share.google/vmafBFlebQvN85aRH"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-3 px-8 py-4 rounded-lg font-semibold text-white shadow-lg hover:shadow-xl transition-all hover:scale-105"
+            style={{ backgroundColor: '#073590' }}
+          >
+            <svg className="w-5 h-5" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" fill="#FFC107"/>
+              <path d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C16.318 4 9.656 8.337 6.306 14.691z" fill="#FF3D00"/>
+              <path d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0124 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z" fill="#4CAF50"/>
+              <path d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 01-4.087 5.571l.003-.002l6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z" fill="#1976D2"/>
+            </svg>
+            <span>
+              {language === "bg" ? "Виж всички отзиви в Google" : "View all reviews on Google"}
+            </span>
+          </a>
         </div>
       </div>
     </section>
