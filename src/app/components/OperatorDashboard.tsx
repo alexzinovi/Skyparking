@@ -1542,6 +1542,16 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
       )
     );
     
+    // Pending payment: customers with pay-on-leave that arrived during this shift
+    const pendingPaymentBookings = bookings.filter(b => 
+      b.paymentMethod === "pay-on-leave" &&
+      b.paymentStatus === "pending" &&
+      b.status === "arrived" &&
+      isInShift(b.arrivalDate, b.arrivalTime, shiftRange)
+    );
+    const pendingRevenue = pendingPaymentBookings.reduce((sum, b) => sum + b.totalPrice, 0);
+    const pendingCount = pendingPaymentBookings.length;
+    
     // Calculate base revenue (excluding late fees)
     const baseRevenue = paidBookings.reduce((sum, b) => sum + b.totalPrice, 0);
     
@@ -1578,6 +1588,8 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
       lateFees: lateFees,
       cash: cashRevenue,
       card: cardRevenue,
+      pending: pendingRevenue,
+      pendingCount: pendingCount,
       breakdown: breakdown
     };
   }, [bookings, shiftRange]);
@@ -2427,6 +2439,35 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                       <span className="text-gray-600 text-lg">Очаквани приходи:</span>
                       <span className="text-4xl font-bold">€{revenueStats.expected.toFixed(2)}</span>
                     </div>
+                    
+                    {/* Pending Payment Warning */}
+                    {revenueStats.pending > 0 && (
+                      <div className="bg-orange-50 border-2 border-orange-300 rounded-lg p-5">
+                        <div className="flex items-center gap-3 mb-2">
+                          <Clock className="w-6 h-6 text-orange-600" />
+                          <span className="text-lg font-semibold text-orange-900">Очакващи плащане при напускане</span>
+                        </div>
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                          <span className="text-orange-700">
+                            {revenueStats.pendingCount} {revenueStats.pendingCount === 1 ? 'клиент' : 'клиента'} все още в паркинга
+                          </span>
+                          <span className="text-3xl font-bold text-orange-600">€{revenueStats.pending.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Info text when there's pending payment */}
+                    {revenueStats.pending > 0 && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-base text-blue-900">
+                        <div className="flex items-start gap-2">
+                          <span className="text-blue-600 font-bold">ℹ️</span>
+                          <div>
+                            <span className="font-semibold">Формула:</span> Действителни приходи (€{revenueStats.actual.toFixed(2)}) + Очакващи (€{revenueStats.pending.toFixed(2)}) = Очаквани (€{revenueStats.expected.toFixed(2)})
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
                     <div className="bg-green-50 rounded-lg overflow-hidden">
                       <button 
                         onClick={() => setRevenueExpanded(!revenueExpanded)}
