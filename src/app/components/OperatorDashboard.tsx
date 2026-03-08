@@ -1642,10 +1642,17 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
 
           {booking.paymentMethod && (
             <div className="mt-3">
-              <Badge variant={booking.paymentStatus === "paid" ? "default" : "secondary"} className="text-base py-1 px-3">
+              <Badge 
+                variant={booking.paymentStatus === "paid" ? "default" : "secondary"} 
+                className={`text-base py-1 px-3 ${
+                  booking.paymentMethod === "pay-on-leave" 
+                    ? "bg-orange-100 text-orange-800 border-orange-300 font-semibold" 
+                    : ""
+                }`}
+              >
                 {booking.paymentMethod === "cash" && "💰 В брой"}
                 {booking.paymentMethod === "card" && "💳 С карта"}
-                {booking.paymentMethod === "pay-on-leave" && "⏰ При напускане"}
+                {booking.paymentMethod === "pay-on-leave" && "⏰ Ще плати при напускане"}
                 {booking.paymentStatus === "paid" && " ✓"}
               </Badge>
             </div>
@@ -2554,9 +2561,17 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                           </div>
                           {booking.paymentMethod && (
                             <div className="mt-3">
-                              <Badge variant={booking.paymentStatus === "paid" ? "default" : "secondary"} className="text-base py-1 px-3">
+                              <Badge 
+                                variant={booking.paymentStatus === "paid" ? "default" : "secondary"} 
+                                className={`text-base py-1 px-3 ${
+                                  booking.paymentMethod === "pay-on-leave" 
+                                    ? "bg-orange-100 text-orange-800 border-orange-300 font-semibold" 
+                                    : ""
+                                }`}
+                              >
                                 {booking.paymentMethod === "cash" && "💰 В брой"}
                                 {booking.paymentMethod === "card" && "💳 С карта"}
+                                {booking.paymentMethod === "pay-on-leave" && "⏰ Ще плати при напускане"}
                                 {booking.paymentStatus === "paid" && " ✓"}
                               </Badge>
                             </div>
