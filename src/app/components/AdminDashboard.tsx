@@ -329,6 +329,9 @@ interface Booking {
   passengers: number;
   totalPrice: number;
   paymentStatus: string;
+  paymentMethod?: string;
+  paidAt?: string;
+  finalPrice?: number;
   status: 'new' | 'confirmed' | 'arrived' | 'checked-out' | 'no-show' | 'cancelled' | 'declined';
   createdAt: string;
   updatedAt?: string;
@@ -1302,6 +1305,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
         "Car Keys",
         "Total Price (EUR)",
         "Payment Status",
+        "Payment Method",
         "Invoice Requested",
         "Company Name",
         "Tax Number",
@@ -1332,6 +1336,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
         booking.carKeys ? "Yes" : "No",
         booking.totalPrice,
         booking.paymentStatus,
+        booking.paymentMethod || "",
         booking.needsInvoice ? "Yes" : "No",
         booking.companyName || "",
         booking.taxNumber || "",
@@ -2052,6 +2057,13 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                     <div className="flex items-center gap-3">
                       {getStatusBadge(booking.status)}
                       {getPaymentStatusBadge(booking.paymentStatus)}
+                      {booking.paymentMethod && (
+                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300 text-base py-1 px-3">
+                          {booking.paymentMethod === "cash" && "💰 В брой"}
+                          {booking.paymentMethod === "card" && "💳 С карта"}
+                          {booking.paymentMethod === "pay-on-leave" && "⏰ При напускане"}
+                        </Badge>
+                      )}
                       {booking.carKeys && (
                         <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-300 text-base py-1 px-3">
                           <Key className="h-4 w-4 mr-1" />
@@ -2514,6 +2526,28 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                   <option value="paid">{bg.paid}</option>
                   <option value="pending">{bg.pending}</option>
                   <option value="manual">{bg.manual}</option>
+                </select>
+                <p className="text-xs text-gray-600 mt-1">
+                  💡 Използвайте "Метод на плащане" по-долу, ако операторът е забравил да маркира плащането
+                </p>
+              </div>
+              
+              {/* Payment Method - Admin Only */}
+              <div>
+                <Label htmlFor="paymentMethod" className="text-base font-semibold">
+                  {bg.paymentMethod}
+                  <span className="ml-2 text-xs text-orange-600 font-normal">(само админ)</span>
+                </Label>
+                <select
+                  id="paymentMethod"
+                  className="w-full h-12 px-3 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={formData.paymentMethod || ""}
+                  onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value || undefined })}
+                >
+                  <option value="">Не е избрано</option>
+                  <option value="cash">💰 В брой</option>
+                  <option value="card">💳 С карта</option>
+                  <option value="pay-on-leave">⏰ При напускане</option>
                 </select>
               </div>
             </div>
