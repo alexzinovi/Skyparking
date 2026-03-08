@@ -2449,7 +2449,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                         </div>
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                           <span className="text-orange-700">
-                            {revenueStats.pendingCount} {revenueStats.pendingCount === 1 ? 'клиент' : 'клиента'} все още в паркинга
+                            {revenueStats.pendingCount} {revenueStats.pendingCount === 1 ? 'клиент' : 'клиента'} ще {revenueStats.pendingCount === 1 ? 'плати' : 'платят'} при напускане
                           </span>
                           <span className="text-3xl font-bold text-orange-600">€{revenueStats.pending.toFixed(2)}</span>
                         </div>
