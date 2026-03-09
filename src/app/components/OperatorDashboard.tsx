@@ -90,6 +90,14 @@ interface Booking {
   lateSurcharge?: number;
   originalDepartureDate?: string;
   originalDepartureTime?: string;
+  basePrice?: number; // Price before discount
+  discountCode?: string; // Applied discount code
+  discountApplied?: {
+    discountType: 'percentage' | 'fixed';
+    discountValue: number;
+    code?: string;
+    description?: string;
+  };
   editHistory?: Array<{
     timestamp: string;
     editor: string;
@@ -1637,7 +1645,18 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
             <div>📅 {formatDateDisplay(booking.departureDate)} {booking.departureTime}</div>
             <div>🚙 {booking.numberOfCars || 1} кола/коли</div>
             <div>👥 {booking.passengers} пътник(а)</div>
-            <div className="font-bold text-xl">💶 €{booking.totalPrice}</div>
+            <div className="font-bold text-xl">💶 €{Number(booking.totalPrice).toFixed(2)}</div>
+            
+            {/* Show discount if applied */}
+            {booking.discountApplied && booking.basePrice && (
+              <div className="text-sm text-green-600 font-semibold mt-1">
+                🎫 Отстъпка {booking.discountCode}: 
+                {booking.discountApplied.discountType === 'percentage' 
+                  ? ` -${booking.discountApplied.discountValue}%` 
+                  : ` -€${booking.discountApplied.discountValue}`}
+                {' '}(от €{Number(booking.basePrice).toFixed(2)})
+              </div>
+            )}
           </div>
 
           {/* Capacity info */}

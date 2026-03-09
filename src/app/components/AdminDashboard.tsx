@@ -359,6 +359,13 @@ interface Booking {
   declinedBy?: string; // Operator who declined
   declinedAt?: string; // Timestamp of decline
   discountCode?: string;
+  basePrice?: number; // Price before discount
+  discountApplied?: {
+    discountType: 'percentage' | 'fixed';
+    discountValue: number;
+    code?: string;
+    description?: string;
+  };
   editHistory?: Array<{
     timestamp: string;
     editor: string;

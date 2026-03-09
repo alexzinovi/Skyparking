@@ -558,6 +558,9 @@ app.post("/make-server-47a4914e/bookings", async (c) => {
           needsInvoice: bookingData.needsInvoice,
           companyName: bookingData.companyName,
           language: bookingData.language || 'bg',
+          basePrice: bookingData.basePrice,
+          discountCode: bookingData.discountCode,
+          discountApplied: bookingData.discountApplied,
         });
         
         if (adminEmailResult.success) {
@@ -923,6 +926,9 @@ app.put("/make-server-47a4914e/bookings/:id/accept", async (c) => {
         needsInvoice: updated.needsInvoice,
         companyName: updated.companyName,
         language: updated.language || 'bg',
+        basePrice: updated.basePrice,
+        discountCode: updated.discountCode,
+        discountApplied: updated.discountApplied,
       });
       
       if (customerEmailResult.success) {

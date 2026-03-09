@@ -20,6 +20,12 @@ interface BookingEmailData {
   companyName?: string;
   companyEIK?: string;
   language?: 'bg' | 'en'; // Add language support
+  basePrice?: number; // Price before discount
+  discountCode?: string;
+  discountApplied?: {
+    discountType: 'percentage' | 'fixed';
+    discountValue: number;
+  };
 }
 
 // Format date from YYYY-MM-DD to DD/MM/YYYY
@@ -60,6 +66,19 @@ function generateConfirmationEmailHTML_BG(data: BookingEmailData): string {
            <span style="color: #1f2937; font-size: 14px; font-weight: 500;">${data.companyEIK}</span>
          </td>
        </tr>` : ''}`
+    : '';
+
+  const discountText = data.discountApplied && data.basePrice 
+    ? `<div style="text-align: center; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #e5e7eb;">
+         <div style="font-size: 13px; color: #059669; font-weight: 600;">
+           🎫 Отстъпка (${data.discountCode}): ${data.discountApplied.discountType === 'percentage' 
+             ? `${data.discountApplied.discountValue}%` 
+             : `€${data.discountApplied.discountValue}`}
+         </div>
+         <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">
+           Първоначална цена: €${data.basePrice.toFixed(2)}
+         </div>
+       </div>`
     : '';
 
   return `
@@ -192,6 +211,8 @@ function generateConfirmationEmailHTML_BG(data: BookingEmailData): string {
             ${carKeysText}
             ${invoiceText}
           </table>
+          
+          ${discountText}
           
           <!-- Payment Note -->
           <div style="margin-top: 16px; text-align: center;">
@@ -328,6 +349,19 @@ function generateConfirmationEmailHTML_EN(data: BookingEmailData): string {
        </tr>` : ''}`
     : '';
 
+  const discountText = data.discountApplied && data.basePrice 
+    ? `<div style="text-align: center; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #e5e7eb;">
+         <div style="font-size: 13px; color: #059669; font-weight: 600;">
+           🎫 Discount (${data.discountCode}): ${data.discountApplied.discountType === 'percentage' 
+             ? `${data.discountApplied.discountValue}%` 
+             : `€${data.discountApplied.discountValue}`}
+         </div>
+         <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">
+           Original price: €${data.basePrice.toFixed(2)}
+         </div>
+       </div>`
+    : '';
+
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -458,6 +492,8 @@ function generateConfirmationEmailHTML_EN(data: BookingEmailData): string {
             ${carKeysText}
             ${invoiceText}
           </table>
+          
+          ${discountText}
           
           <!-- Payment Note -->
           <div style="margin-top: 16px; text-align: center;">
@@ -674,6 +710,19 @@ function generateAdminNotificationEmailHTML(data: BookingEmailData): string {
     ? `<p style=\"margin: 10px 0; font-size: 16px;\"><strong>📄 Фактура за:</strong> ${data.companyName || 'фирма'}</p>`
     : '';
 
+  const discountText = data.discountApplied && data.basePrice
+    ? `<div style=\"margin-top: 15px; padding: 12px; background-color: #d1fae5; border-radius: 4px;\">
+         <p style=\"margin: 0; font-size: 14px; color: #059669; font-weight: 600;\">
+           🎫 Приложена отстъпка (${data.discountCode}): ${data.discountApplied.discountType === 'percentage' 
+             ? `${data.discountApplied.discountValue}%` 
+             : `€${data.discountApplied.discountValue}`}
+         </p>
+         <p style=\"margin: 5px 0 0 0; font-size: 13px; color: #047857;\">
+           Първоначална цена: €${data.basePrice.toFixed(2)} → Крайна цена: €${data.totalPrice.toFixed(2)}
+         </p>
+       </div>`
+    : '';
+
   return `
 <!DOCTYPE html>
 <html lang="bg">
@@ -712,6 +761,8 @@ function generateAdminNotificationEmailHTML(data: BookingEmailData): string {
         <div style="margin-top: 20px; padding: 15px; background-color: #f1c933; border-radius: 4px; text-align: center;">
           <p style="margin: 0; font-size: 24px; font-weight: bold; color: #000000;">💶 Цена: €${data.totalPrice}</p>
         </div>
+        
+        ${discountText}
       </div>
 
       <!-- Customer Details -->
