@@ -575,6 +575,17 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
         console.log("Fetched bookings:", data.bookings);
         console.log("Sample booking with invoice data:", data.bookings.find((b: Booking) => b.needsInvoice));
         
+        // Debug discount information
+        const bookingsWithDiscounts = data.bookings.filter((b: Booking) => b.discountCode || b.discountApplied);
+        console.log("📊 Bookings with discounts:", bookingsWithDiscounts.map((b: Booking) => ({
+          id: b.id,
+          name: b.name,
+          discountCode: b.discountCode,
+          discountApplied: b.discountApplied,
+          basePrice: b.basePrice,
+          totalPrice: b.totalPrice
+        })));
+        
         // Recalculate late surcharges for late bookings
         const bookingsWithUpdatedSurcharges = data.bookings.map((b: Booking) => {
           if (b.isLate && b.originalDepartureDate) {
@@ -1649,7 +1660,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
             
             {/* Show discount if applied */}
             {booking.discountApplied && booking.basePrice && (
-              <div className="text-sm text-green-600 font-semibold mt-1">
+              <div className="text-base text-green-600 font-semibold col-span-1 sm:col-span-2">
                 🎫 Отстъпка {booking.discountCode}: 
                 {booking.discountApplied.discountType === 'percentage' 
                   ? ` -${booking.discountApplied.discountValue}%` 
@@ -2136,6 +2147,17 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                             <div>🚙 {booking.numberOfCars || 1} кола/коли</div>
                             <div>👥 {booking.passengers} пътник(а)</div>
                             <div className="font-bold text-xl">💶 €{booking.totalPrice}</div>
+                            
+                            {/* Show discount if applied */}
+                            {booking.discountApplied && booking.basePrice && (
+                              <div className="text-base text-green-600 font-semibold col-span-2">
+                                🎫 Отстъпка {booking.discountCode}: 
+                                {booking.discountApplied.discountType === 'percentage' 
+                                  ? ` -${booking.discountApplied.discountValue}%` 
+                                  : ` -€${booking.discountApplied.discountValue}`}
+                                {' '}(от €{Number(booking.basePrice).toFixed(2)})
+                              </div>
+                            )}
                           </div>
                           {(() => {
                             const capacityOnArrival = calculateCapacityForSingleDate(
