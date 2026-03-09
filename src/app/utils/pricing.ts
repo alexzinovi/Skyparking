@@ -218,10 +218,39 @@ export async function calculatePrice(
 
   if (departureDateTime <= arrivalDateTime) return null;
 
-  const diffTime = Math.abs(departureDateTime.getTime() - arrivalDateTime.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  // CORRECT BUSINESS LOGIC:
+  // 1. Count how many midnights pass between arrival and departure
+  // 2. If departure hour > arrival hour, add 1 extra day
+  
+  // Count midnights
+  let midnightCounter = new Date(arrivalDateTime);
+  midnightCounter.setHours(0, 0, 0, 0); // Start of arrival day
+  midnightCounter.setDate(midnightCounter.getDate() + 1); // First midnight after arrival
+  
+  let midnightsPassed = 0;
+  while (midnightCounter <= departureDateTime) {
+    midnightsPassed++;
+    midnightCounter.setDate(midnightCounter.getDate() + 1);
+  }
+  
+  // Check if departure hour > arrival hour for extra day
+  const arrivalHourDecimal = arrivalDateTime.getHours() + arrivalDateTime.getMinutes() / 60;
+  const departureHourDecimal = departureDateTime.getHours() + departureDateTime.getMinutes() / 60;
+  
+  let extraDay = 0;
+  if (departureHourDecimal > arrivalHourDecimal) {
+    extraDay = 1;
+  }
+  
+  const diffDays = midnightsPassed + extraDay;
 
-  console.log(`🧮 Calculating price: ${diffDays} days for ${numberOfCars} car(s)`);
+  console.log(`🧮 Calculating price:`);
+  console.log(`   Arrival: ${arrivalDateTime.toISOString()} (${arrivalDateTime.toLocaleString()})`);
+  console.log(`   Departure: ${departureDateTime.toISOString()} (${departureDateTime.toLocaleString()})`);
+  console.log(`   Arrival hour: ${arrivalHourDecimal.toFixed(2)}, Departure hour: ${departureHourDecimal.toFixed(2)}`);
+  console.log(`   Midnights passed: ${midnightsPassed}`);
+  console.log(`   Extra day (departure > arrival hour): ${extraDay ? 'YES' : 'NO'}`);
+  console.log(`   Total days: ${diffDays} days for ${numberOfCars} car(s)`);
   const pricePerCar = await calculatePriceForDays(diffDays);
   console.log(`💰 Price per car: €${pricePerCar}, Total: €${pricePerCar * numberOfCars}`);
   
