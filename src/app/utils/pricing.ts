@@ -7,38 +7,39 @@ const projectId = "dbybybmjjeeocoecaewv";
 const publicAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRieWJ5Ym1qamVlb2NvZWNhZXd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODgxMzAsImV4cCI6MjA4MjA2NDEzMH0.fMZ3Yi5gZpE6kBBz-y1x0FKZcGczxSJZ9jL-Zeau340";
 
 // Default fallback pricing (only used if server is unreachable)
+// IMPORTANT: This should match the current pricing in the database
 const DEFAULT_PRICING: PricingConfig = {
   dailyPrices: {
     1: 10,
-    2: 15,
-    3: 19,
-    4: 21,
-    5: 23,
-    6: 25,
-    7: 28,
-    8: 30,
-    9: 32,
-    10: 34,
-    11: 36,
-    12: 38,
-    13: 40,
-    14: 43,
-    15: 46,
-    16: 49,
-    17: 52,
-    18: 55,
-    19: 57,
-    20: 59,
-    21: 61,
-    22: 63,
-    23: 65,
-    24: 67,
-    25: 69,
-    26: 71,
-    27: 73,
-    28: 75,
-    29: 77,
-    30: 79
+    2: 18,
+    3: 21,
+    4: 24,
+    5: 27,
+    6: 30,
+    7: 33,
+    8: 37,
+    9: 40,
+    10: 43,
+    11: 46,
+    12: 49,
+    13: 52,
+    14: 55,
+    15: 58,
+    16: 61,
+    17: 64,
+    18: 67,
+    19: 70,
+    20: 73,
+    21: 76,
+    22: 79,
+    23: 82,
+    24: 85,
+    25: 88,
+    26: 91,
+    27: 94,
+    28: 97,
+    29: 100,
+    30: 103
   },
   longTermRate: 2.8
 };
@@ -50,11 +51,23 @@ let isPricingInitialized = false;
 
 const PRICING_CACHE_KEY = 'skyparking_pricing_cache';
 const PRICING_CACHE_TIMESTAMP_KEY = 'skyparking_pricing_cache_timestamp';
+const PRICING_CACHE_VERSION_KEY = 'skyparking_pricing_cache_version';
+const CURRENT_CACHE_VERSION = '2'; // Increment this to force cache clear
 const CACHE_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes
 
 // Load pricing from localStorage cache
 function loadPricingFromCache(): PricingConfig | null {
   try {
+    // Check version first
+    const version = localStorage.getItem(PRICING_CACHE_VERSION_KEY);
+    if (version !== CURRENT_CACHE_VERSION) {
+      console.log(`🔄 Cache version mismatch (${version} vs ${CURRENT_CACHE_VERSION}), clearing old cache`);
+      localStorage.removeItem(PRICING_CACHE_KEY);
+      localStorage.removeItem(PRICING_CACHE_TIMESTAMP_KEY);
+      localStorage.setItem(PRICING_CACHE_VERSION_KEY, CURRENT_CACHE_VERSION);
+      return null;
+    }
+    
     const cached = localStorage.getItem(PRICING_CACHE_KEY);
     const timestamp = localStorage.getItem(PRICING_CACHE_TIMESTAMP_KEY);
     
