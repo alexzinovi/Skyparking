@@ -71,6 +71,7 @@ interface Booking {
   totalPrice: number;
   carKeys?: boolean;
   needsInvoice?: boolean;
+  invoiceUrl?: string; // URL to the uploaded invoice PDF
   companyName?: string;
   companyOwner?: string;
   taxNumber?: string;
@@ -900,7 +901,17 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
     
     // Invoice badge
     if (booking.needsInvoice) {
-      badges.push(<Badge key="invoice" variant="outline" className="text-base py-1 px-3 bg-yellow-50 border-yellow-300"><FileText className="w-4 h-4 inline mr-1" />Фактура</Badge>);
+      if (booking.invoiceUrl) {
+        badges.push(
+          <a key="invoice" href={booking.invoiceUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+            <Badge variant="outline" className="text-base py-1 px-3 bg-yellow-50 border-yellow-300 cursor-pointer hover:bg-yellow-100 transition-colors">
+              <FileText className="w-4 h-4 inline mr-1" />Фактура
+            </Badge>
+          </a>
+        );
+      } else {
+        badges.push(<Badge key="invoice" variant="outline" className="text-base py-1 px-3 bg-yellow-50 border-yellow-300"><FileText className="w-4 h-4 inline mr-1" />Фактура</Badge>);
+      }
     }
     
     return badges;
@@ -1642,10 +1653,24 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
               </Badge>
             )}
             {booking.needsInvoice && (
-              <Badge variant="outline" className="text-base py-1 px-3 bg-yellow-50 border-yellow-300">
-                <FileText className="w-5 h-5 inline mr-1" />
-                Факту��а
-              </Badge>
+              booking.invoiceUrl ? (
+                <a 
+                  href={booking.invoiceUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Badge variant="outline" className="text-base py-1 px-3 bg-yellow-50 border-yellow-300 cursor-pointer hover:bg-yellow-100 transition-colors">
+                    <FileText className="w-5 h-5 inline mr-1" />
+                    Фактура
+                  </Badge>
+                </a>
+              ) : (
+                <Badge variant="outline" className="text-base py-1 px-3 bg-yellow-50 border-yellow-300">
+                  <FileText className="w-5 h-5 inline mr-1" />
+                  Фактура
+                </Badge>
+              )
             )}
           </div>
           
@@ -2133,10 +2158,23 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                             <User className="w-6 h-6 text-gray-500" />
                             <span className="font-bold text-2xl">{booking.name}</span>
                             {booking.needsInvoice && (
-                              <Badge variant="outline" className="text-base py-1 px-3 bg-yellow-50 border-yellow-300">
-                                <FileText className="w-5 h-5 inline mr-1" />
-                                Фактура
-                              </Badge>
+                              booking.invoiceUrl ? (
+                                <a 
+                                  href={booking.invoiceUrl} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                >
+                                  <Badge variant="outline" className="text-base py-1 px-3 bg-yellow-50 border-yellow-300 cursor-pointer hover:bg-yellow-100 transition-colors">
+                                    <FileText className="w-5 h-5 inline mr-1" />
+                                    Фактура
+                                  </Badge>
+                                </a>
+                              ) : (
+                                <Badge variant="outline" className="text-base py-1 px-3 bg-yellow-50 border-yellow-300">
+                                  <FileText className="w-5 h-5 inline mr-1" />
+                                  Фактура
+                                </Badge>
+                              )
                             )}
                           </div>
                           <div className="grid grid-cols-2 gap-3 text-lg text-gray-700 font-medium">
@@ -2288,10 +2326,23 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                               </Badge>
                             )}
                             {booking.needsInvoice && (
-                              <Badge variant="outline" className="text-base py-1 px-3 bg-yellow-50 border-yellow-300">
-                                <FileText className="w-5 h-5 inline mr-1" />
-                                Фактура
-                              </Badge>
+                              booking.invoiceUrl ? (
+                                <a 
+                                  href={booking.invoiceUrl} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                >
+                                  <Badge variant="outline" className="text-base py-1 px-3 bg-yellow-50 border-yellow-300 cursor-pointer hover:bg-yellow-100 transition-colors">
+                                    <FileText className="w-5 h-5 inline mr-1" />
+                                    Фактура
+                                  </Badge>
+                                </a>
+                              ) : (
+                                <Badge variant="outline" className="text-base py-1 px-3 bg-yellow-50 border-yellow-300">
+                                  <FileText className="w-5 h-5 inline mr-1" />
+                                  Фактура
+                                </Badge>
+                              )
                             )}
                           </div>
                           <div className="grid grid-cols-2 gap-3 text-lg text-gray-700 font-medium">
@@ -3282,6 +3333,17 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                       placeholder="123456789"
                       className="bg-white h-12 text-base"
                     />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-base font-semibold">URL на фактура</Label>
+                    <Input
+                      value={bookingForm.invoiceUrl || ''}
+                      onChange={(e) => setBookingForm({...bookingForm, invoiceUrl: e.target.value})}
+                      placeholder="https://example.com/invoice.pdf"
+                      className="bg-white h-12 text-base"
+                    />
+                    <p className="text-sm text-blue-700">Въведете URL адрес към качената фактура (PDF, Google Drive, Dropbox, и т.н.)</p>
                   </div>
                 </div>
               </div>

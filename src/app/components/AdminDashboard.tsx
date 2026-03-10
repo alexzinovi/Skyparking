@@ -336,6 +336,7 @@ interface Booking {
   createdAt: string;
   updatedAt?: string;
   needsInvoice?: boolean;
+  invoiceUrl?: string; // URL to the uploaded invoice PDF
   companyName?: string;
   companyOwner?: string;
   taxNumber?: string;
@@ -2214,10 +2215,24 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                       <div className="font-bold text-3xl text-gray-900">€{booking.totalPrice}</div>
                       {booking.needsInvoice && (
                         <div className="mt-3">
-                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300 text-base py-1 px-3">
-                            <FileText className="h-4 w-4 mr-1" />
-                            {bg.invoiceRequested}
-                          </Badge>
+                          {booking.invoiceUrl ? (
+                            <a 
+                              href={booking.invoiceUrl} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="inline-block"
+                            >
+                              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300 text-base py-1 px-3 cursor-pointer hover:bg-blue-100 transition-colors">
+                                <FileText className="h-4 w-4 mr-1" />
+                                {bg.invoiceRequested}
+                              </Badge>
+                            </a>
+                          ) : (
+                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300 text-base py-1 px-3">
+                              <FileText className="h-4 w-4 mr-1" />
+                              {bg.invoiceRequested}
+                            </Badge>
+                          )}
                         </div>
                       )}
                     </div>
@@ -2265,6 +2280,19 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                           <div className="md:col-span-2">
                             <span className="text-gray-600">{bg.address}:</span>
                             <div className="font-medium">{booking.address}</div>
+                          </div>
+                        )}
+                        {booking.invoiceUrl && (
+                          <div className="md:col-span-3 mt-2 pt-2 border-t border-blue-300">
+                            <a 
+                              href={booking.invoiceUrl} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 text-blue-700 hover:text-blue-900 font-medium hover:underline"
+                            >
+                              <FileText className="h-5 w-5" />
+                              Отвори фактура (PDF)
+                            </a>
                           </div>
                         )}
                       </div>
@@ -2731,6 +2759,19 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                         />
                       </div>
                     )}
+                  </div>
+
+                  {/* Invoice URL field */}
+                  <div>
+                    <Label htmlFor="invoiceUrl" className="text-base font-semibold">URL на фактура</Label>
+                    <Input
+                      id="invoiceUrl"
+                      value={formData.invoiceUrl || ""}
+                      onChange={(e) => setFormData({ ...formData, invoiceUrl: e.target.value })}
+                      placeholder="https://example.com/invoice.pdf"
+                      className="bg-white h-12 text-base"
+                    />
+                    <p className="text-sm text-gray-500 mt-1">Въведете URL адрес към качената фактура (PDF, Google Drive, Dropbox, и т.н.)</p>
                   </div>
                 </div>
               )}
