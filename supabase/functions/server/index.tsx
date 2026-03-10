@@ -305,10 +305,17 @@ async function calculateCapacity(
         booking.departureDate, booking.departureTime
       )) {
         const numberOfCars = Number(booking.numberOfCars || 1);
-        if (booking.carKeys) {
-          keysCount += numberOfCars;
-        } else {
-          nonKeysCount += numberOfCars;
+        
+        // Only count bookings that should be included in capacity
+        // If includeInCapacity is undefined (old bookings), default to true
+        const shouldInclude = booking.includeInCapacity !== false;
+        
+        if (shouldInclude) {
+          if (booking.carKeys) {
+            keysCount += numberOfCars;
+          } else {
+            nonKeysCount += numberOfCars;
+          }
         }
       }
     });
@@ -521,7 +528,9 @@ app.post("/make-server-47a4914e/bookings", async (c) => {
       createdAt: new Date().toISOString(),
       paymentStatus: booking.paymentStatus || "pending",
       status: booking.status || "new", // Use provided status, default to "new"
-      statusHistory: []
+      statusHistory: [],
+      keyNumber: booking.keyNumber || null, // Optional key box number for car keys bookings
+      includeInCapacity: booking.includeInCapacity !== false // Default to true
     };
     
     console.log("Saving booking with needsInvoice:", bookingData.needsInvoice);
@@ -660,7 +669,7 @@ app.put("/make-server-47a4914e/bookings/:id", async (c) => {
     const changes: string[] = [];
     const fieldsToTrack = ['name', 'email', 'phone', 'licensePlate', 'arrivalDate', 'arrivalTime', 
                            'departureDate', 'departureTime', 'passengers', 'numberOfCars', 
-                           'totalPrice', 'carKeys', 'status', 'paymentMethod', 'paymentStatus'];
+                           'totalPrice', 'carKeys', 'keyNumber', 'includeInCapacity', 'status', 'paymentMethod', 'paymentStatus'];
     
     for (const field of fieldsToTrack) {
       if (updates[field] !== undefined && updates[field] !== existing[field]) {

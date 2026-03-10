@@ -70,6 +70,8 @@ interface Booking {
   numberOfCars?: number;
   totalPrice: number;
   carKeys?: boolean;
+  keyNumber?: string; // Physical key number in the key box
+  includeInCapacity?: boolean; // Whether to include in extra capacity calculations
   needsInvoice?: boolean;
   invoiceUrl?: string; // URL to the uploaded invoice PDF
   companyName?: string;

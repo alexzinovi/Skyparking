@@ -155,7 +155,7 @@ const bg = {
   loadingBookings: "Зареждане на резервации...",
   noBookings: "Няма резервации все още",
   noResults: "Няма резервации съвпадащи с търсенето",
-  deleteConfirm: "Сигурни ли сте, че искате да изтриете тази резервация?",
+  deleteConfirm: "Сигурни ли с��е, че искате да изтриете тази резервация?",
   bookingDeleted: "Резервацията е изтрита успешно",
   bookingUpdated: "Резервацията е обновена",
   bookingCreated: "Резервацията е създадена",
@@ -194,6 +194,11 @@ const bg = {
   carKeysNo: "НЕ - няма ключове",
   carKeysNotes: "Бележки за ключовете",
   carKeysNotesPlaceholder: "Напр.: Ключове оставени в офиса, паркирана в зона B...",
+  keyNumber: "Номер на ключ",
+  keyNumberPlaceholder: "напр., Ключ #12",
+  keyNumberHint: "Физически номер на ключа в кутията",
+  includeInCapacity: "Включи в допълнителен капацитет (преливащи места)",
+  includeInCapacityHint: "Ако не е отметнато, това запазване няма да заема място в капацитета (за коли паркирани извън паркинга)",
   
   // Capacity
   capacityWarning: "⚠️ Предупреждение за ка�����ацитет",
@@ -355,6 +360,8 @@ interface Booking {
   checkedOutAt?: string;
   carKeys?: boolean;
   carKeysNotes?: string;
+  keyNumber?: string; // Physical key number in the key box
+  includeInCapacity?: boolean; // Whether to include in extra capacity calculations
   capacityOverride?: boolean;
   declineReason?: string;
   declinedBy?: string; // Operator who declined
@@ -1311,6 +1318,8 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
         "Passengers",
         "Number of Cars",
         "Car Keys",
+        "Key Number",
+        "Include in Capacity",
         "Total Price (EUR)",
         "Payment Status",
         "Payment Method",
@@ -1342,6 +1351,8 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
         booking.passengers || "0",
         booking.numberOfCars || "1",
         booking.carKeys ? "Yes" : "No",
+        booking.keyNumber || "",
+        booking.includeInCapacity !== false ? "Yes" : "No",
         booking.totalPrice,
         booking.paymentStatus,
         booking.paymentMethod || "",
@@ -2073,9 +2084,11 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                         </Badge>
                       )}
                       {booking.carKeys && (
-                        <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-300 text-base py-1 px-3">
+                        <Badge variant="outline" className={`${booking.includeInCapacity === false ? 'bg-orange-50 text-orange-700 border-orange-300' : 'bg-purple-50 text-purple-700 border-purple-300'} text-base py-1 px-3`}>
                           <Key className="h-4 w-4 mr-1" />
                           {bg.carKeysYes}
+                          {booking.keyNumber && ` - ${booking.keyNumber}`}
+                          {booking.includeInCapacity === false && ' 🚫'}
                         </Badge>
                       )}
                       {booking.capacityOverride && (
@@ -2634,18 +2647,58 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
               </div>
 
               {formData.carKeys && (
-                <div>
-                  <Label htmlFor="carKeysNotes" className="text-base font-semibold">{bg.carKeysNotes}</Label>
-                  <textarea
-                    id="carKeysNotes"
-                    value={formData.carKeysNotes || ""}
-                    onChange={(e) => setFormData({ ...formData, carKeysNotes: e.target.value })}
-                    placeholder={bg.carKeysNotesPlaceholder}
-                    className="w-full h-24 px-4 py-3 text-base border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    maxLength={500}
-                  />
-                  <div className="text-sm text-gray-500 mt-1">
-                    {(formData.carKeysNotes || "").length}/500
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="keyNumber" className="text-base font-semibold">
+                      {bg.keyNumber || "Key Number"}
+                    </Label>
+                    <Input
+                      id="keyNumber"
+                      type="text"
+                      value={formData.keyNumber || ""}
+                      onChange={(e) => setFormData({ ...formData, keyNumber: e.target.value })}
+                      placeholder={bg.keyNumberPlaceholder || "e.g., Key #12"}
+                      className="h-12 text-base"
+                      maxLength={20}
+                    />
+                    <div className="text-sm text-gray-500 mt-1">
+                      {bg.keyNumberHint || "Физически номер на ключа в кутията"}
+                    </div>
+                  </div>
+                  
+                  <div className="p-4 bg-yellow-50 border border-yellow-300 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        id="includeInCapacity"
+                        checked={formData.includeInCapacity !== false}
+                        onChange={(e) => setFormData({ ...formData, includeInCapacity: e.target.checked })}
+                        className="w-5 h-5 text-blue-600"
+                      />
+                      <div className="flex-1">
+                        <Label htmlFor="includeInCapacity" className="text-base font-medium cursor-pointer">
+                          {bg.includeInCapacity || "Include in extra capacity (overflow spots)"}
+                        </Label>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {bg.includeInCapacityHint || "Ако не е отметнато, това запазване няма да заема място в капацитета (за коли паркирани извън паркинга)"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="carKeysNotes" className="text-base font-semibold">{bg.carKeysNotes}</Label>
+                    <textarea
+                      id="carKeysNotes"
+                      value={formData.carKeysNotes || ""}
+                      onChange={(e) => setFormData({ ...formData, carKeysNotes: e.target.value })}
+                      placeholder={bg.carKeysNotesPlaceholder}
+                      className="w-full h-24 px-4 py-3 text-base border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      maxLength={500}
+                    />
+                    <div className="text-sm text-gray-500 mt-1">
+                      {(formData.carKeysNotes || "").length}/500
+                    </div>
                   </div>
                 </div>
               )}
