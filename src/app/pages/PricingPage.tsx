@@ -33,15 +33,15 @@ export function PricingPage() {
             {/* Weekend Package */}
             <div className="bg-white rounded-lg shadow-lg p-6 border-2 border-gray-200 hover:border-[#f1c933] transition-colors">
               <div className="text-center">
-                <h2 className="text-xl font-bold mb-3" style={{ color: '#073590' }}>
+                <h2 className="text-xl font-bold mb-1" style={{ color: '#073590' }}>
                   {language === 'bg' ? 'Уикенд Пакет' : 'Weekend Package'}
                 </h2>
+                <div className="text-sm text-gray-600 mb-3">
+                  {language === 'bg' ? '3 дни' : '3 days'}
+                </div>
                 <div className="mb-4">
                   <div className="text-4xl font-bold mb-1" style={{ color: '#f1c933' }}>
                     21€
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    {language === 'bg' ? '3 дни' : '3 days'}
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
                     (41.07 {language === 'bg' ? 'лв' : 'BGN'})
@@ -66,15 +66,15 @@ export function PricingPage() {
                 </span>
               </div>
               <div className="text-center">
-                <h2 className="text-xl font-bold mb-3" style={{ color: '#073590' }}>
+                <h2 className="text-xl font-bold mb-1" style={{ color: '#073590' }}>
                   {language === 'bg' ? '1 Седмица' : '1 Week'}
                 </h2>
+                <div className="text-sm text-gray-600 mb-3">
+                  {language === 'bg' ? '7 дни' : '7 days'}
+                </div>
                 <div className="mb-4">
                   <div className="text-5xl font-bold mb-1" style={{ color: '#f1c933' }}>
                     32€
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    {language === 'bg' ? '7 дни' : '7 days'}
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
                     (62.59 {language === 'bg' ? 'лв' : 'BGN'})
@@ -94,15 +94,15 @@ export function PricingPage() {
             {/* Monthly Package */}
             <div className="bg-white rounded-lg shadow-lg p-6 border-2 border-gray-200 hover:border-[#f1c933] transition-colors">
               <div className="text-center">
-                <h2 className="text-xl font-bold mb-3" style={{ color: '#073590' }}>
+                <h2 className="text-xl font-bold mb-1" style={{ color: '#073590' }}>
                   {language === 'bg' ? '1 Месец' : '1 Month'}
                 </h2>
+                <div className="text-sm text-gray-600 mb-3">
+                  {language === 'bg' ? '30 дни' : '30 days'}
+                </div>
                 <div className="mb-4">
                   <div className="text-4xl font-bold mb-1" style={{ color: '#f1c933' }}>
-                    84€
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    {language === 'bg' ? '30 дни' : '30 days'}
+                    84€*
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
                     (164.29 {language === 'bg' ? 'лв' : 'BGN'})
@@ -154,8 +154,8 @@ export function PricingPage() {
             <div className="mt-6 bg-yellow-50 rounded-lg p-4 border-2" style={{ borderColor: '#f1c933' }}>
               <p className="font-semibold text-center" style={{ color: '#073590' }}>
                 {language === 'bg' 
-                  ? 'За по-дълги периоди (повече от 1 месец) моля обадете се на +359 886 616 991'
-                  : 'For longer periods (more than 1 month) please call us at +359 886 616 991'}
+                  ? '* За по-дълги периоди (за 1 месец и повече) моля обадете се на +359 886 616 991'
+                  : '* For longer periods (1 month and more) please call us at +359 886 616 991'}
               </p>
             </div>
           </div>
