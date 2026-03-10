@@ -53,7 +53,8 @@ const PRICING_CACHE_KEY = 'skyparking_pricing_cache';
 const PRICING_CACHE_TIMESTAMP_KEY = 'skyparking_pricing_cache_timestamp';
 const PRICING_CACHE_VERSION_KEY = 'skyparking_pricing_cache_version';
 const CURRENT_CACHE_VERSION = '2'; // Increment this to force cache clear
-const CACHE_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes
+const CACHE_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes - only for "fresh" cache checks
+const PERMANENT_FALLBACK_KEY = 'skyparking_pricing_permanent_fallback'; // Never expires, always available
 
 // Load pricing from localStorage cache
 function loadPricingFromCache(): PricingConfig | null {
@@ -64,6 +65,7 @@ function loadPricingFromCache(): PricingConfig | null {
       console.log(`🔄 Cache version mismatch (${version} vs ${CURRENT_CACHE_VERSION}), clearing old cache`);
       localStorage.removeItem(PRICING_CACHE_KEY);
       localStorage.removeItem(PRICING_CACHE_TIMESTAMP_KEY);
+      localStorage.removeItem(PERMANENT_FALLBACK_KEY);
       localStorage.setItem(PRICING_CACHE_VERSION_KEY, CURRENT_CACHE_VERSION);
       return null;
     }
@@ -84,11 +86,28 @@ function loadPricingFromCache(): PricingConfig | null {
   return null;
 }
 
+// Load permanent fallback pricing (never expires, survives cache clears)
+function loadPermanentFallback(): PricingConfig | null {
+  try {
+    const fallback = localStorage.getItem(PERMANENT_FALLBACK_KEY);
+    if (fallback) {
+      console.log("🔒 Loading pricing from permanent fallback");
+      return JSON.parse(fallback);
+    }
+  } catch (error) {
+    console.warn("Failed to load permanent fallback:", error);
+  }
+  return null;
+}
+
 // Save pricing to localStorage cache
 function savePricingToCache(pricing: PricingConfig): void {
   try {
     localStorage.setItem(PRICING_CACHE_KEY, JSON.stringify(pricing));
     localStorage.setItem(PRICING_CACHE_TIMESTAMP_KEY, Date.now().toString());
+    // Also save as permanent fallback (overwrites old fallback with latest pricing)
+    localStorage.setItem(PERMANENT_FALLBACK_KEY, JSON.stringify(pricing));
+    console.log("💾 Saved pricing to cache and permanent fallback");
   } catch (error) {
     console.warn("Failed to save pricing to cache:", error);
   }
@@ -118,14 +137,15 @@ async function fetchPricingConfig(): Promise<PricingConfig> {
         console.log("✅ Fetched pricing from server");
         cachedPricing = data.pricing;
         isPricingInitialized = true;
-        savePricingToCache(data.pricing); // Save to localStorage
+        savePricingToCache(data.pricing); // Save to localStorage (including permanent fallback)
         return data.pricing;
       }
     }
     
-    console.log("📦 Server pricing unavailable, using cache");
+    console.log("📦 Server pricing unavailable, using fallbacks");
     
-    // Try localStorage cache
+    // Fallback priority:
+    // 1. Fresh cache (< 5 min old)
     const cachedData = loadPricingFromCache();
     if (cachedData) {
       cachedPricing = cachedData;
@@ -133,20 +153,30 @@ async function fetchPricingConfig(): Promise<PricingConfig> {
       return cachedData;
     }
     
-    // Fall back to defaults
-    console.log("⚙️ Using default pricing");
+    // 2. Permanent fallback (any pricing ever fetched, even if old)
+    const permanentFallback = loadPermanentFallback();
+    if (permanentFallback) {
+      console.log("🔒 Using permanent fallback (last known good pricing)");
+      cachedPricing = permanentFallback;
+      isPricingInitialized = true;
+      return permanentFallback;
+    }
+    
+    // 3. DEFAULT_PRICING (hardcoded, only if customer has NEVER fetched pricing before)
+    console.log("⚙️ Using DEFAULT_PRICING (first-time user with no connection)");
     cachedPricing = DEFAULT_PRICING;
     isPricingInitialized = true;
     return DEFAULT_PRICING;
   } catch (error) {
     // Don't log timeout as error - it's expected sometimes
     if (error instanceof Error && error.name === 'AbortError') {
-      console.log("📦 Using cached pricing");
+      console.log("⏱️ Server timeout, using fallbacks");
     } else {
-      console.log("📦 Network issue, using cached pricing");
+      console.log("📡 Network issue, using fallbacks");
     }
     
-    // Try localStorage cache on error
+    // Same fallback priority on errors
+    // 1. Fresh cache
     const cachedData = loadPricingFromCache();
     if (cachedData) {
       cachedPricing = cachedData;
@@ -154,8 +184,17 @@ async function fetchPricingConfig(): Promise<PricingConfig> {
       return cachedData;
     }
     
-    // Final fallback to defaults
-    console.log("⚙️ Using default pricing");
+    // 2. Permanent fallback (last known good pricing)
+    const permanentFallback = loadPermanentFallback();
+    if (permanentFallback) {
+      console.log("🔒 Using permanent fallback (last known good pricing)");
+      cachedPricing = permanentFallback;
+      isPricingInitialized = true;
+      return permanentFallback;
+    }
+    
+    // 3. DEFAULT_PRICING (last resort)
+    console.log("⚙️ Using DEFAULT_PRICING (no cached pricing available)");
     cachedPricing = DEFAULT_PRICING;
     isPricingInitialized = true;
     return DEFAULT_PRICING;
