@@ -224,9 +224,15 @@ function calculateCapacityForDateRange(
       datesOverlap(b.arrivalDate, b.departureDate, arrivalDate, departureDate)
   );
 
-  // Count total cars (considering numberOfCars)
+  // Count total cars (considering numberOfCars and includeInCapacity)
   const totalCars = overlappingBookings.reduce(
-    (sum, b) => sum + Number(b.numberOfCars || 1),
+    (sum, b) => {
+      // Only count if includeInCapacity is not explicitly false
+      if (b.includeInCapacity === false) {
+        return sum;
+      }
+      return sum + Number(b.numberOfCars || 1);
+    },
     0
   );
 
@@ -272,16 +278,28 @@ function calculateCapacityForSingleDate(
       b.departureDate >= targetDate
   );
 
-  // Count total cars present on this date
+  // Count total cars present on this date (excluding those not in capacity)
   const totalCars = presentBookings.reduce(
-    (sum, b) => sum + Number(b.numberOfCars || 1),
+    (sum, b) => {
+      // Only count if includeInCapacity is not explicitly false
+      if (b.includeInCapacity === false) {
+        return sum;
+      }
+      return sum + Number(b.numberOfCars || 1);
+    },
     0
   );
 
-  // Count cars leaving on this specific date
+  // Count cars leaving on this specific date (excluding those not in capacity)
   const leavingBookings = presentBookings.filter(b => b.departureDate === targetDate);
   const leavingCars = leavingBookings.reduce(
-    (sum, b) => sum + Number(b.numberOfCars || 1),
+    (sum, b) => {
+      // Only count if includeInCapacity is not explicitly false
+      if (b.includeInCapacity === false) {
+        return sum;
+      }
+      return sum + Number(b.numberOfCars || 1);
+    },
     0
   );
 
@@ -389,6 +407,11 @@ function calculateCapacityForDate(bookings: Booking[], dateStr: string) {
   let keysCount = 0;
   
   overlappingBookings.forEach(b => {
+    // Only count if includeInCapacity is not explicitly false
+    if (b.includeInCapacity === false) {
+      return;
+    }
+    
     const carCount = Number(b.numberOfCars || 1);
     if (b.carKeys) {
       keysCount += carCount;
@@ -487,6 +510,8 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
     passengers: 0,
     numberOfCars: 1,
     carKeys: false,
+    keyNumber: "",
+    includeInCapacity: true,
     needsInvoice: false,
     notes: "",
     // Invoice fields
@@ -898,7 +923,15 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
     
     // Car keys badge
     if (booking.carKeys) {
-      badges.push(<Badge key="keys" variant="secondary" className="text-base py-1 px-3">🔑 С ключове</Badge>);
+      badges.push(
+        <Badge 
+          key="keys" 
+          variant="secondary" 
+          className={`${booking.includeInCapacity === false ? 'bg-orange-100 text-orange-800' : ''} text-base py-1 px-3`}
+        >
+          🔑 С ключове{booking.keyNumber && ` - ${booking.keyNumber}`}{booking.includeInCapacity === false && ' 🚫'}
+        </Badge>
+      );
     }
     
     // Invoice badge
@@ -1650,8 +1683,11 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
             <User className="w-6 h-6 text-gray-500" />
             <span className="font-bold text-2xl">{booking.name}</span>
             {booking.carKeys && (
-              <Badge variant="secondary" className="text-base py-1 px-3">
-                🔑 С ключове
+              <Badge 
+                variant="secondary" 
+                className={`${booking.includeInCapacity === false ? 'bg-orange-100 text-orange-800' : ''} text-base py-1 px-3`}
+              >
+                🔑 С ключове{booking.keyNumber && ` - ${booking.keyNumber}`}{booking.includeInCapacity === false && ' 🚫'}
               </Badge>
             )}
             {booking.needsInvoice && (
@@ -2323,8 +2359,11 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                             <User className="w-6 h-6 text-gray-500" />
                             <span className="font-bold text-2xl">{booking.name}</span>
                             {booking.carKeys && (
-                              <Badge variant="secondary" className="text-base py-1 px-3">
-                                🔑 С ключове
+                              <Badge 
+                                variant="secondary" 
+                                className={`${booking.includeInCapacity === false ? 'bg-orange-100 text-orange-800' : ''} text-base py-1 px-3`}
+                              >
+                                🔑 С ключове{booking.keyNumber && ` - ${booking.keyNumber}`}{booking.includeInCapacity === false && ' 🚫'}
                               </Badge>
                             )}
                             {booking.needsInvoice && (
@@ -3264,19 +3303,57 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
 
             {/* Options */}
             <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <Checkbox
-                  id="carKeys"
-                  checked={bookingForm.carKeys}
-                  onCheckedChange={(checked) => setBookingForm({...bookingForm, carKeys: !!checked})}
-                  className="w-5 h-5"
-                />
-                <label
-                  htmlFor="carKeys"
-                  className="text-base font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                >
-                  🔑 Клиентът оставя ключовете (позволява препаркиране)
-                </label>
+              <div className="space-y-4">
+                <div className="flex items-center space-x-3">
+                  <Checkbox
+                    id="carKeys"
+                    checked={bookingForm.carKeys}
+                    onCheckedChange={(checked) => setBookingForm({...bookingForm, carKeys: !!checked})}
+                    className="w-5 h-5"
+                  />
+                  <label
+                    htmlFor="carKeys"
+                    className="text-base font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                  >
+                    🔑 Клиентът оставя ключовете (позволява препаркиране)
+                  </label>
+                </div>
+
+                {bookingForm.carKeys && (
+                  <div className="ml-8 space-y-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                    <div className="space-y-2">
+                      <Label className="text-base font-semibold">Номер на ключ</Label>
+                      <Input
+                        value={bookingForm.keyNumber || ""}
+                        onChange={(e) => setBookingForm({...bookingForm, keyNumber: e.target.value})}
+                        placeholder="напр., Ключ #12"
+                        className="h-12 text-base"
+                        maxLength={20}
+                      />
+                      <p className="text-sm text-gray-600">Физически номер на ключа в кутията</p>
+                    </div>
+
+                    <div className="flex items-start space-x-3 p-3 bg-yellow-50 border border-yellow-300 rounded-md">
+                      <Checkbox
+                        id="includeInCapacity"
+                        checked={bookingForm.includeInCapacity !== false}
+                        onCheckedChange={(checked) => setBookingForm({...bookingForm, includeInCapacity: !!checked})}
+                        className="w-5 h-5 mt-1"
+                      />
+                      <div className="flex-1">
+                        <label
+                          htmlFor="includeInCapacity"
+                          className="text-base font-medium leading-none cursor-pointer"
+                        >
+                          Включи в допълнителен капацитет
+                        </label>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Ако не е отметнато, това запазване няма да заема място в капацитета (за коли паркирани извън паркинга)
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center space-x-3">
