@@ -218,10 +218,30 @@ export async function calculatePrice(
 
   if (departureDateTime <= arrivalDateTime) return null;
 
-  const diffTime = Math.abs(departureDateTime.getTime() - arrivalDateTime.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  // Calculate midnights crossed (difference in calendar days)
+  const arrivalDateOnly = new Date(arrivalDate);
+  const departureDateOnly = new Date(departureDate);
+  const midnightsCrossed = Math.floor((departureDateOnly.getTime() - arrivalDateOnly.getTime()) / (1000 * 60 * 60 * 24));
 
-  console.log(`🧮 Calculating price: ${diffDays} days for ${numberOfCars} car(s)`);
+  // Extract hours and minutes for time comparison
+  const arrivalHour = arrivalDateTime.getHours();
+  const arrivalMinute = arrivalDateTime.getMinutes();
+  const departureHour = departureDateTime.getHours();
+  const departureMinute = departureDateTime.getMinutes();
+  
+  // Convert to minutes for easier comparison
+  const arrivalTimeInMinutes = arrivalHour * 60 + arrivalMinute;
+  const departureTimeInMinutes = departureHour * 60 + departureMinute;
+
+  // If departure time is after arrival time, add 1 day
+  let diffDays = midnightsCrossed;
+  if (departureTimeInMinutes > arrivalTimeInMinutes) {
+    diffDays += 1;
+  }
+
+  console.log(`🧮 Calculating price: ${arrivalDate} ${arrivalTime} → ${departureDate} ${departureTime}`);
+  console.log(`   Midnights crossed: ${midnightsCrossed}, Departure time ${departureTimeInMinutes > arrivalTimeInMinutes ? '>' : '≤'} arrival time → ${diffDays} days for ${numberOfCars} car(s)`);
+  
   const pricePerCar = await calculatePriceForDays(diffDays);
   console.log(`💰 Price per car: €${pricePerCar}, Total: €${pricePerCar * numberOfCars}`);
   
