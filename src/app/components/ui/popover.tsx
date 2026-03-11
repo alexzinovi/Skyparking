@@ -5,27 +5,25 @@ import * as PopoverPrimitive from "@radix-ui/react-popover";
 
 import { cn } from "./utils";
 
-// Helper function to filter out Figma inspector props
-const filterFigmaProps = (props: any) => {
-  const filtered = { ...props };
-  Object.keys(filtered).forEach(key => {
-    if (key.startsWith('_fg')) {
-      delete filtered[key];
+// More aggressive Figma prop filter
+const cleanProps = <T extends Record<string, any>>(props: T): Partial<T> => {
+  const cleaned: any = {};
+  for (const key in props) {
+    // Skip all _fg props (case insensitive check)
+    if (!key.match(/^_fg/i)) {
+      cleaned[key] = props[key];
     }
-  });
-  return filtered;
+  }
+  return cleaned;
 };
 
-function Popover({
-  ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Root>) {
-  return <PopoverPrimitive.Root data-slot="popover" {...filterFigmaProps(props)} />;
-}
+const Popover = PopoverPrimitive.Root;
 
-function PopoverTrigger({
-  ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Trigger>) {
-  return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...filterFigmaProps(props)} />;
+function PopoverTrigger(
+  props: React.ComponentProps<typeof PopoverPrimitive.Trigger>
+) {
+  const filtered = cleanProps(props);
+  return <PopoverPrimitive.Trigger {...filtered} />;
 }
 
 function PopoverContent({
@@ -34,26 +32,27 @@ function PopoverContent({
   sideOffset = 4,
   ...props
 }: React.ComponentProps<typeof PopoverPrimitive.Content>) {
+  const filtered = cleanProps(props);
   return (
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Content
-        data-slot="popover-content"
         align={align}
         sideOffset={sideOffset}
         className={cn(
           "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 w-72 origin-(--radix-popover-content-transform-origin) rounded-md border p-4 shadow-md outline-hidden",
           className,
         )}
-        {...filterFigmaProps(props)}
+        {...filtered}
       />
     </PopoverPrimitive.Portal>
   );
 }
 
-function PopoverAnchor({
-  ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Anchor>) {
-  return <PopoverPrimitive.Anchor data-slot="popover-anchor" {...filterFigmaProps(props)} />;
+function PopoverAnchor(
+  props: React.ComponentProps<typeof PopoverPrimitive.Anchor>
+) {
+  const filtered = cleanProps(props);
+  return <PopoverPrimitive.Anchor {...filtered} />;
 }
 
 export { Popover, PopoverTrigger, PopoverContent, PopoverAnchor };

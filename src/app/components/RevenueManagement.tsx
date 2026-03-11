@@ -141,7 +141,8 @@ export function RevenueManagement({ bookings, users }: RevenueManagementProps) {
     // For future periods, count confirmed and arrived bookings (projected)
     // For mixed periods, count both
     const relevantBookings = bookings.filter(booking => {
-      const bookingDate = new Date(booking.departureDate);
+      // Use arrivalDate for revenue calculation since customers pay on arrival
+      const bookingDate = new Date(booking.arrivalDate);
       const isInRange = bookingDate >= dateRange.start && bookingDate <= dateRange.end;
       
       if (!isInRange) return false;
@@ -222,10 +223,11 @@ export function RevenueManagement({ bookings, users }: RevenueManagementProps) {
     const dailyMap = new Map<string, { date: string; revenue: number; count: number; cash: number; card: number; projected: number }>();
     
     revenueData.bookings.forEach(booking => {
-      const date = booking.departureDate;
+      // Use arrivalDate for daily breakdown since that's when revenue is collected
+      const date = booking.arrivalDate;
       const amount = booking.finalPrice || booking.totalPrice;
       const now = new Date();
-      const bookingDate = new Date(booking.departureDate);
+      const bookingDate = new Date(booking.arrivalDate);
       const isPast = bookingDate < now;
       
       if (!dailyMap.has(date)) {
