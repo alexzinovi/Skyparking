@@ -11,7 +11,7 @@ interface NumberPickerProps {
   error?: string;
   id?: string;
   icon?: React.ReactNode;
-  [key: string]: any; // Allow other props to pass through (like Figma inspector props)
+  [key: string]: any; // Allow other props to pass through (like Figma inspector props - we'll filter them out)
 }
 
 export function NumberPicker({ 
@@ -23,7 +23,7 @@ export function NumberPicker({
   error, 
   id,
   icon,
-  ...rest // Capture all other props
+  ...rest // Capture all other props (like Figma inspector props - we'll filter them out)
 }: NumberPickerProps) {
   const [open, setOpen] = useState(false);
 
@@ -35,16 +35,11 @@ export function NumberPicker({
   const selectedOption = options.find(opt => opt.value === value);
   const displayIcon = icon || <Hash className="h-4 w-4" />;
 
-  // Filter out Figma inspector props (start with _fg)
-  const cleanProps = Object.keys(rest).reduce((acc, key) => {
-    if (!key.startsWith('_fg')) {
-      acc[key] = rest[key];
-    }
-    return acc;
-  }, {} as Record<string, any>);
+  // Don't pass any props to the wrapper div - just ignore them
+  // This prevents Figma inspector props from being passed down
 
   return (
-    <div className="space-y-2 md:space-y-3" {...cleanProps}>
+    <div className="space-y-2 md:space-y-3">
       {label && (
         <label className="text-sm md:text-base font-medium text-gray-700 block" htmlFor={id}>
           {displayIcon && <span className="inline-flex items-center mr-2">{displayIcon}</span>}

@@ -19,7 +19,7 @@ export function HomePage() {
     const existingIcons = document.querySelectorAll('link[rel*="icon"]');
     
     // Check if our favicon is already set
-    const faviconUrl = 'https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/favicon.png';
+    const faviconUrl = '/favicon.png';
     const alreadySet = Array.from(existingIcons).some(icon => 
       icon.getAttribute('href')?.startsWith(faviconUrl)
     );
@@ -247,7 +247,7 @@ export function HomePage() {
               aria-label="Viber"
             >
               <img 
-                src="https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/viberlogo.png" 
+                src="/viber-logo.png" 
                 alt="Viber" 
                 className="w-7 h-7"
                 style={{ mixBlendMode: 'multiply' }}

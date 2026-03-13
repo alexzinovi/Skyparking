@@ -9,8 +9,8 @@ import { cn } from "./utils";
 const cleanProps = <T extends Record<string, any>>(props: T): Partial<T> => {
   const cleaned: any = {};
   for (const key in props) {
-    // Skip all _fg props (case insensitive check)
-    if (!key.match(/^_fg/i)) {
+    // Skip all _fg props (case insensitive check) - more patterns
+    if (!key.match(/^_fg/i) && !key.startsWith('_fg')) {
       cleaned[key] = props[key];
     }
   }
@@ -20,10 +20,18 @@ const cleanProps = <T extends Record<string, any>>(props: T): Partial<T> => {
 const Popover = PopoverPrimitive.Root;
 
 function PopoverTrigger(
-  props: React.ComponentProps<typeof PopoverPrimitive.Trigger>
+  { children, ...props }: React.ComponentProps<typeof PopoverPrimitive.Trigger>
 ) {
   const filtered = cleanProps(props);
-  return <PopoverPrimitive.Trigger {...filtered} />;
+  
+  // If asChild is true and children exist, also clean the children's props
+  if (filtered.asChild && children && React.isValidElement(children)) {
+    const childProps = cleanProps(children.props || {});
+    const cleanedChild = React.cloneElement(children, childProps as any);
+    return <PopoverPrimitive.Trigger {...filtered}>{cleanedChild}</PopoverPrimitive.Trigger>;
+  }
+  
+  return <PopoverPrimitive.Trigger {...filtered}>{children}</PopoverPrimitive.Trigger>;
 }
 
 function PopoverContent({

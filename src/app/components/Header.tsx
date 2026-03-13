@@ -67,7 +67,7 @@ export function Header() {
             >
               {/* Desktop Logo */}
               <img
-                src="https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/white%20web%20header.png"
+                src="/logo-desktop.png"
                 alt="SkyParking Logo"
                 className="h-30 w-auto hidden md:block"
                 onError={(e) => {
@@ -83,7 +83,7 @@ export function Header() {
               />
               {/* Mobile Logo */}
               <img
-                src="https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/header%20mobile.png"
+                src="/logo-mobile.png"
                 alt="SkyParking Logo"
                 className="w-52 h-auto md:hidden max-w-none"
                 onError={(e) => {

@@ -180,7 +180,8 @@ export function RevenueManagement({ bookings, users }: RevenueManagementProps) {
       totalBasePrice += booking.totalPrice;
 
       const now = new Date();
-      const bookingDate = new Date(booking.departureDate);
+      // Use arrivalDate to determine if payment has been collected
+      const bookingDate = new Date(booking.arrivalDate);
       const isPast = bookingDate < now;
       
       if (isPast) {
@@ -280,7 +281,8 @@ export function RevenueManagement({ bookings, users }: RevenueManagementProps) {
     
     revenueData.bookings.forEach(booking => {
       const amount = booking.finalPrice || booking.totalPrice;
-      const bookingDate = new Date(booking.departureDate);
+      // Use arrivalDate to determine if payment has been collected
+      const bookingDate = new Date(booking.arrivalDate);
       const isPast = bookingDate < now;
       
       if (isPast && booking.paymentStatus === "paid") {

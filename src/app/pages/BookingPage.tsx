@@ -97,7 +97,7 @@ export function BookingPage() {
               aria-label="Viber"
             >
               <img 
-                src="https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/viberlogo.png" 
+                src="/viber-logo.png" 
                 alt="Viber" 
                 className="w-7 h-7"
                 style={{ mixBlendMode: 'multiply' }}
