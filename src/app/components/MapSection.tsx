@@ -51,7 +51,7 @@ export function MapSection() {
                   className="bg-[#f1c933] hover:bg-[#f1c933]/90 text-[#073590]"
                 >
                   <img 
-                    src="https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/google-map-icon.png" 
+                    src="/google-maps-icon.png" 
                     alt="Google Maps" 
                     className="mr-2 h-5 w-5"
                   />
@@ -63,7 +63,7 @@ export function MapSection() {
                   className="bg-[#073590] hover:bg-[#073590]/90 text-white"
                 >
                   <img 
-                    src="https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/waze-icon.png" 
+                    src="/waze-icon.png" 
                     alt="Waze" 
                     className="mr-2 h-5 w-5"
                   />

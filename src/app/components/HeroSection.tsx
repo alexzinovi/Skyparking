@@ -15,7 +15,7 @@ export function HeroSection() {
       <section className="relative h-[95vh] flex items-center justify-center overflow-hidden mt-20 md:mt-[90px]">
         <div className="absolute inset-0 md:inset-0 bottom-0 md:bottom-0">
           <ImageWithFallback
-            src="https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/iStock-1458801953.jpg"
+            src="/hero-image.jpg"
             alt="Airport parking lot"
             className="w-full h-full object-cover object-[40%_center] md:object-center"
           />

@@ -109,7 +109,7 @@ function generateConfirmationEmailHTML_BG(data: BookingEmailData): string {
     
     <!-- Header - Compact with Solid Brand Blue -->
     <div class="email-header" style="background-color: #053790; padding: 18px 20px; text-align: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
-      <img class="header-logo" src="https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/email_header.png" alt="SkyParking" style="max-width: 160px; height: auto; display: inline-block;" />
+      <img class="header-logo" src="https://skyparking.bg/logo-email.png" alt="SkyParking" style="max-width: 160px; height: auto; display: inline-block;" />
     </div>
 
     <!-- Confirmation Statement -->
@@ -241,7 +241,7 @@ function generateConfirmationEmailHTML_BG(data: BookingEmailData): string {
               <tr>
                 <td style="padding-bottom: 12px;">
                   <a href="https://ul.waze.com/ul?place=ChIJ6eb_yAqHqkARRJP7h2zo5AU&ll=42.67676540%2C23.40033890&navigate=yes&utm_campaign=default&utm_source=waze_website&utm_medium=lm_share_location" style="display: block; text-align: center; background-color: #053790; color: #ffffff; padding: 14px 20px; text-decoration: none; border-radius: 10px; font-size: 14px; font-weight: 600; height: 48px; line-height: 20px; box-sizing: border-box;">
-                    <img src="https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/waze-icon.png" alt="Waze" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;" />
+                    <img src="https://skyparking.bg/waze-icon.png" alt="Waze" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;" />
                     Навигация с Waze
                   </a>
                 </td>
@@ -249,7 +249,7 @@ function generateConfirmationEmailHTML_BG(data: BookingEmailData): string {
               <tr>
                 <td>
                   <a href="https://maps.app.goo.gl/Yt6YeQN5ECBSjVme8" style="display: block; text-align: center; background-color: #ffffff; color: #053790; padding: 14px 20px; text-decoration: none; border-radius: 10px; font-size: 14px; font-weight: 600; border: 2px solid #053790; height: 48px; line-height: 20px; box-sizing: border-box;">
-                    <img src="https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/google-map-icon.png" alt="Google Maps" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;" />
+                    <img src="https://skyparking.bg/google-maps-icon.png" alt="Google Maps" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;" />
                     Навигация с Google Maps
                   </a>
                 </td>
@@ -390,7 +390,7 @@ function generateConfirmationEmailHTML_EN(data: BookingEmailData): string {
     
     <!-- Header - Compact with Solid Brand Blue -->
     <div class="email-header" style="background-color: #053790; padding: 18px 20px; text-align: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
-      <img class="header-logo" src="https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/email_header.png" alt="SkyParking" style="max-width: 160px; height: auto; display: inline-block;" />
+      <img class="header-logo" src="https://skyparking.bg/logo-email.png" alt="SkyParking" style="max-width: 160px; height: auto; display: inline-block;" />
     </div>
 
     <!-- Confirmation Statement -->
@@ -522,7 +522,7 @@ function generateConfirmationEmailHTML_EN(data: BookingEmailData): string {
               <tr>
                 <td style="padding-bottom: 12px;">
                   <a href="https://ul.waze.com/ul?place=ChIJ6eb_yAqHqkARRJP7h2zo5AU&ll=42.67676540%2C23.40033890&navigate=yes&utm_campaign=default&utm_source=waze_website&utm_medium=lm_share_location" style="display: block; text-align: center; background-color: #053790; color: #ffffff; padding: 14px 20px; text-decoration: none; border-radius: 10px; font-size: 14px; font-weight: 600; height: 48px; line-height: 20px; box-sizing: border-box;">
-                    <img src="https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/waze-icon.png" alt="Waze" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;" />
+                    <img src="https://skyparking.bg/waze-icon.png" alt="Waze" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;" />
                     Navigate with Waze
                   </a>
                 </td>
@@ -530,7 +530,7 @@ function generateConfirmationEmailHTML_EN(data: BookingEmailData): string {
               <tr>
                 <td>
                   <a href="https://maps.app.goo.gl/Yt6YeQN5ECBSjVme8" style="display: block; text-align: center; background-color: #ffffff; color: #053790; padding: 14px 20px; text-decoration: none; border-radius: 10px; font-size: 14px; font-weight: 600; border: 2px solid #053790; height: 48px; line-height: 20px; box-sizing: border-box;">
-                    <img src="https://dbybybmjjeeocoecaewv.supabase.co/storage/v1/object/public/assets/google-map-icon.png" alt="Google Maps" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;" />
+                    <img src="https://skyparking.bg/google-maps-icon.png" alt="Google Maps" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;" />
                     Navigate with Google Maps
                   </a>
                 </td>
