@@ -783,6 +783,40 @@ function generateAdminNotificationEmailHTML(data: BookingEmailData): string {
         ${invoiceText}
       </div>
 
+      <!-- Viber Message Template -->
+      <div style="background-color: #7360f2; border: 3px solid #665dc0; padding: 20px; margin: 25px 0; border-radius: 8px;">
+        <div style="display: flex; align-items: center; margin-bottom: 15px;">
+          <img src="https://skyparking.bg/viber-logo.png" alt="Viber" style="width: 32px; height: 32px; margin-right: 12px;" />
+          <h3 style="margin: 0; font-size: 20px; color: #ffffff;">📱 Viber съобщение за клиента</h3>
+        </div>
+        <p style="margin: 0 0 12px 0; font-size: 13px; color: #e0d9ff; font-style: italic;">
+          Копирайте текста по-долу и го изпратете на клиента във Viber:
+        </p>
+        <div style="background-color: #ffffff; padding: 18px; border-radius: 6px; font-family: Arial, sans-serif; line-height: 1.6; border: 1px solid #665dc0;">
+          <p style="margin: 0 0 12px 0; font-size: 15px; color: #1a1a1a;">
+            Здравейте ${data.name}, SkyParking потвърждава вашата резервация от ${formatDateDisplay(data.arrivalDate)} в ${data.arrivalTime} до ${formatDateDisplay(data.departureDate)} в ${data.departureTime} за ${data.numberOfCars > 1 ? 'автомобили' : 'автомобил'} ${data.licensePlate} за сумата от €${data.totalPrice} с включени два трансфера.
+          </p>
+          <p style="margin: 0 0 12px 0; font-size: 15px; color: #1a1a1a;">
+            Ако имате допълнителни въпроси или желаете да коригирате вашата резервация моля се свържете се с нас тук или на +359 886 616 991
+          </p>
+          <p style="margin: 0; font-size: 15px; color: #1a1a1a;">
+            Това е нашата локация във Google Maps и Waze, както и снимка на паркинга:
+          </p>
+        </div>
+        <div style="margin-top: 15px; padding: 12px; background-color: #ffffff; border-radius: 6px; border: 1px solid #665dc0;">
+          <p style="margin: 0 0 8px 0; font-size: 13px; color: #665dc0; font-weight: bold;">📍 Линкове за изпращане:</p>
+          <p style="margin: 5px 0; font-size: 14px;">
+            <strong>Google Maps:</strong> <a href="https://maps.app.goo.gl/Yt6YeQN5ECBSjVme8" style="color: #073590;">https://maps.app.goo.gl/Yt6YeQN5ECBSjVme8</a>
+          </p>
+          <p style="margin: 5px 0; font-size: 14px;">
+            <strong>Waze:</strong> <a href="https://ul.waze.com/ul?place=ChIJ6eb_yAqHqkARRJP7h2zo5AU&ll=42.67676540%2C23.40033890&navigate=yes" style="color: #073590;">https://ul.waze.com/ul?place=ChIJ6eb_yAqHqkARRJP7h2zo5AU&ll=42.67676540%2C23.40033890&navigate=yes</a>
+          </p>
+          <p style="margin: 5px 0; font-size: 14px;">
+            <strong>Снимка на паркинга:</strong> <a href="https://skyparking.bg/hero-image.jpg" style="color: #073590;">https://skyparking.bg/hero-image.jpg</a>
+          </p>
+        </div>
+      </div>
+
       <!-- Action Button -->
       <div style="text-align: center; margin: 30px 0;">
         <a href="https://dbybybmjjeeocoecaewv.supabase.co/functions/v1/make-server-47a4914e" 

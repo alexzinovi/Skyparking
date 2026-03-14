@@ -1595,16 +1595,12 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
     );
     const expectedRevenue = expectedBookings.reduce((sum, b) => sum + b.totalPrice, 0);
     
-    // Actual collected: paid bookings that arrived or checked out in this shift
-    // The idea is that payment happens when they arrive or when they leave
+    // Actual collected: paid bookings that ARRIVED during this shift
+    // Only count revenue from customers who arrived in this shift, not those departing from previous shifts
     const paidBookings = bookings.filter(b => 
       b.paymentStatus === "paid" &&
-      (
-        // Paid on arrival (during this shift)
-        (b.arrivedAt && isInShift(b.arrivalDate, b.arrivalTime, shiftRange)) ||
-        // Paid on departure (during this shift)
-        (b.checkedOutAt && isInShift(b.departureDate, b.departureTime, shiftRange))
-      )
+      // Only count if they arrived during this shift
+      isInShift(b.arrivalDate, b.arrivalTime, shiftRange)
     );
     
     // Pending payment: customers with pay-on-leave that arrived during this shift
