@@ -792,27 +792,45 @@ function generateAdminNotificationEmailHTML(data: BookingEmailData): string {
         <p style="margin: 0 0 12px 0; font-size: 13px; color: #e0d9ff; font-style: italic;">
           Копирайте текста по-долу и го изпратете на клиента във Viber:
         </p>
-        <div style="background-color: #ffffff; padding: 18px; border-radius: 6px; font-family: Arial, sans-serif; line-height: 1.6; border: 1px solid #665dc0;">
-          <p style="margin: 0 0 12px 0; font-size: 15px; color: #1a1a1a;">
-            Здравейте ${data.name}, SkyParking потвърждава вашата резервация от ${formatDateDisplay(data.arrivalDate)} в ${data.arrivalTime} до ${formatDateDisplay(data.departureDate)} в ${data.departureTime} за ${data.numberOfCars > 1 ? 'автомобили' : 'автомобил'} ${data.licensePlate} за сумата от €${data.totalPrice} с включени два трансфера.
+        <div style="background-color: #ffffff; padding: 20px; border-radius: 6px; font-family: Arial, sans-serif; line-height: 1.7; border: 1px solid #665dc0;">
+          <p style="margin: 0 0 16px 0; font-size: 15px; color: #1a1a1a;">
+            Здравейте <strong>${data.name}</strong>,
           </p>
-          <p style="margin: 0 0 12px 0; font-size: 15px; color: #1a1a1a;">
-            Ако имате допълнителни въпроси или желаете да коригирате вашата резервация моля се свържете се с нас тук или на +359 886 616 991
+          <p style="margin: 0 0 16px 0; font-size: 15px; color: #1a1a1a;">
+            ✅ SkyParking потвърждава вашата резервация!
+          </p>
+          <p style="margin: 0 0 4px 0; font-size: 15px; color: #1a1a1a;">
+            📅 <strong>От:</strong> ${formatDateDisplay(data.arrivalDate)} в ${data.arrivalTime}
+          </p>
+          <p style="margin: 0 0 16px 0; font-size: 15px; color: #1a1a1a;">
+            📅 <strong>До:</strong> ${formatDateDisplay(data.departureDate)} в ${data.departureTime}
+          </p>
+          <p style="margin: 0 0 4px 0; font-size: 15px; color: #1a1a1a;">
+            🚗 <strong>${data.numberOfCars > 1 ? 'Автомобили' : 'Автомобил'}:</strong> ${data.licensePlate}
+          </p>
+          <p style="margin: 0 0 16px 0; font-size: 15px; color: #1a1a1a;">
+            💶 <strong>Цена:</strong> €${data.totalPrice} (с включени 2 трансфера)
+          </p>
+          <p style="margin: 0 0 16px 0; font-size: 15px; color: #1a1a1a;">
+            Ако имате въпроси или желаете да коригирате резервацията, моля свържете се с нас тук или на <strong>+359 886 616 991</strong>
           </p>
           <p style="margin: 0; font-size: 15px; color: #1a1a1a;">
-            Това е нашата локация във Google Maps и Waze, както и снимка на паркинга:
+            📍 Нашата локация и снимка на паркинга:
           </p>
         </div>
         <div style="margin-top: 15px; padding: 12px; background-color: #ffffff; border-radius: 6px; border: 1px solid #665dc0;">
-          <p style="margin: 0 0 8px 0; font-size: 13px; color: #665dc0; font-weight: bold;">📍 Линкове за изпращане:</p>
-          <p style="margin: 5px 0; font-size: 14px;">
-            <strong>Google Maps:</strong> <a href="https://maps.app.goo.gl/Yt6YeQN5ECBSjVme8" style="color: #073590;">https://maps.app.goo.gl/Yt6YeQN5ECBSjVme8</a>
+          <p style="margin: 0 0 8px 0; font-size: 13px; color: #665dc0; font-weight: bold;">Линкове за изпращане във Viber:</p>
+          <p style="margin: 5px 0; font-size: 13px;">
+            <strong>Google Maps:</strong><br/>
+            <a href="https://maps.app.goo.gl/Yt6YeQN5ECBSjVme8" style="color: #073590; word-break: break-all;">https://maps.app.goo.gl/Yt6YeQN5ECBSjVme8</a>
           </p>
-          <p style="margin: 5px 0; font-size: 14px;">
-            <strong>Waze:</strong> <a href="https://ul.waze.com/ul?place=ChIJ6eb_yAqHqkARRJP7h2zo5AU&ll=42.67676540%2C23.40033890&navigate=yes" style="color: #073590;">https://ul.waze.com/ul?place=ChIJ6eb_yAqHqkARRJP7h2zo5AU&ll=42.67676540%2C23.40033890&navigate=yes</a>
+          <p style="margin: 5px 0; font-size: 13px;">
+            <strong>Waze:</strong><br/>
+            <a href="https://ul.waze.com/ul?place=ChIJ6eb_yAqHqkARRJP7h2zo5AU&ll=42.67676540%2C23.40033890&navigate=yes" style="color: #073590; word-break: break-all;">https://ul.waze.com/ul?place=ChIJ6eb_yAqHqkARRJP7h2zo5AU&ll=42.67676540%2C23.40033890&navigate=yes</a>
           </p>
-          <p style="margin: 5px 0; font-size: 14px;">
-            <strong>Снимка на паркинга:</strong> <a href="https://skyparking.bg/hero-image.jpg" style="color: #073590;">https://skyparking.bg/hero-image.jpg</a>
+          <p style="margin: 5px 0; font-size: 13px;">
+            <strong>Снимка на паркинга:</strong><br/>
+            <a href="https://skyparking.bg/hero-image.jpg" style="color: #073590;">https://skyparking.bg/hero-image.jpg</a>
           </p>
         </div>
       </div>
