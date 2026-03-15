@@ -1214,23 +1214,25 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
   // Render action buttons for a booking
   const renderBookingActions = (booking: Booking) => {
     return (
-      <div className="flex flex-wrap gap-2 sm:gap-3">
+      <div className="flex flex-wrap gap-1.5">
         {/* Context-aware action buttons */}
         {booking.status === "new" && (
           <>
             <Button
-              className="bg-green-600 hover:bg-green-700 text-base sm:text-lg py-5 sm:py-6 px-4 sm:px-6"
+              size="sm"
+              className="bg-green-600 hover:bg-green-700 text-xs h-7 px-2"
               onClick={() => acceptBooking(booking)}
             >
-              <Check className="h-5 w-5 sm:h-6 sm:w-6 mr-2" />
+              <Check className="h-3 w-3 mr-1" />
               {bg.accept}
             </Button>
             <Button
+              size="sm"
               variant="destructive"
-              className="text-base sm:text-lg py-5 sm:py-6 px-4 sm:px-6"
+              className="text-xs h-7 px-2"
               onClick={() => cancelBooking(booking)}
             >
-              <X className="h-5 w-5 sm:h-6 sm:w-6 mr-2" />
+              <X className="h-3 w-3 mr-1" />
               {bg.reject}
             </Button>
           </>
@@ -1239,26 +1241,29 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
         {booking.status === "confirmed" && (
           <>
             <Button
-              className="bg-blue-600 hover:bg-blue-700 text-base sm:text-lg py-5 sm:py-6 px-4 sm:px-6"
+              size="sm"
+              className="bg-blue-600 hover:bg-blue-700 text-xs h-7 px-2"
               onClick={() => markArrived(booking)}
             >
-              <LogIn className="h-5 w-5 sm:h-6 sm:w-6 mr-2" />
+              <LogIn className="h-3 w-3 mr-1" />
               {bg.markArrived}
             </Button>
             <Button
+              size="sm"
               variant="outline"
-              className="text-base sm:text-lg py-5 sm:py-6 px-4 sm:px-6"
+              className="text-xs h-7 px-2"
               onClick={() => markNoShow(booking)}
             >
-              <XCircle className="h-5 w-5 sm:h-6 sm:w-6 mr-2" />
+              <XCircle className="h-3 w-3 mr-1" />
               {bg.markNoShow}
             </Button>
             <Button
+              size="sm"
               variant="destructive"
-              className="text-base sm:text-lg py-5 sm:py-6 px-4 sm:px-6"
+              className="text-xs h-7 px-2"
               onClick={() => cancelBooking(booking)}
             >
-              <X className="h-5 w-5 sm:h-6 sm:w-6 mr-2" />
+              <X className="h-3 w-3 mr-1" />
               {bg.reject}
             </Button>
           </>
@@ -1266,10 +1271,11 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
         
         {booking.status === "arrived" && (
           <Button
-            className="bg-green-600 hover:bg-green-700 text-base sm:text-lg py-5 sm:py-6 px-4 sm:px-6"
+            size="sm"
+            className="bg-green-600 hover:bg-green-700 text-xs h-7 px-2"
             onClick={() => checkout(booking)}
           >
-            <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 mr-2" />
+            <CheckCircle className="h-3 w-3 mr-1" />
             {bg.checkout}
           </Button>
         )}
@@ -1277,23 +1283,25 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
         {/* Edit and Delete based on permissions */}
         {permissions.includes("edit_bookings") && (
           <Button
+            size="sm"
             variant="outline"
-            className="text-base sm:text-lg py-5 sm:py-6 px-4 sm:px-6"
+            className="text-xs h-7 px-2"
             onClick={() => {
               setEditingBooking(booking);
               setFormData(booking);
             }}
           >
-            <Edit className="h-5 w-5 sm:h-6 sm:w-6" />
+            <Edit className="h-3 w-3" />
           </Button>
         )}
         {permissions.includes("delete_bookings") && (
           <Button
+            size="sm"
             variant="destructive"
-            className="text-base sm:text-lg py-5 sm:py-6 px-4 sm:px-6"
+            className="text-xs h-7 px-2"
             onClick={() => deleteBooking(booking.id)}
           >
-            <Trash2 className="h-5 w-5 sm:h-6 sm:w-6" />
+            <Trash2 className="h-3 w-3" />
           </Button>
         )}
       </div>

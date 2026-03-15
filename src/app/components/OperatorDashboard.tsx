@@ -923,14 +923,15 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
   const renderOperatorActions = (booking: Booking) => {
     return (
       <Button
+        size="sm"
         onClick={() => {
           handleEditReservation(booking);
           setShowBookingForm(true);
         }}
-        className="h-12 text-base"
+        className="h-7 text-xs px-2"
         variant="outline"
       >
-        <Edit className="w-5 h-5 mr-2" />
+        <Edit className="w-3 h-3 mr-1" />
         Редактирай
       </Button>
     );
@@ -1708,22 +1709,22 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
   const renderTabActions = (booking: Booking, showActions: string) => {
     if (showActions === "arriving") {
       return (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1.5">
           <Button 
             size="sm" 
             onClick={() => handleArrived(booking)}
-            className="bg-green-600 hover:bg-green-700 whitespace-nowrap text-lg px-5 py-3"
+            className="bg-green-600 hover:bg-green-700 whitespace-nowrap text-xs h-7 px-2"
           >
-            <CheckCircle className="w-6 h-6 mr-2" />
+            <CheckCircle className="w-3 h-3 mr-1" />
             Пристигна
           </Button>
           <Button 
             size="sm" 
             variant="destructive"
             onClick={() => handleNoShow(booking)}
-            className="whitespace-nowrap text-lg px-5 py-3"
+            className="whitespace-nowrap text-xs h-7 px-2"
           >
-            <XCircle className="w-6 h-6 mr-2" />
+            <XCircle className="w-3 h-3 mr-1" />
             Не се яви
           </Button>
         </div>
@@ -1736,30 +1737,30 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
           <Button 
             size="sm" 
             onClick={() => handleCheckout(booking)}
-            className="bg-blue-600 hover:bg-blue-700 whitespace-nowrap text-lg px-5 py-3"
+            className="bg-blue-600 hover:bg-blue-700 whitespace-nowrap text-xs h-7 px-2"
           >
-            <CheckCircle className="w-6 h-6 mr-2" />
-            Напусна (с доплащане)
+            <CheckCircle className="w-3 h-3 mr-1" />
+            Напусна (€{booking.lateSurcharge || 0})
           </Button>
         );
       }
       return (
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-1.5">
           <Button 
             size="sm" 
             onClick={() => handleCheckout(booking)}
-            className="bg-blue-600 hover:bg-blue-700 whitespace-nowrap text-lg px-5 py-3"
+            className="bg-blue-600 hover:bg-blue-700 whitespace-nowrap text-xs h-7 px-2"
           >
-            <CheckCircle className="w-6 h-6 mr-2" />
+            <CheckCircle className="w-3 h-3 mr-1" />
             Напусна
           </Button>
           <Button 
             size="sm" 
             variant="destructive"
             onClick={() => handleMarkLate(booking)}
-            className="bg-red-600 hover:bg-red-700 whitespace-nowrap text-lg px-5 py-3"
+            className="bg-red-600 hover:bg-red-700 whitespace-nowrap text-xs h-7 px-2"
           >
-            <AlertCircle className="w-6 h-6 mr-2" />
+            <AlertCircle className="w-3 h-3 mr-1" />
             Закъснява
           </Button>
         </div>
@@ -1769,8 +1770,8 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
     if (showActions === "exits") {
       if (booking.status === "new" || booking.status === "pending") {
         return (
-          <Badge variant="outline" className="text-base py-2 px-4 bg-yellow-50 border-yellow-400">
-            Очаква потвърждение
+          <Badge variant="outline" className="text-xs py-0.5 px-2 bg-yellow-50 border-yellow-400">
+            Очаква
           </Badge>
         );
       }
@@ -1779,9 +1780,9 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
           <Button 
             size="sm" 
             onClick={() => handleArrived(booking)}
-            className="bg-green-600 hover:bg-green-700 whitespace-nowrap text-lg px-5 py-3"
+            className="bg-green-600 hover:bg-green-700 whitespace-nowrap text-xs h-7 px-2"
           >
-            <CheckCircle className="w-6 h-6 mr-2" />
+            <CheckCircle className="w-3 h-3 mr-1" />
             Пристигна
           </Button>
         );
@@ -1791,31 +1792,31 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
           <Button 
             size="sm" 
             onClick={() => handleCheckout(booking)}
-            className="bg-blue-600 hover:bg-blue-700 whitespace-nowrap text-lg px-5 py-3"
+            className="bg-blue-600 hover:bg-blue-700 whitespace-nowrap text-xs h-7 px-2"
           >
-            <CheckCircle className="w-6 h-6 mr-2" />
-            Напусна (с доплащане)
+            <CheckCircle className="w-3 h-3 mr-1" />
+            Напусна (€{booking.lateSurcharge || 0})
           </Button>
         );
       }
       if ((booking.status === "arrived" || booking.status === "late") && !booking.isLate) {
         return (
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-1.5">
             <Button 
               size="sm" 
               onClick={() => handleCheckout(booking)}
-              className="bg-blue-600 hover:bg-blue-700 whitespace-nowrap text-lg px-5 py-3"
+              className="bg-blue-600 hover:bg-blue-700 whitespace-nowrap text-xs h-7 px-2"
             >
-              <CheckCircle className="w-6 h-6 mr-2" />
+              <CheckCircle className="w-3 h-3 mr-1" />
               Напусна
             </Button>
             <Button 
               size="sm" 
               variant="destructive"
               onClick={() => handleMarkLate(booking)}
-              className="bg-red-600 hover:bg-red-700 whitespace-nowrap text-lg px-5 py-3"
+              className="bg-red-600 hover:bg-red-700 whitespace-nowrap text-xs h-7 px-2"
             >
-              <AlertCircle className="w-6 h-6 mr-2" />
+              <AlertCircle className="w-3 h-3 mr-1" />
               Закъснява
             </Button>
           </div>
