@@ -481,7 +481,14 @@ function calculateCapacityForDate(bookings: Booking[], dateStr: string) {
       return;
     }
     
-    const carCount = Number(b.numberOfCars) || 1;
+    // More explicit numberOfCars handling
+    const numCars = Number(b.numberOfCars);
+    const carCount = (numCars > 0) ? numCars : 1;
+    
+    if (dateStr === today) {
+      console.log(`  → ${b.name}: numberOfCars=${b.numberOfCars}, numCars=${numCars}, carCount=${carCount}, carKeys=${b.carKeys}, includeInCapacity=${b.includeInCapacity}`);
+    }
+    
     if (b.carKeys) {
       keysCount += carCount;
     } else {
@@ -502,16 +509,30 @@ function calculateCapacityForDate(bookings: Booking[], dateStr: string) {
     return b.departureDate === dateStr;
   });
   
-  const leavingCount = leavingBookings.reduce((sum, b) => sum + (Number(b.numberOfCars) || 1), 0);
+  const leavingCount = leavingBookings.reduce((sum, b) => {
+    const numCars = Number(b.numberOfCars);
+    return sum + ((numCars > 0) ? numCars : 1);
+  }, 0);
   
   const totalCount = nonKeysCount + keysCount;
   const percentage = totalCount > 0 ? (totalCount / TOTAL_CAPACITY) * 100 : 0;
+  
+  // Calculate arriving count for this date
+  const arrivingBookings = bookings.filter(b => {
+    if (b.status === 'cancelled' || b.status === 'no-show' || b.status === 'declined') return false;
+    return b.arrivalDate === dateStr;
+  });
+  const arrivingCount = arrivingBookings.reduce((sum, b) => {
+    const numCars = Number(b.numberOfCars);
+    return sum + ((numCars > 0) ? numCars : 1);
+  }, 0);
   
   return {
     nonKeysCount,
     keysCount,
     totalCount,
     leavingCount,
+    arrivingCount,
     percentage,
     isLow: percentage < 50,
     isMedium: percentage >= 50 && percentage < 80,
@@ -1607,13 +1628,15 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
     // Debug: Log all arrived bookings with their car counts
     console.log('🚗 ARRIVED BOOKINGS DEBUG:');
     arrivedBookings.forEach(b => {
-      const carCount = Number(b.numberOfCars) || 1;
-      console.log(`  - ${b.name} (${b.bookingCode || b.id}): numberOfCars = ${b.numberOfCars} → counted as ${carCount} cars`);
+      const numCars = Number(b.numberOfCars);
+      const carCount = (numCars > 0) ? numCars : 1;
+      console.log(`  - ${b.name} (${b.bookingCode || b.id}): numberOfCars = ${b.numberOfCars} (Number=${numCars}) → counted as ${carCount} cars`);
     });
     
     const carsInParking = arrivedBookings.reduce((sum, b) => {
       // Use Number() for conversion, but handle 0, null, undefined, "" as 1
-      const carCount = Number(b.numberOfCars) || 1;
+      const numCars = Number(b.numberOfCars);
+      const carCount = (numCars > 0) ? numCars : 1;
       return sum + carCount;
     }, 0);
     
@@ -2773,7 +2796,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                           const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                           const capacity = calculateCapacityForDate(bookings, dateStr);
                           const isSelected = selectedDate === dateStr;
-                          const isToday = dateStr === new Date().toISOString().split('T')[0];
+                          const isToday = dateStr === getTodayDate();
                           
                           let bgColor = 'bg-white';
                           if (capacity.isFull) bgColor = 'bg-red-100 border-red-400';
@@ -2787,10 +2810,10 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                               onClick={() => setSelectedDate(dateStr)}
                               className={`aspect-square border-2 rounded text-center hover:shadow-md transition-all flex flex-col items-center justify-center p-1 ${bgColor} ${
                                 isSelected ? 'ring-2 ring-blue-500 shadow-lg' : ''
-                              } ${isToday ? 'font-bold border-[#073590]' : ''}`}
+                              } ${isToday ? 'ring-4 ring-[#f1c933] font-black border-[#073590] border-4' : ''}`}
                             >
-                              <div className="text-sm sm:text-base font-bold leading-none">{day}</div>
-                              <div className="text-[10px] sm:text-xs mt-0.5">
+                              <div className={`${isToday ? 'text-base sm:text-lg' : 'text-sm sm:text-base'} font-bold leading-none`}>{day}</div>
+                              <div className={`${isToday ? 'text-xs sm:text-sm font-bold' : 'text-[10px] sm:text-xs'} mt-0.5`}>
                                 {capacity.totalCount > 0 ? `${capacity.totalCount}` : '-'}
                               </div>
                             </button>
@@ -2838,7 +2861,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                           {formatDateDisplay(selectedDate)}
                         </h3>
                         
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-2 gap-2 mb-3">
                           <div className="bg-white p-3 rounded-lg shadow border-2 border-blue-200">
                             <div className="text-gray-600 text-xs font-semibold mb-1">БЕЗ КЛЮЧОВЕ</div>
                             <div className="text-2xl font-black text-blue-600">{capacity.nonKeysCount}</div>
@@ -2863,6 +2886,21 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                               {availableSpots}
                             </div>
                             <div className="text-xs text-gray-500">места</div>
+                          </div>
+                        </div>
+                        
+                        {/* Arrivals and Departures */}
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="bg-white p-3 rounded-lg shadow border-2 border-green-200">
+                            <div className="text-gray-600 text-xs font-semibold mb-1">⬇️ ПРИСТИГАНИЯ</div>
+                            <div className="text-2xl font-black text-green-600">{capacity.arrivingCount}</div>
+                            <div className="text-xs text-gray-500">коли</div>
+                          </div>
+                          
+                          <div className="bg-white p-3 rounded-lg shadow border-2 border-orange-200">
+                            <div className="text-gray-600 text-xs font-semibold mb-1">⬆️ НАПУСКАНИЯ</div>
+                            <div className="text-2xl font-black text-orange-600">{capacity.leavingCount}</div>
+                            <div className="text-xs text-gray-500">коли</div>
                           </div>
                         </div>
                         

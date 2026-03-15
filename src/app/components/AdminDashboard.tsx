@@ -1368,21 +1368,37 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
   
   const calculateCapacityForDate = (dateStr: string) => {
     const overlappingBookings = bookings.filter(b => {
-      if (b.status !== 'confirmed' && b.status !== 'arrived') return false;
+      // If booking is 'arrived', they are physically in parking regardless of scheduled dates
+      if (b.status === 'arrived') {
+        return true;
+      }
       
-      const bookingArrival = new Date(b.arrivalDate);
-      const bookingDeparture = new Date(b.departureDate);
-      const currentDate = new Date(dateStr);
+      // For confirmed bookings, check if the date range overlaps with the target date
+      if (b.status === 'confirmed') {
+        const bookingArrival = new Date(b.arrivalDate);
+        const bookingDeparture = new Date(b.departureDate);
+        const currentDate = new Date(dateStr);
+        
+        // Include departure date - a booking occupies space from arrival through departure (inclusive)
+        return bookingArrival <= currentDate && currentDate <= bookingDeparture;
+      }
       
-      // Include departure date - a booking occupies space from arrival through departure (inclusive)
-      return bookingArrival <= currentDate && currentDate <= bookingDeparture;
+      return false;
     });
     
     let nonKeysCount = 0;
     let keysCount = 0;
     
     overlappingBookings.forEach(b => {
-      const carCount = Number(b.numberOfCars || 1);
+      // Only count if includeInCapacity is not explicitly false
+      if (b.includeInCapacity === false) {
+        return;
+      }
+      
+      // More explicit numberOfCars handling
+      const numCars = Number(b.numberOfCars);
+      const carCount = (numCars > 0) ? numCars : 1;
+      
       if (b.carKeys) {
         keysCount += carCount;
       } else {
@@ -1399,7 +1415,20 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
       return b.departureDate === dateStr;
     });
     
-    const leavingCount = leavingBookings.reduce((sum, b) => sum + Number(b.numberOfCars || 1), 0);
+    const leavingCount = leavingBookings.reduce((sum, b) => {
+      const numCars = Number(b.numberOfCars);
+      return sum + ((numCars > 0) ? numCars : 1);
+    }, 0);
+    
+    // Calculate arriving count for this date
+    const arrivingBookings = bookings.filter(b => {
+      if (b.status === 'cancelled' || b.status === 'no-show' || b.status === 'declined') return false;
+      return b.arrivalDate === dateStr;
+    });
+    const arrivingCount = arrivingBookings.reduce((sum, b) => {
+      const numCars = Number(b.numberOfCars);
+      return sum + ((numCars > 0) ? numCars : 1);
+    }, 0);
     
     const totalCount = nonKeysCount + keysCount;
     const percentage = totalCount > 0 ? (totalCount / 200) * 100 : 0;
@@ -1409,6 +1438,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
       keysCount,
       totalCount,
       leavingCount,
+      arrivingCount,
       percentage,
       isLow: percentage < 50,
       isMedium: percentage >= 50 && percentage < 80,
@@ -2010,7 +2040,9 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                     const capacity = calculateCapacityForDate(dateStr);
                     const isSelected = selectedDate === dateStr;
-                    const isToday = dateStr === new Date().toISOString().split('T')[0];
+                    const today = new Date();
+                    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+                    const isToday = dateStr === todayStr;
                     
                     let bgColor = 'bg-white';
                     if (capacity.isFull) bgColor = 'bg-red-100 border-red-300';
@@ -2024,10 +2056,10 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                         onClick={() => setSelectedDate(dateStr)}
                         className={`p-3 border-2 rounded-lg hover:shadow-md transition-all ${bgColor} ${
                           isSelected ? 'ring-2 ring-blue-500 shadow-lg' : ''
-                        } ${isToday ? 'font-bold border-[#073590]' : ''}`}
+                        } ${isToday ? 'ring-4 ring-[#f1c933] font-black border-[#073590] border-4' : ''}`}
                       >
-                        <div className="text-lg font-medium mb-1">{day}</div>
-                        <div className="text-xs">
+                        <div className={`${isToday ? 'text-xl' : 'text-lg'} font-medium mb-1`}>{day}</div>
+                        <div className={`${isToday ? 'text-sm font-bold' : 'text-xs'}`}>
                           {capacity.totalCount > 0 ? `${capacity.totalCount}/200` : '-'}
                         </div>
                       </button>
@@ -2075,32 +2107,42 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                     {bg.capacityForDate} {formatDateDisplay(selectedDate)}
                   </h3>
                   
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                    <div className="bg-white p-4 rounded-lg shadow">
-                      <div className="text-gray-600 text-sm mb-1">{bg.carsWithoutKeys}</div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                    <div className="bg-white p-4 rounded-lg shadow border-2 border-blue-200">
+                      <div className="text-gray-600 text-sm font-semibold mb-1">{bg.carsWithoutKeys}</div>
                       <div className="text-3xl font-bold text-blue-600">{capacity.nonKeysCount}/180</div>
                     </div>
                     
-                    <div className="bg-white p-4 rounded-lg shadow">
-                      <div className="text-gray-600 text-sm mb-1">{bg.carsWithKeys}</div>
+                    <div className="bg-white p-4 rounded-lg shadow border-2 border-purple-200">
+                      <div className="text-gray-600 text-sm font-semibold mb-1">{bg.carsWithKeys}</div>
                       <div className="text-3xl font-bold text-purple-600">{capacity.keysCount}/20</div>
                     </div>
                     
-                    <div className="bg-white p-4 rounded-lg shadow">
-                      <div className="text-gray-600 text-sm mb-1">{bg.totalCars}</div>
+                    <div className="bg-white p-4 rounded-lg shadow border-2 border-gray-300">
+                      <div className="text-gray-600 text-sm font-semibold mb-1">{bg.totalCars}</div>
                       <div className="text-3xl font-bold text-gray-800">{capacity.totalCount}/200</div>
                     </div>
                     
-                    <div className="bg-white p-4 rounded-lg shadow">
-                      <div className="text-gray-600 text-sm mb-1">{bg.availableSpots}</div>
+                    <div className={`bg-white p-4 rounded-lg shadow border-2 ${availableSpots <= 0 ? 'border-red-400' : availableSpots < 40 ? 'border-yellow-400' : 'border-green-400'}`}>
+                      <div className="text-gray-600 text-sm font-semibold mb-1">{bg.availableSpots}</div>
                       <div className={`text-3xl font-bold ${availableSpots <= 0 ? 'text-red-600' : availableSpots < 40 ? 'text-yellow-600' : 'text-green-600'}`}>
                         {availableSpots}
                       </div>
                     </div>
+                  </div>
+                  
+                  {/* Arrivals and Departures */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white p-4 rounded-lg shadow border-2 border-green-200">
+                      <div className="text-gray-600 text-sm font-semibold mb-1">⬇️ {bg.arrivingToday || 'ПРИСТИГАНИЯ'}</div>
+                      <div className="text-3xl font-bold text-green-600">{capacity.arrivingCount}</div>
+                      <div className="text-xs text-gray-500">коли</div>
+                    </div>
                     
-                    <div className="bg-white p-4 rounded-lg shadow">
-                      <div className="text-gray-600 text-sm mb-1">{bg.leavingToday}</div>
+                    <div className="bg-white p-4 rounded-lg shadow border-2 border-orange-200">
+                      <div className="text-gray-600 text-sm font-semibold mb-1">⬆️ {bg.leavingToday}</div>
                       <div className="text-3xl font-bold text-orange-600">{capacity.leavingCount}</div>
+                      <div className="text-xs text-gray-500">коли</div>
                     </div>
                   </div>
                   
