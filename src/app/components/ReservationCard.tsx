@@ -142,26 +142,6 @@ export function ReservationCard({
     );
   };
 
-  // Payment status badge helper with strong color signals
-  const getPaymentStatusBadge = () => {
-    if (reservation.paymentStatus === 'paid') {
-      return (
-        <Badge variant="outline" className="bg-green-100 text-green-800 border-green-400 text-sm py-1 px-3 font-bold flex-shrink-0 border-2">
-          <CheckCircle className="h-4 w-4 mr-1" />
-          Платено
-        </Badge>
-      );
-    } else if (reservation.paymentStatus === 'pending') {
-      return (
-        <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-400 text-sm py-1 px-3 font-bold flex-shrink-0 border-2">
-          <Clock className="h-4 w-4 mr-1" />
-          Очаква плащане
-        </Badge>
-      );
-    }
-    return null;
-  };
-
   return (
     <div className="bg-white border-2 border-gray-300 rounded-lg p-4 shadow-md hover:shadow-lg transition-shadow w-full">
       {/* TOP: Booking Code & Status Badges */}
@@ -174,16 +154,6 @@ export function ReservationCard({
         
         <div className="flex flex-wrap items-center gap-2 justify-end">
           {getStatusBadge()}
-          {getPaymentStatusBadge()}
-          
-          {/* Payment Method Badge */}
-          {reservation.paymentMethod && (
-            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300 text-xs py-0.5 px-2 flex-shrink-0">
-              {reservation.paymentMethod === 'cash' && '💰'}
-              {reservation.paymentMethod === 'card' && '💳'}
-              {reservation.paymentMethod === 'pay-on-leave' && '⏰'}
-            </Badge>
-          )}
           
           {/* Car Keys Badge */}
           {reservation.carKeys && (
@@ -285,36 +255,35 @@ export function ReservationCard({
         </div>
       </div>
 
-      {/* PRIORITY 5: SECONDARY INFO - SMALLER */}
-      <div className="mb-3 space-y-2">
-        {/* Email */}
-        <div className="flex items-center gap-2 text-sm">
-          <Mail className="h-4 w-4 text-gray-400 flex-shrink-0" />
-          <span className="text-gray-600 truncate">{reservation.email}</span>
-        </div>
-        
-        {/* Passengers & Cars */}
-        <div className="flex items-center gap-2 text-sm">
-          <Users className="h-4 w-4 text-gray-400 flex-shrink-0" />
-          <span className="text-gray-600">{reservation.passengers} пътник • {reservation.numberOfCars || 1} кола</span>
-        </div>
-      </div>
-
-      {/* PRICE - PROMINENT BUT NOT OVERSIZED */}
+      {/* PAYMENT: PRICE & PAID STATUS */}
       <div className="mb-3 bg-green-50 border border-green-300 rounded-lg p-2.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Euro className="h-5 w-5 text-green-700" />
             <span className="font-black text-2xl text-green-800">€{reservation.finalPrice || reservation.totalPrice}</span>
           </div>
-          {reservation.basePrice && reservation.discountApplied && (
-            <div className="text-sm text-green-600 font-bold">
-              -{reservation.discountApplied.discountType === 'percentage' 
-                ? `${reservation.discountApplied.discountValue}%` 
-                : `€${reservation.discountApplied.discountValue}`}
-            </div>
-          )}
+          {/* Simple Paid/Unpaid Status */}
+          <div className="flex items-center gap-1">
+            {reservation.paymentStatus === 'paid' ? (
+              <Badge variant="outline" className="bg-green-100 text-green-800 border-green-400 text-sm py-1 px-2 font-bold border-2">
+                <CheckCircle className="h-4 w-4 mr-1" />
+                Платено
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="bg-gray-100 text-gray-700 border-gray-300 text-sm py-1 px-2 font-bold border-2">
+                <XCircle className="h-4 w-4 mr-1" />
+                Неплатено
+              </Badge>
+            )}
+          </div>
         </div>
+        {reservation.basePrice && reservation.discountApplied && (
+          <div className="text-sm text-green-600 font-bold mt-1">
+            Отстъпка: -{reservation.discountApplied.discountType === 'percentage' 
+              ? `${reservation.discountApplied.discountValue}%` 
+              : `€${reservation.discountApplied.discountValue}`}
+          </div>
+        )}
       </div>
 
       {/* CAPACITY INFO - SMALL, IF SHOWN */}

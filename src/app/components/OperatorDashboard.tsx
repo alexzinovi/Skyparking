@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
@@ -36,7 +36,8 @@ import {
   ChevronRight,
   RefreshCw,
   Key,
-  X
+  X,
+  Menu
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "./ui/dialog";
 import { toast } from "sonner";
@@ -385,6 +386,43 @@ function generateTimeSlots(): string[] {
     slots.push(`${hourStr}:30`);
   }
   return slots;
+}
+
+// Format datetime-local value to display format
+function formatDateTimeForDisplay(date: string, time: string): string {
+  if (!date || !time) return "";
+  
+  const dateObj = new Date(date + 'T' + time);
+  const months = ['Яну', 'Фев', 'Мар', 'Апр', 'Май', 'Юни', 'Юли', 'Авг', 'Сеп', 'Окт', 'Ное', 'Дек'];
+  
+  const day = dateObj.getDate();
+  const month = months[dateObj.getMonth()];
+  const year = dateObj.getFullYear();
+  const hours = time.split(':')[0];
+  const minutes = time.split(':')[1];
+  
+  return `${day} ${month} ${year} • ${hours}:${minutes}`;
+}
+
+// Convert datetime-local input to separate date and time
+function parseDateTimeLocal(datetimeLocal: string): { date: string; time: string } {
+  if (!datetimeLocal) return { date: "", time: "" };
+  
+  const [date, time] = datetimeLocal.split('T');
+  return { date, time: time || "" };
+}
+
+// Combine date and time to datetime-local format
+function combineDateTimeLocal(date: string, time: string): string {
+  if (!date) return "";
+  if (!time) return date + 'T00:00';
+  return date + 'T' + time;
+}
+
+// Auto-format license plate
+function formatLicensePlate(input: string): string {
+  // Remove all spaces and convert to uppercase
+  return input.replace(/\s+/g, '').toUpperCase();
 }
 
 // Calendar helper functions
@@ -1334,7 +1372,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
       arrivalTime: "",
       departureDate: "",
       departureTime: "",
-      passengers: 0,
+      passengers: 2, // Default value
       numberOfCars: 1,
       carKeys: false,
       needsInvoice: false,
@@ -1841,59 +1879,73 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
     );
   };
 
+  // State for menu drawer
+  const [menuOpen, setMenuOpen] = React.useState(false);
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">🅿️ SkyParking Оператор</h1>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 mt-2">
-                <span className="text-lg text-gray-600 font-medium">
-                  {currentUser.fullName} ({currentUser.role})
-                </span>
+      {/* Hamburger Menu Drawer */}
+      {menuOpen && (
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 z-40"
+            onClick={() => setMenuOpen(false)}
+          />
+          {/* Menu Panel */}
+          <div className="fixed top-0 right-0 bottom-0 w-80 bg-white shadow-2xl z-50 flex flex-col">
+            <div className="p-4 border-b">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold">Меню</h2>
+                <button
+                  onClick={() => setMenuOpen(false)}
+                  className="p-2 hover:bg-gray-100 rounded-lg"
+                >
+                  <X className="w-6 h-6" />
+                </button>
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
+            
+            <div className="flex-1 overflow-y-auto p-4">
+              {/* User Info */}
+              <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                <div className="text-sm text-gray-500 mb-1">Потребител</div>
+                <div className="font-semibold text-gray-900">{currentUser.fullName}</div>
+                <div className="text-sm text-gray-600">{currentUser.role}</div>
+              </div>
+
+              {/* Undo Button */}
               <Button 
-                onClick={async () => {
-                  setIsManualRefreshing(true);
-                  await fetchBookings(false, true);
-                  setIsManualRefreshing(false);
-                  toast.success("🔄 Данните са опреснени");
+                onClick={() => {
+                  handleUndo();
+                  setMenuOpen(false);
                 }} 
                 variant="outline"
-                disabled={isManualRefreshing}
-                className="text-lg h-14 px-6"
-                title="Опресни данните ръчно"
-              >
-                <RefreshCw className={`w-6 h-6 mr-2 ${isManualRefreshing ? 'animate-spin' : ''}`} />
-                Опресни
-              </Button>
-              <Button 
-                onClick={handleUndo} 
-                variant="outline"
                 disabled={undoStack.length === 0}
-                className={`relative text-lg h-14 px-6 ${undoStack.length > 0 ? 'bg-yellow-50 border-yellow-300 hover:bg-yellow-100' : ''}`}
-                title={undoStack.length > 0 ? `Отмяна: ${undoStack[undoStack.length - 1]?.description}` : 'Няма действия за отмяна'}
+                className={`w-full mb-3 justify-start text-base h-12 ${undoStack.length > 0 ? 'bg-yellow-50 border-yellow-300' : ''}`}
               >
-                <Undo className="w-6 h-6 mr-2" />
+                <Undo className="w-5 h-5 mr-2" />
                 Отмяна
                 {undoStack.length > 0 && (
-                  <span className="ml-1 px-2 py-1 bg-yellow-200 text-yellow-800 text-base rounded-full font-semibold">
+                  <span className="ml-auto px-2 py-1 bg-yellow-200 text-yellow-800 text-sm rounded-full font-semibold">
                     {undoStack.length}
                   </span>
                 )}
               </Button>
-              <Button onClick={onLogout} variant="outline" className="text-lg h-14 px-6">
-                <LogOut className="w-6 h-6 mr-2" />
+
+              {/* Logout Button */}
+              <Button 
+                onClick={onLogout} 
+                variant="outline" 
+                className="w-full justify-start text-base h-12 border-red-200 text-red-600 hover:bg-red-50"
+              >
+                <LogOut className="w-5 h-5 mr-2" />
                 Изход
               </Button>
             </div>
           </div>
-        </div>
-      </div>
+        </>
+      )}
 
       {/* Auto-reset notification */}
       {showAutoResetMessage && (
@@ -1903,136 +1955,172 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
       )}
 
       {/* Shift Status Bar - Clean Operations Control UI v3 */}
-      <div className="bg-gray-50 border-b py-3">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          {/* Compact Shift Header with ДНЕС button */}
-          <div className="flex items-center justify-between mb-3 bg-white rounded-lg border border-gray-200 px-4 py-2.5">
-            <div className="flex items-center gap-3">
+      <div className="bg-white border-b py-2">
+        <div className="px-3">
+          {/* Compact Shift Header with controls */}
+          <div className="flex items-center justify-between mb-2 bg-gray-50 rounded-lg border border-gray-200 px-3 py-2">
+            {/* Left: Hamburger Menu */}
+            <button
+              onClick={() => setMenuOpen(true)}
+              className="p-2 hover:bg-gray-200 rounded-lg transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"
+              title="Меню"
+            >
+              <Menu className="w-6 h-6 text-gray-700" />
+            </button>
+
+            {/* Center: Shift Info */}
+            <div className="flex items-center gap-2 flex-1 justify-center">
               {!isPreviewMode && <span className="text-green-500 text-base">●</span>}
               {isPreviewMode && <span className="text-base">👁</span>}
-              <div>
-                <div className="font-bold text-gray-900 uppercase text-base leading-tight">
-                  {isPreviewMode ? 'ПРЕГЛЕД НА СМЯНА' : SHIFT_CONFIG[shiftRange.shift].label}
+              <div className="text-center">
+                <div className="font-bold text-gray-900 uppercase text-sm leading-tight">
+                  {isPreviewMode ? 'ПРЕГЛЕД' : SHIFT_CONFIG[shiftRange.shift].label}
                 </div>
-                <div className="text-sm text-gray-600">
+                <div className="text-xs text-gray-600">
                   {formatShiftDisplay(shiftRange).replace(/\/\d{4}/g, '')}
                 </div>
-                {isPreviewMode && (
-                  <div className="text-xs text-gray-500 mt-0.5">
-                    (не е активната смяна)
-                  </div>
-                )}
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={goToPreviousShift}
-                className="flex items-center gap-1.5 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 px-4 py-2 rounded transition-colors font-medium"
-                title="Предишна смяна"
-              >
-                <ChevronLeft className="w-4 h-4" />
-                <span>Предишна</span>
-              </button>
-              <button
-                onClick={returnToActiveShift}
-                className={`text-sm px-4 py-2 rounded transition-colors font-bold ${
-                  !isPreviewMode
-                    ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                    : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
-                }`}
-                title="Днешна смяна"
-              >
-                ДНЕС
-              </button>
-              <button
-                onClick={goToNextShift}
-                className="flex items-center gap-1.5 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 px-4 py-2 rounded transition-colors font-medium"
-                title="Следваща смяна"
-              >
-                <span>Следваща</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
+
+            {/* Right: Refresh Button */}
+            <button
+              onClick={async () => {
+                setIsManualRefreshing(true);
+                await fetchBookings(false, true);
+                setIsManualRefreshing(false);
+                toast.success("🔄 Опреснено");
+              }}
+              disabled={isManualRefreshing}
+              className="p-2 hover:bg-gray-200 rounded-lg transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center disabled:opacity-50"
+              title="Опресни"
+            >
+              <RefreshCw className={`w-6 h-6 text-gray-700 ${isManualRefreshing ? 'animate-spin' : ''}`} />
+            </button>
           </div>
 
-          {/* Main KPI Blocks - Compact Layout (70-80px height) */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+          {/* Shift Navigation */}
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <button
+              onClick={goToPreviousShift}
+              className="flex items-center justify-center gap-1 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 px-3 py-2 rounded transition-colors font-semibold min-h-[48px]"
+              title="Предишна смяна"
+            >
+              <ChevronLeft className="w-5 h-5" />
+              <span className="hidden sm:inline">Предишна</span>
+            </button>
+            <button
+              onClick={returnToActiveShift}
+              className={`text-sm px-4 py-2 rounded transition-colors font-black min-h-[48px] ${
+                !isPreviewMode
+                  ? 'bg-blue-50 text-blue-700 border-2 border-blue-400'
+                  : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 border-2 border-gray-200'
+              }`}
+              title="Днешна смяна"
+            >
+              ДНЕС
+            </button>
+            <button
+              onClick={goToNextShift}
+              className="flex items-center justify-center gap-1 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 px-3 py-2 rounded transition-colors font-semibold min-h-[48px]"
+              title="Следваща смяна"
+            >
+              <span className="hidden sm:inline">Следваща</span>
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Main KPI Blocks - Mobile-First 2-Column Grid */}
+          <div className="grid grid-cols-2 gap-2 mb-3">
             {/* Block 1 - ARRIVALS */}
-            <div className="bg-white rounded-lg border border-gray-200 px-4 py-3">
-              <div className="text-xs font-bold text-gray-500 mb-1 tracking-wide uppercase">
+            <div className="bg-white rounded-lg border-2 border-gray-200 px-3 py-3">
+              <div className="text-xs font-black text-gray-500 mb-2 tracking-wide uppercase">
                 ПРИСТИГАНИЯ
               </div>
-              <div className="text-2xl font-bold text-gray-900 leading-none">
-                {summaryStats.actual.arrived} <span className="text-lg font-normal text-gray-400">от</span> {summaryStats.expected.arriving}
+              <div className="text-3xl font-black text-gray-900 leading-none">
+                {summaryStats.actual.arrived}
+              </div>
+              <div className="text-sm text-gray-500 mt-1">
+                от {summaryStats.expected.arriving}
               </div>
             </div>
 
             {/* Block 2 - DEPARTURES */}
-            <div className="bg-white rounded-lg border border-gray-200 px-4 py-3">
-              <div className="text-xs font-bold text-gray-500 mb-1 tracking-wide uppercase">
+            <div className="bg-white rounded-lg border-2 border-gray-200 px-3 py-3">
+              <div className="text-xs font-black text-gray-500 mb-2 tracking-wide uppercase">
                 НАПУСКАНИЯ
               </div>
-              <div className="text-2xl font-bold text-gray-900 leading-none">
-                {summaryStats.actual.left} <span className="text-lg font-normal text-gray-400">от</span> {summaryStats.expected.leaving}
+              <div className="text-3xl font-black text-gray-900 leading-none">
+                {summaryStats.actual.left}
+              </div>
+              <div className="text-sm text-gray-500 mt-1">
+                от {summaryStats.expected.leaving}
               </div>
             </div>
 
             {/* Block 3 - CARS IN PARKING */}
-            <div className="bg-white rounded-lg border border-gray-200 px-4 py-3 relative overflow-hidden">
+            <div className="bg-white rounded-lg border-2 border-gray-200 px-3 py-3 relative overflow-hidden">
               {/* Colored indicator bar on left */}
               {(() => {
                 const colors = getOccupancyColor(currentOccupancy.percentage);
-                return <div className={`absolute left-0 top-0 bottom-0 w-1 ${colors.bar}`}></div>;
+                return <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${colors.bar}`}></div>;
               })()}
               <div className="pl-2">
-                <div className="text-xs font-bold text-gray-500 mb-1 tracking-wide uppercase">
-                  КОЛИ В ПАРКИНГА
+                <div className="text-xs font-black text-gray-500 mb-2 tracking-wide uppercase">
+                  В ПАРКИНГА
                 </div>
-                <div className="text-2xl font-bold text-gray-900 leading-none mb-1">
+                <div className="text-3xl font-black text-gray-900 leading-none mb-1">
                   {currentOccupancy.carsInParking}
                 </div>
                 {(() => {
                   const colors = getOccupancyColor(currentOccupancy.percentage);
                   return (
-                    <>
-                      <div className={`text-sm font-semibold ${colors.text}`}>
-                        Заетост: {currentOccupancy.percentage}%
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        Свободни места: {currentOccupancy.availableSpots}
-                      </div>
-                    </>
+                    <div className={`text-sm font-bold ${colors.text}`}>
+                      {currentOccupancy.percentage}%
+                    </div>
                   );
                 })()}
+              </div>
+            </div>
+
+            {/* Block 4 - FREE SPACES */}
+            <div className="bg-white rounded-lg border-2 border-gray-200 px-3 py-3">
+              <div className="text-xs font-black text-gray-500 mb-2 tracking-wide uppercase">
+                СВОБОДНИ
+              </div>
+              <div className="text-3xl font-black text-green-600 leading-none">
+                {currentOccupancy.availableSpots}
+              </div>
+              <div className="text-sm text-gray-500 mt-1">
+                места
               </div>
             </div>
           </div>
 
           {/* Preview Mode: Peak Information (Separated) */}
           {isPreviewMode && peakAnalytics && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2">
               {/* Peak Arrivals */}
-              <div className="bg-white rounded-lg border border-gray-200 px-4 py-3">
-                <div className="text-xs font-bold text-gray-500 mb-1 tracking-wide uppercase">
+              <div className="bg-white rounded-lg border-2 border-gray-200 px-3 py-3">
+                <div className="text-xs font-black text-gray-500 mb-2 tracking-wide uppercase">
                   ПИК ПРИСТИГАНИЯ
                 </div>
-                <div className="text-lg font-bold text-gray-900 leading-tight">
+                <div className="text-base font-bold text-gray-900 leading-tight">
                   {peakAnalytics.peakArrivals.timeRange}
                 </div>
-                <div className="text-sm text-gray-600 mt-0.5">
+                <div className="text-sm text-gray-600 mt-1">
                   {peakAnalytics.peakArrivals.count} коли
                 </div>
               </div>
 
               {/* Peak Departures */}
-              <div className="bg-white rounded-lg border border-gray-200 px-4 py-3">
-                <div className="text-xs font-bold text-gray-500 mb-1 tracking-wide uppercase">
+              <div className="bg-white rounded-lg border-2 border-gray-200 px-3 py-3">
+                <div className="text-xs font-black text-gray-500 mb-2 tracking-wide uppercase">
                   ПИК НАПУСКАНИЯ
                 </div>
-                <div className="text-lg font-bold text-gray-900 leading-tight">
+                <div className="text-base font-bold text-gray-900 leading-tight">
                   {peakAnalytics.peakDepartures.timeRange}
                 </div>
-                <div className="text-sm text-gray-600 mt-0.5">
+                <div className="text-sm text-gray-600 mt-1">
                   {peakAnalytics.peakDepartures.count} коли
                 </div>
               </div>
@@ -2042,29 +2130,29 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
       </div>
 
       {/* Search Bar */}
-      <div className="bg-gray-50 border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+      <div className="bg-white border-b">
+        <div className="px-3 py-2">
           <div className="relative">
             <input
               type="text"
-              placeholder="🔍 Търсене по име, телефон, рег. номер или код (SP-XXXXXXXX)..."
+              placeholder="🔍 Търсене по име, телефон, рег. номер..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-16 text-xl px-6 pl-14 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              className="w-full h-14 text-lg px-5 pl-12 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-2xl font-bold"
-                title="Изчисти търсенето"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xl font-bold"
+                title="Изчисти"
               >
                 ×
               </button>
             )}
           </div>
           {searchQuery && (
-            <div className="mt-3 text-base text-gray-600">
-              Намерени резултати: <span className="font-semibold">
+            <div className="mt-2 text-sm text-gray-600">
+              Резултати: <span className="font-semibold">
                 {newBookings.length + confirmedBookings.length + arrivingToday.length + leavingToday.length + exitingCustomers.length + allBookings.length}
               </span>
             </div>
@@ -2074,11 +2162,11 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
 
       {/* Tabs */}
       <div className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="px-3">
           <div className="flex gap-1 overflow-x-auto">
             {[
               { id: "new", label: "Нови", count: newBookings.length },
-              { id: "confirmed", label: "Потвърдени", count: confirmedBookings.length },
+              { id: "confirmed", label: "Предстоящи резервации", count: confirmedBookings.length },
               { id: "arriving", label: "Пристигащи днес", count: arrivingToday.length },
               { id: "leaving", label: "Напускащи днес", count: leavingToday.length },
               { id: "all", label: "Всички", count: allBookings.length },
@@ -2088,7 +2176,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as TabType)}
-                className={`px-6 py-4 font-medium text-lg whitespace-nowrap border-b-2 transition-colors ${
+                className={`px-4 py-3 font-medium text-base whitespace-nowrap border-b-2 transition-colors min-h-[48px] flex items-center ${
                   activeTab === tab.id
                     ? "border-blue-600 text-blue-600"
                     : "border-transparent text-gray-600 hover:text-gray-900"
@@ -2109,7 +2197,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      <div className="px-3 py-4">
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin h-10 w-10 sm:h-12 sm:w-12 border-4 border-blue-600 border-t-transparent rounded-full"></div>
@@ -2125,135 +2213,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                     {searchQuery ? `Няма резултати за "${searchQuery}"` : "Няма нови резервации"}
                   </Card>
                 ) : (
-                  newBookings.map(booking => (
-                    <Card key={booking.id} className="p-6">
-                      <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
-                        <div className="flex-1 w-full">
-                          {/* Booking Code at the top */}
-                          {booking.bookingCode && (
-                            <div className="mb-3 inline-block bg-[#f1c933] text-[#073590] font-bold text-lg px-4 py-2 rounded-lg">
-                              📋 {booking.bookingCode}
-                            </div>
-                          )}
-                          
-                          <div className="flex flex-wrap items-center gap-3 mb-4">
-                            <User className="w-6 h-6 text-gray-500" />
-                            <span className="font-bold text-2xl">{booking.name}</span>
-                            {booking.carKeys && (
-                              <Badge 
-                                variant="secondary" 
-                                className={`${booking.includeInCapacity === false ? 'bg-orange-100 text-orange-800' : ''} text-base py-1 px-3`}
-                              >
-                                🔑 С ключове{booking.keyNumber && ` - ${booking.keyNumber}`}{booking.includeInCapacity === false && ' 🚫'}
-                              </Badge>
-                            )}
-                            {booking.needsInvoice && (
-                              booking.invoiceUrl ? (
-                                <a 
-                                  href={booking.invoiceUrl} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                >
-                                  <Badge variant="outline" className="text-base py-1 px-3 bg-yellow-50 border-yellow-300 cursor-pointer hover:bg-yellow-100 transition-colors">
-                                    <FileText className="w-5 h-5 inline mr-1" />
-                                    Фактура
-                                  </Badge>
-                                </a>
-                              ) : (
-                                <Badge variant="outline" className="text-base py-1 px-3 bg-yellow-50 border-yellow-300">
-                                  <FileText className="w-5 h-5 inline mr-1" />
-                                  Фактура
-                                </Badge>
-                              )
-                            )}
-                          </div>
-                          <div className="grid grid-cols-2 gap-3 text-lg text-gray-700 font-medium">
-                            <div>📞 {booking.phone}</div>
-                            <div>
-                              🚗 {booking.licensePlate}
-                              {booking.licensePlate2 && <div className="ml-5">{booking.licensePlate2}</div>}
-                              {booking.licensePlate3 && <div className="ml-5">{booking.licensePlate3}</div>}
-                              {booking.licensePlate4 && <div className="ml-5">{booking.licensePlate4}</div>}
-                              {booking.licensePlate5 && <div className="ml-5">{booking.licensePlate5}</div>}
-                            </div>
-                            <div>📅 От: {formatDateDisplay(booking.arrivalDate)} {booking.arrivalTime}</div>
-                            <div>📅 До: {formatDateDisplay(booking.departureDate)} {booking.departureTime}</div>
-                            <div>🚙 {booking.numberOfCars || 1} кола/коли</div>
-                            <div>👥 {booking.passengers} пътник(а)</div>
-                            <div className="font-bold text-xl">💶 €{booking.totalPrice}</div>
-                            
-                            {/* Show discount if applied */}
-                            {booking.discountApplied && booking.basePrice && (
-                              <div className="text-base text-green-600 font-semibold col-span-2">
-                                🎫 Отстъпка {booking.discountCode}: 
-                                {booking.discountApplied.discountType === 'percentage' 
-                                  ? ` -${booking.discountApplied.discountValue}%` 
-                                  : ` -€${booking.discountApplied.discountValue}`}
-                                {' '}(от €{Number(booking.basePrice).toFixed(2)})
-                              </div>
-                            )}
-                          </div>
-                          
-                          {/* Car Keys Notes */}
-                          {booking.carKeysNotes && (
-                            <div className="mt-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
-                              <div className="text-purple-900 font-semibold text-base mb-2">
-                                📝 Бележки за ключовете:
-                              </div>
-                              <div className="text-purple-800 text-base">
-                                {booking.carKeysNotes}
-                              </div>
-                            </div>
-                          )}
-                          {(() => {
-                            const capacityOnArrival = calculateCapacityForSingleDate(
-                              bookings,
-                              booking.arrivalDate,
-                              booking.id
-                            );
-                            return (
-                              <div className="mt-3 text-base text-gray-600 font-medium">
-                                Капацитет за {formatDateDisplay(booking.arrivalDate)}: {capacityOnArrival.occupied}/{capacityOnArrival.total} ({capacityOnArrival.percentage}%)
-                                {capacityOnArrival.leaving > 0 && (
-                                  <span className="text-green-600 ml-2">
-                                    (-{capacityOnArrival.leaving} напускат)
-                                  </span>
-                                )}
-                              </div>
-                            );
-                          })()}
-                        </div>
-                        <div className="flex flex-col gap-2">
-                          <Button
-                            size="lg"
-                            onClick={() => handleAcceptReservation(booking)}
-                            className="bg-green-600 hover:bg-green-700 h-12 text-base font-semibold"
-                          >
-                            <CheckCircle className="w-5 h-5 mr-2" />
-                            Потвърди
-                          </Button>
-                          <Button
-                            size="lg"
-                            variant="destructive"
-                            onClick={() => handleDeclineReservation(booking)}
-                            className="h-12 text-base font-semibold"
-                          >
-                            <XCircle className="w-5 h-5 mr-2" />
-                            Откажи
-                          </Button>
-                          <Button
-                            size="lg"
-                            variant="outline"
-                            onClick={() => handleEditReservation(booking)}
-                            className="h-12 text-base font-semibold"
-                          >
-                            <Edit className="w-4 h-4 mr-2" />
-                            Редактирай
-                          </Button>
-                        </div>
-                      </div>
-                    </Card>
-                  ))
+                  newBookings.map(booking => renderBookingCard(booking, "new"))
                 )}
               </div>
             )}
@@ -2262,18 +2222,9 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
             {activeTab === "confirmed" && (
               <div className="space-y-6">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-                  <h2 className="text-3xl font-semibold">Потвърдени Резервации</h2>
+                  <h2 className="text-3xl font-semibold">Предстоящи Резервации</h2>
                   
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
-                    {/* Add Manual Reservation Button */}
-                    <Button 
-                      onClick={handleAddManualReservation}
-                      className="bg-blue-600 hover:bg-blue-700 text-lg h-14 px-6"
-                    >
-                      <Plus className="w-6 h-6 mr-2" />
-                      Добави Резервация
-                    </Button>
-                    
                     {/* Date filters */}
                     <div className="flex items-center gap-2">
                       <Label className="text-lg">От:</Label>
@@ -2311,111 +2262,10 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                 
                 {confirmedBookings.length === 0 ? (
                   <Card className="p-16 text-center text-gray-500 text-xl">
-                    {searchQuery ? `Няма резултати за "${searchQuery}"` : "Няма потвърдени резервации"}
+                    {searchQuery ? `Няма резултати за "${searchQuery}"` : "Няма предстоящи резервации"}
                   </Card>
                 ) : (
-                  confirmedBookings.map(booking => (
-                    <Card key={booking.id} className="p-6">
-                      <div className="flex flex-col sm:flex-row items-start justify-between gap-5">
-                        <div className="flex-1 w-full">
-                          {/* Booking Code at the top */}
-                          {booking.bookingCode && (
-                            <div className="mb-3 inline-block bg-[#f1c933] text-[#073590] font-bold text-lg px-4 py-2 rounded-lg">
-                              📋 {booking.bookingCode}
-                            </div>
-                          )}
-                          
-                          <div className="flex flex-wrap items-center gap-3 mb-4">
-                            <User className="w-6 h-6 text-gray-500" />
-                            <span className="font-bold text-2xl">{booking.name}</span>
-                            {booking.carKeys && (
-                              <Badge 
-                                variant="secondary" 
-                                className={`${booking.includeInCapacity === false ? 'bg-orange-100 text-orange-800' : ''} text-base py-1 px-3`}
-                              >
-                                🔑 С ключове{booking.keyNumber && ` - ${booking.keyNumber}`}{booking.includeInCapacity === false && ' 🚫'}
-                              </Badge>
-                            )}
-                            {booking.needsInvoice && (
-                              booking.invoiceUrl ? (
-                                <a 
-                                  href={booking.invoiceUrl} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                >
-                                  <Badge variant="outline" className="text-base py-1 px-3 bg-yellow-50 border-yellow-300 cursor-pointer hover:bg-yellow-100 transition-colors">
-                                    <FileText className="w-5 h-5 inline mr-1" />
-                                    Фактура
-                                  </Badge>
-                                </a>
-                              ) : (
-                                <Badge variant="outline" className="text-base py-1 px-3 bg-yellow-50 border-yellow-300">
-                                  <FileText className="w-5 h-5 inline mr-1" />
-                                  Фактура
-                                </Badge>
-                              )
-                            )}
-                          </div>
-                          <div className="grid grid-cols-2 gap-3 text-lg text-gray-700 font-medium">
-                            <div>📞 {booking.phone}</div>
-                            <div>
-                              🚗 {booking.licensePlate}
-                              {booking.licensePlate2 && <div className="ml-5">{booking.licensePlate2}</div>}
-                              {booking.licensePlate3 && <div className="ml-5">{booking.licensePlate3}</div>}
-                              {booking.licensePlate4 && <div className="ml-5">{booking.licensePlate4}</div>}
-                              {booking.licensePlate5 && <div className="ml-5">{booking.licensePlate5}</div>}
-                            </div>
-                            <div>📅 От: {formatDateDisplay(booking.arrivalDate)} {booking.arrivalTime}</div>
-                            <div>📅 До: {formatDateDisplay(booking.departureDate)} {booking.departureTime}</div>
-                            <div>🚙 {booking.numberOfCars || 1} кола/коли</div>
-                            <div>👥 {booking.passengers} пътник(а)</div>
-                            <div className="font-bold text-xl">💶 €{booking.totalPrice}</div>
-                          </div>
-                          
-                          {/* Car Keys Notes */}
-                          {booking.carKeysNotes && (
-                            <div className="mt-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
-                              <div className="text-purple-900 font-semibold text-base mb-2">
-                                📝 Бележки за ключовете:
-                              </div>
-                              <div className="text-purple-800 text-base">
-                                {booking.carKeysNotes}
-                              </div>
-                            </div>
-                          )}
-                          {(() => {
-                            const capacityOnArrival = calculateCapacityForSingleDate(
-                              bookings,
-                              booking.arrivalDate,
-                              booking.id
-                            );
-                            return (
-                              <div className="mt-3 text-base text-gray-600 font-medium">
-                                Капацитет за {formatDateDisplay(booking.arrivalDate)}: {capacityOnArrival.occupied}/{capacityOnArrival.total} ({capacityOnArrival.percentage}%)
-                                {capacityOnArrival.leaving > 0 && (
-                                  <span className="text-green-600 ml-2">
-                                    (-{capacityOnArrival.leaving} напускат)
-                                  </span>
-                                )}
-                              </div>
-                            );
-                          })()}
-                        </div>
-                        <div className="flex flex-col gap-3">
-                          <Badge className="bg-green-600 text-base py-2 px-4">Потвърдено</Badge>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleEditReservation(booking)}
-                            className="text-base py-2 px-4 h-auto"
-                          >
-                            <Edit className="w-5 h-5 mr-2" />
-                            Редактирай
-                          </Button>
-                        </div>
-                      </div>
-                    </Card>
-                  ))
+                  confirmedBookings.map(booking => renderBookingCard(booking, "confirmed"))
                 )}
               </div>
             )}
@@ -2542,49 +2392,49 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
 
             {/* Revenue */}
             {activeTab === "revenue" && (
-              <div className="space-y-6">
-                <h2 className="text-3xl font-semibold mb-6">Дневни приходи</h2>
+              <div className="space-y-4">
+                <h2 className="text-2xl font-bold mb-4">Дневни приходи</h2>
                 
-                <Card className="p-8">
-                  <div className="flex items-center gap-4 mb-8">
-                    <div className="p-4 bg-green-100 rounded-lg">
-                      <Euro className="w-10 h-10 text-green-600" />
+                <Card className="p-4">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="p-3 bg-green-100 rounded-lg">
+                      <Euro className="w-8 h-8 text-green-600" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-2xl">Общо</h3>
-                      <p className="text-lg text-gray-600">{SHIFT_CONFIG[selectedShift].label}</p>
+                      <h3 className="font-semibold text-xl">Общо</h3>
+                      <p className="text-base text-gray-600">{SHIFT_CONFIG[selectedShift].label}</p>
                     </div>
                   </div>
                   
-                  <div className="space-y-6">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-5 bg-gray-50 rounded-lg gap-2">
-                      <span className="text-gray-600 text-lg">Очаквани приходи:</span>
-                      <span className="text-4xl font-bold">€{revenueStats.expected.toFixed(2)}</span>
+                  <div className="space-y-4">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-gray-50 rounded-lg gap-2">
+                      <span className="text-gray-600 text-base font-semibold">Очаквани приходи:</span>
+                      <span className="text-3xl font-black">€{revenueStats.expected.toFixed(2)}</span>
                     </div>
                     
                     {/* Pending Payment Warning */}
                     {revenueStats.pending > 0 && (
-                      <div className="bg-orange-50 border-2 border-orange-300 rounded-lg p-5">
-                        <div className="flex items-center gap-3 mb-2">
-                          <Clock className="w-6 h-6 text-orange-600" />
-                          <span className="text-lg font-semibold text-orange-900">Очакващи плащане при напускане</span>
+                      <div className="bg-orange-50 border-2 border-orange-300 rounded-lg p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Clock className="w-5 h-5 text-orange-600" />
+                          <span className="text-base font-bold text-orange-900">Очакващи плащане</span>
                         </div>
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                          <span className="text-orange-700">
-                            {revenueStats.pendingCount} {revenueStats.pendingCount === 1 ? 'клиент' : 'клиента'} ще {revenueStats.pendingCount === 1 ? 'плати' : 'платят'} при напускане
+                          <span className="text-sm text-orange-700">
+                            {revenueStats.pendingCount} {revenueStats.pendingCount === 1 ? 'клиент' : 'клиента'}
                           </span>
-                          <span className="text-3xl font-bold text-orange-600">€{revenueStats.pending.toFixed(2)}</span>
+                          <span className="text-2xl font-black text-orange-600">€{revenueStats.pending.toFixed(2)}</span>
                         </div>
                       </div>
                     )}
                     
                     {/* Info text when there's pending payment */}
                     {revenueStats.pending > 0 && (
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-base text-blue-900">
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-900">
                         <div className="flex items-start gap-2">
                           <span className="text-blue-600 font-bold">ℹ️</span>
-                          <div>
-                            <span className="font-semibold">Формула:</span> Действителни приходи (€{revenueStats.actual.toFixed(2)}) + Очакващи (€{revenueStats.pending.toFixed(2)}) = Очаквани (€{revenueStats.expected.toFixed(2)})
+                          <div className="text-xs">
+                            <span className="font-semibold">Формула:</span> €{revenueStats.actual.toFixed(2)} + €{revenueStats.pending.toFixed(2)} = €{revenueStats.expected.toFixed(2)}
                           </div>
                         </div>
                       </div>
@@ -2593,13 +2443,13 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                     <div className="bg-green-50 rounded-lg overflow-hidden">
                       <button 
                         onClick={() => setRevenueExpanded(!revenueExpanded)}
-                        className="w-full flex flex-col sm:flex-row justify-between items-start sm:items-center p-5 gap-2 hover:bg-green-100 transition-colors"
+                        className="w-full flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 gap-2 hover:bg-green-100 transition-colors min-h-[56px]"
                       >
                         <div className="flex items-center gap-2">
-                          <span className="text-gray-600 text-lg">Действителни приходи:</span>
+                          <span className="text-gray-600 text-base font-semibold">Действителни приходи:</span>
                           {revenueExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                         </div>
-                        <span className="text-4xl font-bold text-green-600">€{revenueStats.actual.toFixed(2)}</span>
+                        <span className="text-3xl font-black text-green-600">€{revenueStats.actual.toFixed(2)}</span>
                       </button>
                       
                       {revenueExpanded && (
@@ -2682,7 +2532,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                     >
                       <option value="all">Всички статуси ({statusCounts.all})</option>
                       <option value="new">🆕 Нови ({statusCounts.new})</option>
-                      <option value="confirmed">✅ Потвърдени ({statusCounts.confirmed})</option>
+                      <option value="confirmed">✅ Предстоящи ({statusCounts.confirmed})</option>
                       <option value="in-parking">🚗 В паркинга ({statusCounts.inParking})</option>
                       <option value="checked-out">✔️ Напуснали ({statusCounts.checkedOut})</option>
                       <option value="cancelled">❌ Отказани ({statusCounts.cancelled})</option>
@@ -2798,23 +2648,23 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
 
             {/* Calendar */}
             {activeTab === "calendar" && (
-              <div className="space-y-6">
-                <Card className="p-6">
-                  {/* Month Navigation */}
-                  <div className="flex items-center justify-between mb-6">
+              <div className="space-y-4">
+                <Card className="p-3">
+                  {/* Month Navigation - Single Row, Mobile-Optimized */}
+                  <div className="flex items-center justify-between mb-4 gap-2">
                     <Button
                       onClick={() => {
                         const newMonth = new Date(currentMonth);
                         newMonth.setMonth(newMonth.getMonth() - 1);
                         setCurrentMonth(newMonth);
                       }}
-                      className="text-lg"
+                      className="text-base min-h-[48px] px-3"
                     >
-                      <ChevronLeft className="h-5 w-5 mr-2" />
-                      Предишен
+                      <ChevronLeft className="h-5 w-5" />
+                      <span className="hidden sm:inline ml-1">Предишен</span>
                     </Button>
                     
-                    <h2 className="text-2xl font-bold">
+                    <h2 className="text-lg sm:text-xl font-bold text-center flex-1">
                       {currentMonth.toLocaleDateString('bg-BG', { month: 'long', year: 'numeric' })}
                     </h2>
                     
@@ -2824,28 +2674,28 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                         newMonth.setMonth(newMonth.getMonth() + 1);
                         setCurrentMonth(newMonth);
                       }}
-                      className="text-lg"
+                      className="text-base min-h-[48px] px-3"
                     >
-                      Следващ
-                      <ChevronRight className="h-5 w-5 ml-2" />
+                      <span className="hidden sm:inline mr-1">Следващ</span>
+                      <ChevronRight className="h-5 w-5" />
                     </Button>
                   </div>
 
-                  {/* Calendar Grid */}
-                  <div className="mb-6">
+                  {/* Calendar Grid - Full Width Mobile */}
+                  <div className="mb-4">
                     {/* Day headers */}
-                    <div className="grid grid-cols-7 gap-2 mb-2">
-                      <div className="text-center font-semibold p-2">Пон</div>
-                      <div className="text-center font-semibold p-2">Вто</div>
-                      <div className="text-center font-semibold p-2">Сря</div>
-                      <div className="text-center font-semibold p-2">Чет</div>
-                      <div className="text-center font-semibold p-2">Пет</div>
-                      <div className="text-center font-semibold p-2">Съб</div>
-                      <div className="text-center font-semibold p-2">Нед</div>
+                    <div className="grid grid-cols-7 gap-1 mb-1">
+                      <div className="text-center font-bold text-xs p-1">Пн</div>
+                      <div className="text-center font-bold text-xs p-1">Вт</div>
+                      <div className="text-center font-bold text-xs p-1">Ср</div>
+                      <div className="text-center font-bold text-xs p-1">Чт</div>
+                      <div className="text-center font-bold text-xs p-1">Пт</div>
+                      <div className="text-center font-bold text-xs p-1">Сб</div>
+                      <div className="text-center font-bold text-xs p-1">Нд</div>
                     </div>
 
                     {/* Calendar days */}
-                    <div className="grid grid-cols-7 gap-2">
+                    <div className="grid grid-cols-7 gap-1">
                       {(() => {
                         const { daysInMonth, startingDayOfWeek, year, month } = getDaysInMonth(currentMonth);
                         const days = [];
@@ -2855,7 +2705,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                         
                         // Empty cells before month starts
                         for (let i = 0; i < adjustedStart; i++) {
-                          days.push(<div key={`empty-${i}`} className="p-2"></div>);
+                          days.push(<div key={`empty-${i}`} className="aspect-square"></div>);
                         }
                         
                         // Days of the month
@@ -2866,22 +2716,22 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                           const isToday = dateStr === new Date().toISOString().split('T')[0];
                           
                           let bgColor = 'bg-white';
-                          if (capacity.isFull) bgColor = 'bg-red-100 border-red-300';
-                          else if (capacity.isHigh) bgColor = 'bg-yellow-100 border-yellow-300';
-                          else if (capacity.isMedium) bgColor = 'bg-blue-100 border-blue-300';
-                          else if (capacity.totalCount > 0) bgColor = 'bg-green-100 border-green-300';
+                          if (capacity.isFull) bgColor = 'bg-red-100 border-red-400';
+                          else if (capacity.isHigh) bgColor = 'bg-yellow-100 border-yellow-400';
+                          else if (capacity.isMedium) bgColor = 'bg-blue-100 border-blue-400';
+                          else if (capacity.totalCount > 0) bgColor = 'bg-green-100 border-green-400';
                           
                           days.push(
                             <button
                               key={day}
                               onClick={() => setSelectedDate(dateStr)}
-                              className={`p-3 border-2 rounded-lg hover:shadow-md transition-all ${bgColor} ${
+                              className={`aspect-square border-2 rounded text-center hover:shadow-md transition-all flex flex-col items-center justify-center p-1 ${bgColor} ${
                                 isSelected ? 'ring-2 ring-blue-500 shadow-lg' : ''
                               } ${isToday ? 'font-bold border-[#073590]' : ''}`}
                             >
-                              <div className="text-lg font-medium mb-1">{day}</div>
-                              <div className="text-xs">
-                                {capacity.totalCount > 0 ? `${capacity.totalCount}/${TOTAL_CAPACITY}` : '-'}
+                              <div className="text-sm sm:text-base font-bold leading-none">{day}</div>
+                              <div className="text-[10px] sm:text-xs mt-0.5">
+                                {capacity.totalCount > 0 ? `${capacity.totalCount}` : '-'}
                               </div>
                             </button>
                           );
@@ -2892,26 +2742,26 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                     </div>
                   </div>
 
-                  {/* Legend */}
-                  <div className="flex flex-wrap gap-4 text-sm mb-6 p-4 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-white border-2 rounded"></div>
+                  {/* Legend - Compact */}
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs mb-4 p-2 bg-gray-50 rounded">
+                    <div className="flex items-center gap-1">
+                      <div className="w-4 h-4 bg-white border-2 rounded flex-shrink-0"></div>
                       <span>Свободно</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-green-100 border-2 border-green-300 rounded"></div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-4 h-4 bg-green-100 border-2 border-green-400 rounded flex-shrink-0"></div>
                       <span>&lt;50%</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-blue-100 border-2 border-blue-300 rounded"></div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-4 h-4 bg-blue-100 border-2 border-blue-400 rounded flex-shrink-0"></div>
                       <span>50-79%</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-yellow-100 border-2 border-yellow-300 rounded"></div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-4 h-4 bg-yellow-100 border-2 border-yellow-400 rounded flex-shrink-0"></div>
                       <span>80-99%</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-red-100 border-2 border-red-300 rounded"></div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-4 h-4 bg-red-100 border-2 border-red-400 rounded flex-shrink-0"></div>
                       <span>≥100%</span>
                     </div>
                   </div>
@@ -2922,50 +2772,49 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                     const availableSpots = TOTAL_CAPACITY - capacity.totalCount;
                     
                     return (
-                      <Card className="p-6 bg-gradient-to-br from-blue-50 to-purple-50">
-                        <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                          <Calendar className="h-6 w-6" />
-                          Капацитет за {formatDateDisplay(selectedDate)}
+                      <Card className="p-3 bg-gradient-to-br from-blue-50 to-purple-50">
+                        <h3 className="text-base sm:text-lg font-bold mb-3 flex items-center gap-2">
+                          <Calendar className="h-5 w-5" />
+                          {formatDateDisplay(selectedDate)}
                         </h3>
                         
-                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                          <div className="bg-white p-4 rounded-lg shadow">
-                            <div className="text-gray-600 text-sm mb-1">Без ключове</div>
-                            <div className="text-3xl font-bold text-blue-600">{capacity.nonKeysCount}/{BASE_CAPACITY}</div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="bg-white p-3 rounded-lg shadow border-2 border-blue-200">
+                            <div className="text-gray-600 text-xs font-semibold mb-1">БЕЗ КЛЮЧОВЕ</div>
+                            <div className="text-2xl font-black text-blue-600">{capacity.nonKeysCount}</div>
+                            <div className="text-xs text-gray-500">/ {BASE_CAPACITY}</div>
                           </div>
                           
-                          <div className="bg-white p-4 rounded-lg shadow">
-                            <div className="text-gray-600 text-sm mb-1">С ключове</div>
-                            <div className="text-3xl font-bold text-purple-600">{capacity.keysCount}/{OVERFLOW_CAPACITY}</div>
+                          <div className="bg-white p-3 rounded-lg shadow border-2 border-purple-200">
+                            <div className="text-gray-600 text-xs font-semibold mb-1">С КЛЮЧОВЕ</div>
+                            <div className="text-2xl font-black text-purple-600">{capacity.keysCount}</div>
+                            <div className="text-xs text-gray-500">/ {OVERFLOW_CAPACITY}</div>
                           </div>
                           
-                          <div className="bg-white p-4 rounded-lg shadow">
-                            <div className="text-gray-600 text-sm mb-1">Общо коли</div>
-                            <div className="text-3xl font-bold text-gray-800">{capacity.totalCount}/{TOTAL_CAPACITY}</div>
+                          <div className="bg-white p-3 rounded-lg shadow border-2 border-gray-300">
+                            <div className="text-gray-600 text-xs font-semibold mb-1">ОБЩО КОЛИ</div>
+                            <div className="text-2xl font-black text-gray-800">{capacity.totalCount}</div>
+                            <div className="text-xs text-gray-500">/ {TOTAL_CAPACITY}</div>
                           </div>
                           
-                          <div className="bg-white p-4 rounded-lg shadow">
-                            <div className="text-gray-600 text-sm mb-1">Свободни места</div>
-                            <div className={`text-3xl font-bold ${availableSpots <= 0 ? 'text-red-600' : availableSpots < 40 ? 'text-yellow-600' : 'text-green-600'}`}>
+                          <div className={`bg-white p-3 rounded-lg shadow border-2 ${availableSpots <= 0 ? 'border-red-400' : availableSpots < 40 ? 'border-yellow-400' : 'border-green-400'}`}>
+                            <div className="text-gray-600 text-xs font-semibold mb-1">СВОБОДНИ</div>
+                            <div className={`text-2xl font-black ${availableSpots <= 0 ? 'text-red-600' : availableSpots < 40 ? 'text-yellow-600' : 'text-green-600'}`}>
                               {availableSpots}
                             </div>
-                          </div>
-                          
-                          <div className="bg-white p-4 rounded-lg shadow">
-                            <div className="text-gray-600 text-sm mb-1">Напускащи днес</div>
-                            <div className="text-3xl font-bold text-orange-600">{capacity.leavingCount}</div>
+                            <div className="text-xs text-gray-500">места</div>
                           </div>
                         </div>
                         
                         {/* Status Indicator */}
-                        <div className="mt-6 p-4 rounded-lg text-center text-lg font-semibold" style={{
+                        <div className="mt-3 p-3 rounded-lg text-center text-base font-bold" style={{
                           backgroundColor: capacity.isFull ? '#fee' : capacity.isHigh ? '#ffc' : capacity.isMedium ? '#def' : '#efe'
                         }}>
-                          Статус: {
-                            capacity.isFull ? 'Пълен' :
-                            capacity.isHigh ? 'Висок' :
-                            capacity.isMedium ? 'Среден' :
-                            'Нисък'
+                          {
+                            capacity.isFull ? '🔴 ПЪЛЕН' :
+                            capacity.isHigh ? '🟡 ВИСОК' :
+                            capacity.isMedium ? '🔵 СРЕДЕН' :
+                            '🟢 НИСЪК'
                           }
                         </div>
                       </Card>
@@ -3153,138 +3002,199 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
         </DialogContent>
       </Dialog>
 
-      {/* Booking Form Dialog (Add/Edit) */}
+      {/* Booking Form Dialog (Add/Edit) - OPTIMIZED FOR MOBILE */}
       <Dialog open={showBookingForm} onOpenChange={setShowBookingForm}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto pb-24">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold">
               {editingBooking ? "Редактиране на резервация" : "Нова ръчна резервация"}
             </DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-6 py-4">
-            {/* Customer Info */}
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label className="text-base font-semibold">Име *</Label>
-                <Input
-                  value={bookingForm.name}
-                  onChange={(e) => setBookingForm({...bookingForm, name: e.target.value})}
-                  placeholder="Пълно име"
-                  className="h-12 text-base"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label className="text-base font-semibold">Имейл</Label>
-                <Input
-                  type="email"
-                  value={bookingForm.email}
-                  onChange={(e) => setBookingForm({...bookingForm, email: e.target.value})}
-                  placeholder="email@example.com"
-                  className="h-12 text-base"
-                />
-              </div>
+          <div className="space-y-5 py-4">
+            {/* === ESSENTIAL FIELDS (PRIORITY) === */}
+            
+            {/* Name - Full Width */}
+            <div className="space-y-2">
+              <Label className="text-base font-semibold">Име *</Label>
+              <Input
+                id="booking-name"
+                value={bookingForm.name}
+                onChange={(e) => setBookingForm({...bookingForm, name: e.target.value})}
+                placeholder="Пълно име"
+                className="h-14 text-base"
+                autoComplete="name"
+                enterKeyHint="next"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    document.getElementById('booking-phone')?.focus();
+                  }
+                }}
+              />
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label className="text-base font-semibold">Телефон *</Label>
-                <Input
-                  value={bookingForm.phone}
-                  onChange={(e) => setBookingForm({...bookingForm, phone: e.target.value})}
-                  placeholder="+359 886 616 991"
-                  className="h-12 text-base"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label className="text-base font-semibold">Регистрационен номер *</Label>
-                {Array.from({ length: bookingForm.numberOfCars || 1 }).map((_, index) => {
-                  const licensePlates = bookingForm.licensePlate.split(',').map(lp => lp.trim());
-                  return (
-                    <Input
-                      key={index}
-                      value={licensePlates[index] || ''}
-                      onChange={(e) => {
-                        const newPlates = [...licensePlates];
-                        newPlates[index] = e.target.value.toUpperCase();
-                        // Pad array with empty strings if needed
-                        while (newPlates.length < (bookingForm.numberOfCars || 1)) {
-                          newPlates.push('');
+            {/* Phone - Full Width */}
+            <div className="space-y-2">
+              <Label className="text-base font-semibold">Телефон *</Label>
+              <Input
+                id="booking-phone"
+                type="tel"
+                value={bookingForm.phone}
+                onChange={(e) => setBookingForm({...bookingForm, phone: e.target.value})}
+                placeholder="+359 886 616 991"
+                className="h-14 text-base"
+                autoComplete="tel"
+                enterKeyHint="next"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    document.getElementById('booking-license-0')?.focus();
+                  }
+                }}
+              />
+            </div>
+
+            {/* License Plate(s) - Full Width */}
+            <div className="space-y-2">
+              <Label className="text-base font-semibold">Регистрационен номер *</Label>
+              {Array.from({ length: bookingForm.numberOfCars || 1 }).map((_, index) => {
+                const licensePlates = bookingForm.licensePlate.split(',').map(lp => lp.trim());
+                return (
+                  <Input
+                    key={index}
+                    id={`booking-license-${index}`}
+                    value={licensePlates[index] || ''}
+                    onChange={(e) => {
+                      const newPlates = [...licensePlates];
+                      newPlates[index] = formatLicensePlate(e.target.value);
+                      while (newPlates.length < (bookingForm.numberOfCars || 1)) {
+                        newPlates.push('');
+                      }
+                      setBookingForm({...bookingForm, licensePlate: newPlates.join(',')});
+                    }}
+                    placeholder={`CA1234AB${(bookingForm.numberOfCars || 1) > 1 ? ` (Кола ${index + 1})` : ''}`}
+                    className="h-14 text-base mb-2 uppercase"
+                    autoComplete="off"
+                    enterKeyHint={index === (bookingForm.numberOfCars || 1) - 1 ? "next" : "done"}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (index === (bookingForm.numberOfCars || 1) - 1) {
+                          document.getElementById('booking-arrival')?.focus();
+                        } else {
+                          document.getElementById(`booking-license-${index + 1}`)?.focus();
                         }
-                        setBookingForm({...bookingForm, licensePlate: newPlates.join(',')});
-                      }}
-                      placeholder={`CA 1234 AB${(bookingForm.numberOfCars || 1) > 1 ? ` (Кола ${index + 1})` : ''}`}
-                      className="h-12 text-base mb-2"
-                    />
-                  );
-                })}
-              </div>
+                      }
+                    }}
+                  />
+                );
+              })}
             </div>
 
-            {/* Arrival Info */}
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label className="text-base font-semibold">Дата на пристигане *</Label>
+            {/* Arrival DateTime - Combined Field */}
+            <div className="space-y-2">
+              <Label className="text-base font-semibold">Пристигане *</Label>
+              <Input
+                id="booking-arrival"
+                type="datetime-local"
+                min={new Date().toISOString().slice(0, 16)}
+                value={combineDateTimeLocal(bookingForm.arrivalDate, bookingForm.arrivalTime)}
+                onChange={(e) => {
+                  const { date, time } = parseDateTimeLocal(e.target.value);
+                  setBookingForm({...bookingForm, arrivalDate: date, arrivalTime: time});
+                }}
+                className="h-14 text-base"
+                enterKeyHint="next"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    document.getElementById('booking-departure')?.focus();
+                  }
+                }}
+              />
+              {bookingForm.arrivalDate && bookingForm.arrivalTime && (
+                <p className="text-sm text-gray-600">
+                  {formatDateTimeForDisplay(bookingForm.arrivalDate, bookingForm.arrivalTime)}
+                </p>
+              )}
+            </div>
+
+            {/* Departure DateTime - Combined Field */}
+            <div className="space-y-2">
+              <Label className="text-base font-semibold">Напускане *</Label>
+              <Input
+                id="booking-departure"
+                type="datetime-local"
+                min={bookingForm.arrivalDate ? combineDateTimeLocal(bookingForm.arrivalDate, bookingForm.arrivalTime || '00:00') : new Date().toISOString().slice(0, 16)}
+                value={combineDateTimeLocal(bookingForm.departureDate, bookingForm.departureTime)}
+                onChange={(e) => {
+                  const { date, time } = parseDateTimeLocal(e.target.value);
+                  setBookingForm({...bookingForm, departureDate: date, departureTime: time});
+                }}
+                className="h-14 text-base"
+                enterKeyHint="next"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    document.getElementById('booking-price')?.focus();
+                  }
+                }}
+              />
+              {bookingForm.departureDate && bookingForm.departureTime && (
+                <p className="text-sm text-gray-600">
+                  {formatDateTimeForDisplay(bookingForm.departureDate, bookingForm.departureTime)}
+                </p>
+              )}
+            </div>
+
+            {/* Price - Auto-filled, Editable */}
+            <div className="space-y-2">
+              <Label className="text-base font-semibold">Цена *</Label>
+              <div className="flex items-center gap-2">
+                <Euro className="w-6 h-6 text-gray-500 flex-shrink-0" />
                 <Input
-                  type="date"
-                  min={new Date().toISOString().split('T')[0]}
-                  value={bookingForm.arrivalDate}
-                  onChange={(e) => setBookingForm({...bookingForm, arrivalDate: e.target.value})}
-                  className="h-12 text-base"
+                  id="booking-price"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={manualPrice}
+                  onChange={(e) => setManualPrice(e.target.value)}
+                  placeholder="Автоматично изчислена"
+                  className="h-14 text-base"
+                  enterKeyHint="done"
                 />
               </div>
-              
-              <div className="space-y-2">
-                <Label className="text-base font-semibold">Час на пристигане *</Label>
-                <select
-                  value={bookingForm.arrivalTime}
-                  onChange={(e) => setBookingForm({...bookingForm, arrivalTime: e.target.value})}
-                  className="w-full h-12 px-3 text-base border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Изберете час</option>
-                  {generateTimeSlots().map(time => (
-                    <option key={time} value={time}>{time}</option>
-                  ))}
-                </select>
-              </div>
+              {calculatedPrice > 0 && (
+                <p className="text-sm text-green-600">
+                  ✓ Автоматично изчислена: €{calculatedPrice.toFixed(2)}
+                </p>
+              )}
             </div>
 
-            {/* Departure Info */}
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label className="text-base font-semibold">Дата на напускане *</Label>
-                <Input
-                  type="date"
-                  min={bookingForm.arrivalDate || new Date().toISOString().split('T')[0]}
-                  value={bookingForm.departureDate}
-                  onChange={(e) => setBookingForm({...bookingForm, departureDate: e.target.value})}
-                  className="h-12 text-base"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label className="text-base font-semibold">Час на напускане *</Label>
-                <select
-                  value={bookingForm.departureTime}
-                  onChange={(e) => setBookingForm({...bookingForm, departureTime: e.target.value})}
-                  className="w-full h-12 px-3 text-base border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Изберете час</option>
-                  {generateTimeSlots().map(time => (
-                    <option key={time} value={time}>{time}</option>
-                  ))}
-                </select>
-              </div>
+            {/* === SECONDARY FIELDS === */}
+            <div className="pt-4 border-t border-gray-200">
+              <h3 className="text-lg font-semibold mb-4 text-gray-700">Допълнителна информация</h3>
+
+            {/* Email */}
+            <div className="space-y-2">
+              <Label className="text-base font-semibold">Имейл</Label>
+              <Input
+                type="email"
+                value={bookingForm.email}
+                onChange={(e) => setBookingForm({...bookingForm, email: e.target.value})}
+                placeholder="email@example.com"
+                className="h-14 text-base"
+                autoComplete="email"
+              />
             </div>
 
-            {/* Additional Info */}
-            <div className="grid grid-cols-2 gap-6">
+            {/* Number of Cars and Passengers */}
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-base font-semibold">Брой автомобили</Label>
                 <select
-                  className="w-full h-12 px-3 text-base border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full h-14 px-3 text-base border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={bookingForm.numberOfCars}
                   onChange={(e) => setBookingForm({...bookingForm, numberOfCars: parseInt(e.target.value)})}
                 >
@@ -3303,38 +3213,21 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                   min="0"
                   value={bookingForm.passengers || ""}
                   onChange={(e) => setBookingForm({...bookingForm, passengers: parseInt(e.target.value) || 0})}
-                  placeholder="Въведете брой пътници"
-                  className="h-12 text-base"
-                />
-              </div>
-            </div>
-
-            {/* Price */}
-            <div className="space-y-2">
-              <Label className="text-base font-semibold">Цена (може да се редактира) *</Label>
-              <div className="flex items-center gap-2">
-                <Euro className="w-6 h-6 text-gray-500" />
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={manualPrice}
-                  onChange={(e) => setManualPrice(e.target.value)}
-                  placeholder="Въведете цена"
-                  className="h-12 text-base"
+                  placeholder="2"
+                  className="h-14 text-base"
                 />
               </div>
             </div>
 
             {/* Options */}
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div className="space-y-4">
                 <div className="flex items-center space-x-3">
                   <Checkbox
                     id="carKeys"
                     checked={bookingForm.carKeys}
                     onCheckedChange={(checked) => setBookingForm({...bookingForm, carKeys: !!checked})}
-                    className="w-5 h-5"
+                    className="w-6 h-6"
                   />
                   <label
                     htmlFor="carKeys"
@@ -3352,7 +3245,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                         value={bookingForm.keyNumber || ""}
                         onChange={(e) => setBookingForm({...bookingForm, keyNumber: e.target.value})}
                         placeholder="напр., Ключ #12"
-                        className="h-12 text-base"
+                        className="h-14 text-base"
                         maxLength={20}
                       />
                       <p className="text-sm text-gray-600">Физически номер на ключа в кутията</p>
@@ -3386,7 +3279,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                   id="needsInvoice"
                   checked={bookingForm.needsInvoice}
                   onCheckedChange={(checked) => setBookingForm({...bookingForm, needsInvoice: !!checked})}
-                  className="w-5 h-5"
+                  className="w-6 h-6"
                 />
                 <label
                   htmlFor="needsInvoice"
@@ -3406,9 +3299,11 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                 onChange={(e) => setBookingForm({...bookingForm, notes: e.target.value})}
                 placeholder="Допълнителна информация..."
                 rows={3}
-                className="text-base px-4 py-3"
+                className="text-base px-4 py-3 min-h-[80px]"
               />
             </div>
+            </div>
+            {/* End secondary fields container */}
 
             {/* Invoice Details - Show when needsInvoice is true */}
             {bookingForm.needsInvoice && (
@@ -3420,7 +3315,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
 
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-base font-semibold">Име на фирма *</Label>
+                    <Label className="text-base font-semibold">Име на фирм�� *</Label>
                     <Input
                       value={bookingForm.companyName}
                       onChange={(e) => setBookingForm({...bookingForm, companyName: e.target.value})}
@@ -3462,23 +3357,33 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
             )}
           </div>
 
-          <DialogFooter className="gap-3">
+          <DialogFooter className="sticky bottom-0 left-0 right-0 bg-white border-t border-gray-200 pt-4 pb-4 mt-6 gap-3 flex-col sm:flex-row z-10">
             <Button 
               variant="outline" 
               onClick={() => setShowBookingForm(false)}
-              className="h-12 px-6 text-base"
+              className="h-14 px-8 text-base font-semibold w-full sm:w-auto order-2 sm:order-1"
             >
               Отказ
             </Button>
             <Button 
               onClick={handleSaveBooking}
-              className="h-12 px-6 text-base"
+              className="h-14 px-8 text-base font-semibold bg-[#073590] hover:bg-[#052558] w-full sm:w-auto order-1 sm:order-2"
             >
               {editingBooking ? "Запази промени" : "Създай резервация"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Floating Action Button (FAB) - Create Reservation */}
+      <button
+        onClick={handleAddManualReservation}
+        className="fixed bottom-4 right-4 z-50 flex items-center gap-2 bg-[#073590] hover:bg-[#052558] active:bg-[#041a3d] text-white font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-200 px-4 sm:px-6 py-3 sm:py-4 min-h-[56px] touch-manipulation"
+        aria-label="Добави резервация"
+      >
+        <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
+        <span className="text-sm sm:text-base whitespace-nowrap">Добави резервация</span>
+      </button>
     </div>
   );
 }

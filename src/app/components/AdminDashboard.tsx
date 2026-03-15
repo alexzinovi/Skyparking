@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Card } from "./ui/card";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -32,7 +32,9 @@ import {
   Shield,
   Percent,
   Settings,
-  Download
+  Download,
+  Menu,
+  RefreshCw
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "./ui/dialog";
 import { toast } from "sonner";
@@ -59,7 +61,7 @@ const bg = {
   
   // Tabs
   newReservations: "Нови",
-  confirmedReservations: "Потвърдени",
+  confirmedReservations: "Предстоящи резервации",
   arrivedReservations: "Пристигнали",
   completedReservations: "Приключени",
   cancelledReservations: "Отказани",
@@ -412,6 +414,43 @@ function generateTimeSlots(): string[] {
     slots.push(`${hourStr}:30`);
   }
   return slots;
+}
+
+// Format datetime-local value to display format
+function formatDateTimeForDisplay(date: string, time: string): string {
+  if (!date || !time) return "";
+  
+  const dateObj = new Date(date + 'T' + time);
+  const months = ['Яну', 'Фев', 'Мар', 'Апр', 'Май', 'Юни', 'Юли', 'Авг', 'Сеп', 'Окт', 'Ное', 'Дек'];
+  
+  const day = dateObj.getDate();
+  const month = months[dateObj.getMonth()];
+  const year = dateObj.getFullYear();
+  const hours = time.split(':')[0];
+  const minutes = time.split(':')[1];
+  
+  return `${day} ${month} ${year} • ${hours}:${minutes}`;
+}
+
+// Convert datetime-local input to separate date and time
+function parseDateTimeLocal(datetimeLocal: string): { date: string; time: string } {
+  if (!datetimeLocal) return { date: "", time: "" };
+  
+  const [date, time] = datetimeLocal.split('T');
+  return { date, time: time || "" };
+}
+
+// Combine date and time to datetime-local format
+function combineDateTimeLocal(date: string, time: string): string {
+  if (!date) return "";
+  if (!time) return date + 'T00:00';
+  return date + 'T' + time;
+}
+
+// Auto-format license plate
+function formatLicensePlate(input: string): string {
+  // Remove all spaces and convert to uppercase
+  return input.replace(/\s+/g, '').toUpperCase();
 }
 
 export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDashboardProps) {
@@ -1521,37 +1560,100 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
     }
   };
 
+  // State for menu drawer
+  const [menuOpen, setMenuOpen] = React.useState(false);
+  const [isManualRefreshing, setIsManualRefreshing] = React.useState(false);
+
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      {/* Header */}
-      <div className="bg-white border-b">
-        <div className="container mx-auto px-3 py-3">
-          <div className="flex flex-col gap-3">
-            <div className="flex justify-between items-center">
-              <div>
-                <h1 className="text-2xl font-bold">{bg.dashboardTitle}</h1>
-                <div className="flex items-center gap-2 mt-1">
-                  <p className="text-sm text-gray-500">{currentUser.fullName}</p>
+      {/* Hamburger Menu Drawer */}
+      {menuOpen && (
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 z-40"
+            onClick={() => setMenuOpen(false)}
+          />
+          {/* Menu Panel */}
+          <div className="fixed top-0 right-0 bottom-0 w-80 bg-white shadow-2xl z-50 flex flex-col">
+            <div className="p-4 border-b">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold">Меню</h2>
+                <button
+                  onClick={() => setMenuOpen(false)}
+                  className="p-2 hover:bg-gray-100 rounded-lg"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-4">
+              {/* User Info */}
+              <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                <div className="text-sm text-gray-500 mb-1">Потребител</div>
+                <div className="font-semibold text-gray-900">{currentUser.fullName}</div>
+                <div className="flex items-center gap-2 mt-2">
                   {getRoleBadge(currentUser.role)}
                 </div>
               </div>
-              <Button onClick={onLogout} variant="outline" className="text-sm h-10 px-3">
-                <LogOut className="mr-1 h-4 w-4" />
+
+              {/* Logout Button */}
+              <Button 
+                onClick={onLogout} 
+                variant="outline" 
+                className="w-full justify-start text-base h-12 border-red-200 text-red-600 hover:bg-red-50"
+              >
+                <LogOut className="w-5 h-5 mr-2" />
                 {bg.logout}
               </Button>
             </div>
+          </div>
+        </>
+      )}
+
+      {/* Compact Header with Menu and Refresh */}
+      <div className="bg-white border-b">
+        <div className="px-3 py-2">
+          <div className="flex items-center justify-between">
+            {/* Left: Hamburger Menu */}
+            <button
+              onClick={() => setMenuOpen(true)}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"
+              title="Меню"
+            >
+              <Menu className="w-6 h-6 text-gray-700" />
+            </button>
+
+            {/* Center: Title */}
+            <h1 className="text-lg font-bold text-gray-900">Admin</h1>
+
+            {/* Right: Refresh Button */}
+            <button
+              onClick={async () => {
+                setIsManualRefreshing(true);
+                await fetchBookings();
+                setIsManualRefreshing(false);
+                toast.success("🔄 Опреснено");
+              }}
+              disabled={isManualRefreshing}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center disabled:opacity-50"
+              title="Опресни"
+            >
+              <RefreshCw className={`w-6 h-6 text-gray-700 ${isManualRefreshing ? 'animate-spin' : ''}`} />
+            </button>
           </div>
         </div>
       </div>
 
       {/* Sticky Search Bar */}
       <div className="sticky top-0 z-40 bg-white border-b shadow-sm">
-        <div className="container mx-auto px-3 py-3">
+        <div className="px-3 py-2">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <Input
               type="text"
-              placeholder={bg.search}
+              placeholder="🔍 Търсене..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 h-12 text-base border-2 border-gray-300 focus:border-blue-500"
@@ -1566,7 +1668,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
           <div className="flex gap-0 min-w-max px-2">
             <button
               onClick={() => setActiveTab("new")}
-              className={`px-4 sm:px-6 py-4 sm:py-5 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors ${
+              className={`px-4 sm:px-6 py-3 sm:py-4 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors min-h-[48px] flex items-center ${
                 activeTab === "new"
                   ? "border-yellow-500 text-yellow-600"
                   : "border-transparent text-gray-600 hover:text-gray-900"
@@ -1576,7 +1678,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
             </button>
             <button
               onClick={() => setActiveTab("confirmed")}
-              className={`px-4 sm:px-6 py-4 sm:py-5 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors ${
+              className={`px-4 sm:px-6 py-3 sm:py-4 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors min-h-[48px] flex items-center ${
                 activeTab === "confirmed"
                   ? "border-green-500 text-green-600"
                   : "border-transparent text-gray-600 hover:text-gray-900"
@@ -1586,7 +1688,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
             </button>
             <button
               onClick={() => setActiveTab("arrived")}
-              className={`px-4 sm:px-6 py-4 sm:py-5 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors ${
+              className={`px-4 sm:px-6 py-3 sm:py-4 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors min-h-[48px] flex items-center ${
                 activeTab === "arrived"
                   ? "border-blue-500 text-blue-600"
                   : "border-transparent text-gray-600 hover:text-gray-900"
@@ -1596,7 +1698,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
             </button>
             <button
               onClick={() => setActiveTab("completed")}
-              className={`px-4 sm:px-6 py-4 sm:py-5 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors ${
+              className={`px-4 sm:px-6 py-3 sm:py-4 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors min-h-[48px] flex items-center ${
                 activeTab === "completed"
                   ? "border-gray-500 text-gray-600"
                   : "border-transparent text-gray-600 hover:text-gray-900"
@@ -1606,7 +1708,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
             </button>
             <button
               onClick={() => setActiveTab("cancelled")}
-              className={`px-4 sm:px-6 py-4 sm:py-5 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors ${
+              className={`px-4 sm:px-6 py-3 sm:py-4 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors min-h-[48px] flex items-center ${
                 activeTab === "cancelled"
                   ? "border-red-500 text-red-600"
                   : "border-transparent text-gray-600 hover:text-gray-900"
@@ -1616,7 +1718,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
             </button>
             <button
               onClick={() => setActiveTab("no-show")}
-              className={`px-4 sm:px-6 py-4 sm:py-5 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors ${
+              className={`px-4 sm:px-6 py-3 sm:py-4 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors min-h-[48px] flex items-center ${
                 activeTab === "no-show"
                   ? "border-orange-500 text-orange-600"
                   : "border-transparent text-gray-600 hover:text-gray-900"
@@ -1626,7 +1728,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
             </button>
             <button
               onClick={() => setActiveTab("archive")}
-              className={`px-4 sm:px-6 py-4 sm:py-5 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors ${
+              className={`px-4 sm:px-6 py-3 sm:py-4 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors min-h-[48px] flex items-center ${
                 activeTab === "archive"
                   ? "border-purple-500 text-purple-600"
                   : "border-transparent text-gray-600 hover:text-gray-900"
@@ -1636,7 +1738,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
             </button>
             <button
               onClick={() => setActiveTab("all")}
-              className={`px-4 sm:px-6 py-4 sm:py-5 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors ${
+              className={`px-4 sm:px-6 py-3 sm:py-4 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors min-h-[48px] flex items-center ${
                 activeTab === "all"
                   ? "border-blue-500 text-blue-600"
                   : "border-transparent text-gray-600 hover:text-gray-900"
@@ -1648,7 +1750,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
               <>
                 <button
                   onClick={() => setActiveTab("users")}
-                  className={`px-4 sm:px-6 py-4 sm:py-5 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors ${
+                  className={`px-4 sm:px-6 py-3 sm:py-4 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors min-h-[48px] flex items-center ${
                     activeTab === "users"
                       ? "border-purple-500 text-purple-600"
                       : "border-transparent text-gray-600 hover:text-gray-900"
@@ -1659,7 +1761,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                 </button>
                 <button
                   onClick={() => setActiveTab("pricing")}
-                  className={`px-4 sm:px-6 py-4 sm:py-5 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors ${
+                  className={`px-4 sm:px-6 py-3 sm:py-4 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors min-h-[48px] flex items-center ${
                     activeTab === "pricing"
                       ? "border-green-500 text-green-600"
                       : "border-transparent text-gray-600 hover:text-gray-900"
@@ -1670,7 +1772,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                 </button>
                 <button
                   onClick={() => setActiveTab("discounts")}
-                  className={`px-4 sm:px-6 py-4 sm:py-5 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors ${
+                  className={`px-4 sm:px-6 py-3 sm:py-4 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors min-h-[48px] flex items-center ${
                     activeTab === "discounts"
                       ? "border-green-500 text-green-600"
                       : "border-transparent text-gray-600 hover:text-gray-900"
@@ -1681,7 +1783,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                 </button>
                 <button
                   onClick={() => setActiveTab("settings")}
-                  className={`px-4 sm:px-6 py-4 sm:py-5 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors ${
+                  className={`px-4 sm:px-6 py-3 sm:py-4 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors min-h-[48px] flex items-center ${
                     activeTab === "settings"
                       ? "border-blue-500 text-blue-600"
                       : "border-transparent text-gray-600 hover:text-gray-900"
@@ -1692,7 +1794,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                 </button>
                 <button
                   onClick={() => setActiveTab("calendar")}
-                  className={`px-4 sm:px-6 py-4 sm:py-5 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors ${
+                  className={`px-4 sm:px-6 py-3 sm:py-4 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors min-h-[48px] flex items-center ${
                     activeTab === "calendar"
                       ? "border-purple-500 text-purple-600"
                       : "border-transparent text-gray-600 hover:text-gray-900"
@@ -1703,7 +1805,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                 </button>
                 <button
                   onClick={() => setActiveTab("revenue")}
-                  className={`px-4 sm:px-6 py-4 sm:py-5 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors ${
+                  className={`px-4 sm:px-6 py-3 sm:py-4 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors min-h-[48px] flex items-center ${
                     activeTab === "revenue"
                       ? "border-green-500 text-green-600"
                       : "border-transparent text-gray-600 hover:text-gray-900"
@@ -1718,7 +1820,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
         </div>
       </div>
 
-      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      <div className="px-3 py-4">
         {/* Content - Bookings, Users, Pricing, Discounts, or Settings */}
         {activeTab === "settings" ? (
           /* ========== SETTINGS TAB ========== */
@@ -1752,7 +1854,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
               {capacityLoading ? (
                 <div className="text-center py-4 text-gray-500">Зареждане на капацитет...</div>
               ) : capacityData.length === 0 ? (
-                <div className="text-center py-4 text-gray-500">Няма данни за капацитет</div>
+                <div className="text-center py-4 text-gray-500">Няма данни за кап��цитет</div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-base sm:text-lg">
@@ -2093,7 +2195,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                             size="sm"
                             onClick={() => deleteUser(user.id)}
                             disabled={!user.username || user.username.trim() === ''}
-                            title={!user.username ? "Невалиден потребител - изтрийте чрез 'Диагностика и изчистване'" : ""}
+                            title={!user.username ? "Невалиден потребител - изтрийте чрез 'Диагно��тика и изчистване'" : ""}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -2113,7 +2215,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
           <>
             {/* Actions Bar */}
             <div className="mb-6 flex flex-col sm:flex-row gap-4 justify-between">
-              <div className="relative flex-1 max-w-md">
+              <div className="relative flex-1">
                 <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 sm:h-6 sm:w-6" />
                 <Input
                   placeholder={bg.search}
@@ -2144,13 +2246,6 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                     </Button>
                   </>
                 )}
-                <Button 
-                  onClick={() => { setIsAddingNew(true); setFormData({ paymentStatus: "manual", status: "confirmed", passengers: 0, numberOfCars: 1 }); }}
-                  className="text-base sm:text-lg py-5 sm:py-6 px-4 sm:px-6"
-                >
-                  <Plus className="mr-2 h-5 w-5 sm:h-6 sm:w-6" />
-                  {bg.addManualBooking}
-                </Button>
               </div>
             </div>
 
@@ -2187,112 +2282,174 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
           setFormData({});
         }
       }}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto pb-24">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold">{editingBooking ? bg.editBooking : bg.addBooking}</DialogTitle>
           </DialogHeader>
 
-          <div className="grid gap-6 py-4">
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <Label htmlFor="name" className="text-base font-semibold">{bg.fullName}</Label>
+          <div className="space-y-5 py-4">
+            {/* === ESSENTIAL FIELDS (PRIORITY) === */}
+            
+            {/* Name - Full Width */}
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-base font-semibold">{bg.fullName} *</Label>
+              <Input
+                id="name"
+                value={formData.name || ""}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Пълно име"
+                className="h-14 text-base"
+                autoComplete="name"
+                enterKeyHint="next"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    document.getElementById('phone')?.focus();
+                  }
+                }}
+              />
+            </div>
+
+            {/* Phone - Full Width */}
+            <div className="space-y-2">
+              <Label htmlFor="phone" className="text-base font-semibold">{bg.phone} *</Label>
+              <Input
+                id="phone"
+                type="tel"
+                value={formData.phone || ""}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                placeholder="+359 886 616 991"
+                className="h-14 text-base"
+                autoComplete="tel"
+                enterKeyHint="next"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    document.getElementById('licensePlate')?.focus();
+                  }
+                }}
+              />
+            </div>
+
+            {/* License Plate - Full Width with Auto-Format */}
+            <div className="space-y-2">
+              <Label htmlFor="licensePlate" className="text-base font-semibold">{bg.licensePlate} *</Label>
+              <Input
+                id="licensePlate"
+                value={formData.licensePlate || ""}
+                onChange={(e) => setFormData({ ...formData, licensePlate: formatLicensePlate(e.target.value) })}
+                placeholder="CA1234AB"
+                className="h-14 text-base uppercase"
+                autoComplete="off"
+                enterKeyHint="next"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    document.getElementById('arrivalDateTime')?.focus();
+                  }
+                }}
+              />
+            </div>
+
+            {/* Arrival DateTime - Combined Field */}
+            <div className="space-y-2">
+              <Label htmlFor="arrivalDateTime" className="text-base font-semibold">Пристигане *</Label>
+              <Input
+                id="arrivalDateTime"
+                type="datetime-local"
+                min={new Date().toISOString().slice(0, 16)}
+                value={combineDateTimeLocal(formData.arrivalDate || "", formData.arrivalTime || "")}
+                onChange={(e) => {
+                  const { date, time } = parseDateTimeLocal(e.target.value);
+                  setFormData({ ...formData, arrivalDate: date, arrivalTime: time });
+                }}
+                className="h-14 text-base"
+                enterKeyHint="next"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    document.getElementById('departureDateTime')?.focus();
+                  }
+                }}
+              />
+              {formData.arrivalDate && formData.arrivalTime && (
+                <p className="text-sm text-gray-600">
+                  {formatDateTimeForDisplay(formData.arrivalDate, formData.arrivalTime)}
+                </p>
+              )}
+            </div>
+
+            {/* Departure DateTime - Combined Field */}
+            <div className="space-y-2">
+              <Label htmlFor="departureDateTime" className="text-base font-semibold">Напускане *</Label>
+              <Input
+                id="departureDateTime"
+                type="datetime-local"
+                min={formData.arrivalDate ? combineDateTimeLocal(formData.arrivalDate, formData.arrivalTime || '00:00') : new Date().toISOString().slice(0, 16)}
+                value={combineDateTimeLocal(formData.departureDate || "", formData.departureTime || "")}
+                onChange={(e) => {
+                  const { date, time } = parseDateTimeLocal(e.target.value);
+                  setFormData({ ...formData, departureDate: date, departureTime: time });
+                }}
+                className="h-14 text-base"
+                enterKeyHint="next"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    document.getElementById('totalPrice')?.focus();
+                  }
+                }}
+              />
+              {formData.departureDate && formData.departureTime && (
+                <p className="text-sm text-gray-600">
+                  {formatDateTimeForDisplay(formData.departureDate, formData.departureTime)}
+                </p>
+              )}
+            </div>
+
+            {/* Price - Auto-filled, Editable */}
+            <div className="space-y-2">
+              <Label htmlFor="totalPrice" className="text-base font-semibold">
+                Цена *
+                <span className="ml-2 text-xs text-green-600">(Auto-calculated)</span>
+              </Label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-base text-gray-500">€</span>
                 <Input
-                  id="name"
-                  value={formData.name || ""}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="h-12 text-base"
-                />
-              </div>
-              <div>
-                <Label htmlFor="email" className="text-base font-semibold">{bg.email}</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email || ""}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="h-12 text-base"
+                  id="totalPrice"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.totalPrice || 0}
+                  onChange={(e) => setFormData({ ...formData, totalPrice: parseFloat(e.target.value) })}
+                  className="pl-12 bg-green-50 h-14 text-base"
+                  enterKeyHint="done"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <Label htmlFor="phone" className="text-base font-semibold">{bg.phone}</Label>
-                <Input
-                  id="phone"
-                  value={formData.phone || ""}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="h-12 text-base"
-                />
-              </div>
-              <div>
-                <Label htmlFor="licensePlate" className="text-base font-semibold">{bg.licensePlate}</Label>
-                <Input
-                  id="licensePlate"
-                  value={formData.licensePlate || ""}
-                  onChange={(e) => setFormData({ ...formData, licensePlate: e.target.value })}
-                  className="h-12 text-base"
-                />
-              </div>
+            {/* === SECONDARY FIELDS === */}
+            <div className="pt-4 border-t border-gray-200">
+              <h3 className="text-lg font-semibold mb-4 text-gray-700">Допълнителна информация</h3>
+
+            {/* Email */}
+            <div className="space-y-2 mb-5">
+              <Label htmlFor="email" className="text-base font-semibold">{bg.email}</Label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email || ""}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                placeholder="email@example.com"
+                className="h-14 text-base"
+                autoComplete="email"
+              />
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <Label htmlFor="arrivalDate" className="text-base font-semibold">{bg.arrivalDate}</Label>
-                <Input
-                  id="arrivalDate"
-                  type="date"
-                  value={formData.arrivalDate || ""}
-                  onChange={(e) => setFormData({ ...formData, arrivalDate: e.target.value })}
-                  className="h-12 text-base"
-                />
-              </div>
-              <div>
-                <Label htmlFor="arrivalTime" className="text-base font-semibold">{bg.arrivalTime}</Label>
-                <select
-                  id="arrivalTime"
-                  value={formData.arrivalTime || ""}
-                  onChange={(e) => setFormData({ ...formData, arrivalTime: e.target.value })}
-                  className="w-full h-12 px-3 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Изберете час</option>
-                  {generateTimeSlots().map(time => (
-                    <option key={time} value={time}>{time}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <Label htmlFor="departureDate" className="text-base font-semibold">{bg.departureDate}</Label>
-                <Input
-                  id="departureDate"
-                  type="date"
-                  value={formData.departureDate || ""}
-                  onChange={(e) => setFormData({ ...formData, departureDate: e.target.value })}
-                  className="h-12 text-base"
-                />
-              </div>
-              <div>
-                <Label htmlFor="departureTime" className="text-base font-semibold">{bg.departureTime}</Label>
-                <select
-                  id="departureTime"
-                  value={formData.departureTime || ""}
-                  onChange={(e) => setFormData({ ...formData, departureTime: e.target.value })}
-                  className="w-full h-12 px-3 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Изберете час</option>
-                  {generateTimeSlots().map(time => (
-                    <option key={time} value={time}>{time}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-4 gap-6">
-              <div>
-                <Label htmlFor="numberOfCars" className="text-base font-semibold">{bg.numberOfCars || "Number of Cars"}</Label>
+            {/* Number of Cars and Passengers */}
+            <div className="grid grid-cols-2 gap-4 mb-5">
+              <div className="space-y-2">
+                <Label htmlFor="numberOfCars" className="text-base font-semibold">{bg.numberOfCars || "Брой автомобили"}</Label>
                 <Input
                   id="numberOfCars"
                   type="number"
@@ -2300,10 +2457,10 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                   max="5"
                   value={formData.numberOfCars || 1}
                   onChange={(e) => setFormData({ ...formData, numberOfCars: parseInt(e.target.value) })}
-                  className="h-12 text-base"
+                  className="h-14 text-base"
                 />
               </div>
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="passengers" className="text-base font-semibold">{bg.passengersLabel}</Label>
                 <Input
                   id="passengers"
@@ -2311,33 +2468,19 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                   min="0"
                   value={formData.passengers || ""}
                   onChange={(e) => setFormData({ ...formData, passengers: parseInt(e.target.value) || 0 })}
-                  placeholder="Въведете брой пътници"
-                  className="h-12 text-base"
+                  placeholder="2"
+                  className="h-14 text-base"
                 />
               </div>
-              <div>
-                <Label htmlFor="totalPrice" className="text-base font-semibold">
-                  {bg.totalPrice}
-                  <span className="ml-2 text-xs text-green-600">(Auto-calculated)</span>
-                </Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-base text-gray-500">€</span>
-                  <Input
-                    id="totalPrice"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={formData.totalPrice || 0}
-                    onChange={(e) => setFormData({ ...formData, totalPrice: parseFloat(e.target.value) })}
-                    className="pl-10 bg-green-50 h-12 text-base"
-                  />
-                </div>
-              </div>
-              <div>
+            </div>
+
+            {/* Payment Status and Method */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+              <div className="space-y-2">
                 <Label htmlFor="paymentStatus" className="text-base font-semibold">{bg.paymentStatus}</Label>
                 <select
                   id="paymentStatus"
-                  className="w-full h-12 px-3 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full h-14 px-3 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={formData.paymentStatus || "unpaid"}
                   onChange={(e) => setFormData({ ...formData, paymentStatus: e.target.value })}
                 >
@@ -2346,20 +2489,17 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                   <option value="pending">{bg.pending}</option>
                   <option value="manual">{bg.manual}</option>
                 </select>
-                <p className="text-xs text-gray-600 mt-1">
-                  💡 Използвайте "Метод на плащане" по-долу, ако операторът е забравил да маркира плащането
-                </p>
               </div>
               
               {/* Payment Method - Admin Only */}
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="paymentMethod" className="text-base font-semibold">
                   {bg.paymentMethod}
                   <span className="ml-2 text-xs text-orange-600 font-normal">(само админ)</span>
                 </Label>
                 <select
                   id="paymentMethod"
-                  className="w-full h-12 px-3 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full h-14 px-3 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={formData.paymentMethod || ""}
                   onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value || undefined })}
                 >
@@ -2371,11 +2511,12 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
               </div>
             </div>
 
-            <div>
+            {/* Booking Status */}
+            <div className="space-y-2 mb-5">
               <Label htmlFor="status" className="text-base font-semibold">{bg.bookingStatus}</Label>
               <select
                 id="status"
-                className="w-full h-12 px-3 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full h-14 px-3 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={formData.status || "new"}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
               >
@@ -2429,7 +2570,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                       value={formData.keyNumber || ""}
                       onChange={(e) => setFormData({ ...formData, keyNumber: e.target.value })}
                       placeholder={bg.keyNumberPlaceholder || "e.g., Key #12"}
-                      className="h-12 text-base"
+                      className="h-14 text-base"
                       maxLength={20}
                     />
                     <div className="text-sm text-gray-500 mt-1">
@@ -2515,7 +2656,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                         id="companyName"
                         value={formData.companyName || ""}
                         onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                        className="bg-white h-12 text-base"
+                        className="bg-white h-14 text-base"
                       />
                     </div>
                     <div>
@@ -2524,7 +2665,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                         id="companyOwner"
                         value={formData.companyOwner || ""}
                         onChange={(e) => setFormData({ ...formData, companyOwner: e.target.value })}
-                        className="bg-white h-12 text-base"
+                        className="bg-white h-14 text-base"
                       />
                     </div>
                   </div>
@@ -2536,7 +2677,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                         id="taxNumber"
                         value={formData.taxNumber || ""}
                         onChange={(e) => setFormData({ ...formData, taxNumber: e.target.value })}
-                        className="bg-white h-12 text-base"
+                        className="bg-white h-14 text-base"
                       />
                     </div>
                     <div>
@@ -2545,7 +2686,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                         id="city"
                         value={formData.city || ""}
                         onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                        className="bg-white h-12 text-base"
+                        className="bg-white h-14 text-base"
                       />
                     </div>
                   </div>
@@ -2556,7 +2697,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                       id="address"
                       value={formData.address || ""}
                       onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                      className="bg-white h-12 text-base"
+                      className="bg-white h-14 text-base"
                     />
                   </div>
 
@@ -2566,7 +2707,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                         type="checkbox"
                         checked={formData.isVAT || false}
                         onChange={(e) => setFormData({ ...formData, isVAT: e.target.checked })}
-                        className="w-5 h-5"
+                        className="w-6 h-6"
                       />
                       <span className="font-medium text-base">{bg.vatRegistered}</span>
                     </label>
@@ -2579,7 +2720,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                           value={formData.vatNumber || ""}
                           onChange={(e) => setFormData({ ...formData, vatNumber: e.target.value })}
                           placeholder="e.g., BG123456789"
-                          className="bg-white h-12 text-base"
+                          className="bg-white h-14 text-base"
                         />
                       </div>
                     )}
@@ -2590,9 +2731,11 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                 </div>
               )}
             </div>
+            </div>
+            {/* End secondary fields container */}
           </div>
 
-          <DialogFooter className="gap-3">
+          <DialogFooter className="sticky bottom-0 left-0 right-0 bg-white border-t border-gray-200 pt-4 pb-4 mt-6 gap-3 flex-col sm:flex-row z-10">
             <Button 
               variant="outline" 
               onClick={() => {
@@ -2600,13 +2743,13 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                 setIsAddingNew(false);
                 setFormData({});
               }}
-              className="h-12 px-6 text-base"
+              className="h-14 px-8 text-base font-semibold w-full sm:w-auto order-2 sm:order-1"
             >
               {bg.cancel}
             </Button>
             <Button 
               onClick={saveBooking}
-              className="h-12 px-6 text-base"
+              className="h-14 px-8 text-base font-semibold bg-[#073590] hover:bg-[#052558] w-full sm:w-auto order-1 sm:order-2"
             >
               {editingBooking ? bg.update : bg.create}
             </Button>
@@ -2813,6 +2956,18 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Floating Action Button (FAB) - Create Reservation */}
+      {!["users", "settings", "pricing", "discounts", "calendar", "revenue"].includes(activeTab) && (
+        <button
+          onClick={() => { setIsAddingNew(true); setFormData({ paymentStatus: "manual", status: "confirmed", passengers: 2, numberOfCars: 1 }); }}
+          className="fixed bottom-4 right-4 z-50 flex items-center gap-2 bg-[#073590] hover:bg-[#052558] active:bg-[#041a3d] text-white font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-200 px-4 sm:px-6 py-3 sm:py-4 min-h-[56px] touch-manipulation"
+          aria-label="Добави резервация"
+        >
+          <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
+          <span className="text-sm sm:text-base whitespace-nowrap">Добави резервация</span>
+        </button>
+      )}
     </div>
   );
 }
