@@ -163,11 +163,11 @@ export function ReservationCard({
   };
 
   return (
-    <div className="bg-white border-2 border-gray-300 rounded-lg p-3 shadow-md hover:shadow-lg transition-shadow w-full">
-      {/* ROW 1: Booking ID & Status Badges */}
+    <div className="bg-white border-2 border-gray-300 rounded-lg p-4 shadow-md hover:shadow-lg transition-shadow w-full">
+      {/* TOP: Booking Code & Status Badges */}
       <div className="flex items-center justify-between gap-2 mb-3">
         {reservation.bookingCode && (
-          <Badge className="bg-[#f1c933] text-[#073590] font-bold text-base py-1.5 px-3 flex-shrink-0 border-2 border-[#073590]">
+          <Badge className="bg-[#f1c933] text-[#073590] font-bold text-sm py-1 px-3 flex-shrink-0 border-2 border-[#073590]">
             {reservation.bookingCode}
           </Badge>
         )}
@@ -175,15 +175,57 @@ export function ReservationCard({
         <div className="flex flex-wrap items-center gap-2 justify-end">
           {getStatusBadge()}
           {getPaymentStatusBadge()}
+          
+          {/* Payment Method Badge */}
+          {reservation.paymentMethod && (
+            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300 text-xs py-0.5 px-2 flex-shrink-0">
+              {reservation.paymentMethod === 'cash' && '💰'}
+              {reservation.paymentMethod === 'card' && '💳'}
+              {reservation.paymentMethod === 'pay-on-leave' && '⏰'}
+            </Badge>
+          )}
+          
+          {/* Car Keys Badge */}
+          {reservation.carKeys && (
+            <Badge 
+              variant="outline" 
+              className={`${reservation.includeInCapacity === false ? 'bg-orange-50 text-orange-700 border-orange-300' : 'bg-purple-50 text-purple-700 border-purple-300'} text-xs py-0.5 px-2 flex-shrink-0`}
+            >
+              <Key className="h-3 w-3 mr-0.5" />
+              {reservation.keyNumber || 'К'}
+              {reservation.includeInCapacity === false && ' 🚫'}
+            </Badge>
+          )}
+          
+          {/* Capacity Override Badge */}
+          {reservation.capacityOverride && (
+            <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-300 text-xs py-0.5 px-2 flex-shrink-0">
+              <AlertTriangle className="h-3 w-3" />
+            </Badge>
+          )}
         </div>
       </div>
 
-      {/* ROW 2: LICENSE PLATE - LARGEST, MOST PROMINENT */}
+      {/* PRIORITY 1: CUSTOMER NAME - LARGEST */}
+      <div className="mb-3 pb-3 border-b-2 border-gray-200">
+        <div className="flex items-center gap-2">
+          <User className="h-7 w-7 text-[#073590] flex-shrink-0" />
+          <div className="flex-1">
+            <div className="text-xs text-gray-500 font-semibold mb-0.5">КЛИЕНТ</div>
+            <div className="font-black text-[28px] leading-tight text-gray-900">
+              {reservation.name}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* PRIORITY 2: LICENSE PLATE - SECOND LARGEST */}
       <div className="mb-3 bg-gray-50 border-2 border-gray-300 rounded-lg p-3">
         <div className="flex items-center gap-2">
-          <Car className="h-8 w-8 text-gray-700 flex-shrink-0" />
+          <Car className="h-6 w-6 text-gray-700 flex-shrink-0" />
           <div className="flex-1">
-            <div className="font-black text-3xl text-gray-900 tracking-wide">
+            <div className="text-xs text-gray-500 font-semibold mb-0.5">РЕГИСТРАЦИЯ</div>
+            <div className="font-black text-[24px] leading-tight text-gray-900 tracking-wide">
               {reservation.licensePlate}
             </div>
             {reservation.licensePlate2 && (
@@ -195,65 +237,86 @@ export function ReservationCard({
         </div>
       </div>
 
-      {/* ROW 3: ARRIVAL TIME - VERY LARGE */}
+      {/* PRIORITY 3: ARRIVAL TIME - LARGE AND CLEAR */}
       <div className="mb-3 bg-blue-50 border-2 border-blue-300 rounded-lg p-3">
         <div className="flex items-center gap-2">
-          <Calendar className="h-7 w-7 text-blue-700 flex-shrink-0" />
+          <Calendar className="h-6 w-6 text-blue-700 flex-shrink-0" />
           <div className="flex-1">
-            <div className="text-xs text-blue-600 font-semibold mb-1">ПРИСТИГА</div>
-            <div className="font-bold text-2xl text-blue-900">
+            <div className="text-xs text-blue-600 font-bold mb-1">ПРИСТИГА</div>
+            <div className="font-bold text-xl text-blue-900">
               {formatDateDisplay(reservation.arrivalDate)} {reservation.arrivalTime}
             </div>
-            <div className="text-xs text-blue-700 mt-1 flex items-center gap-1">
-              <span>→ Напуска:</span>
-              <span className="font-semibold">{formatDateDisplay(reservation.departureDate)} {reservation.departureTime}</span>
+            <div className="text-sm text-blue-700 mt-1 flex items-center gap-1">
+              <span className="font-semibold">Напуска:</span>
+              <span>{formatDateDisplay(reservation.departureDate)} {reservation.departureTime}</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ROW 4: CUSTOMER NAME - LARGE */}
+      {/* PRIORITY 4: PHONE NUMBER - MEDIUM SIZE, PROMINENT */}
       <div className="mb-3">
         <div className="flex items-center gap-2">
-          <User className="h-6 w-6 text-gray-600 flex-shrink-0" />
-          <span className="font-bold text-xl text-gray-900">{reservation.name}</span>
-        </div>
-      </div>
-
-      {/* ROW 5: CONTACT INFO - SMALLER */}
-      <div className="mb-3 space-y-2">
-        <div className="flex items-center gap-2 text-base">
-          <Phone className="h-4 w-4 text-gray-500 flex-shrink-0" />
-          <a href={`tel:${reservation.phone}`} className="font-semibold text-blue-600 underline">
+          <Phone className="h-5 w-5 text-green-600 flex-shrink-0" />
+          <a 
+            href={`tel:${reservation.phone}`} 
+            className="font-bold text-lg text-green-600 underline decoration-2"
+          >
             {reservation.phone}
           </a>
         </div>
+      </div>
+
+      {/* PRIORITY 5: SECONDARY INFO - SMALLER */}
+      <div className="mb-3 space-y-2">
+        {/* Email */}
         <div className="flex items-center gap-2 text-sm">
-          <Mail className="h-4 w-4 text-gray-500 flex-shrink-0" />
-          <span className="text-gray-700 truncate">{reservation.email}</span>
+          <Mail className="h-4 w-4 text-gray-400 flex-shrink-0" />
+          <span className="text-gray-600 truncate">{reservation.email}</span>
+        </div>
+        
+        {/* Passengers & Cars */}
+        <div className="flex items-center gap-2 text-sm">
+          <Users className="h-4 w-4 text-gray-400 flex-shrink-0" />
+          <span className="text-gray-600">{reservation.passengers} пътник • {reservation.numberOfCars || 1} кола</span>
         </div>
       </div>
 
-      {/* ROW 6: PASSENGERS & PRICE */}
-      <div className="flex items-center justify-between mb-3 bg-gray-50 border border-gray-200 rounded-lg p-2">
-        <div className="flex items-center gap-2 text-sm">
-          <Users className="h-4 w-4 text-gray-600" />
-          <span className="text-gray-700">{reservation.passengers} пътник • {reservation.numberOfCars || 1} кола</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <Euro className="h-5 w-5 text-gray-600" />
-          <span className="font-bold text-xl text-gray-900">€{reservation.finalPrice || reservation.totalPrice}</span>
+      {/* PRICE - PROMINENT BUT NOT OVERSIZED */}
+      <div className="mb-3 bg-green-50 border border-green-300 rounded-lg p-2.5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Euro className="h-5 w-5 text-green-700" />
+            <span className="font-black text-2xl text-green-800">€{reservation.finalPrice || reservation.totalPrice}</span>
+          </div>
+          {reservation.basePrice && reservation.discountApplied && (
+            <div className="text-sm text-green-600 font-bold">
+              -{reservation.discountApplied.discountType === 'percentage' 
+                ? `${reservation.discountApplied.discountValue}%` 
+                : `€${reservation.discountApplied.discountValue}`}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* LATE WARNING - PROMINENT */}
+      {/* CAPACITY INFO - SMALL, IF SHOWN */}
+      {showCapacityInfo && capacityInfo && (
+        <div className="text-xs text-gray-500 mb-3">
+          Капацитет: {capacityInfo.occupied}/{capacityInfo.total} ({capacityInfo.percentage}%)
+          {capacityInfo.leaving > 0 && (
+            <span className="text-green-600 ml-1">(-{capacityInfo.leaving})</span>
+          )}
+        </div>
+      )}
+
+      {/* LATE WARNING - HIGHLY PROMINENT */}
       {reservation.isLate && (
         <div className="bg-red-100 border-2 border-red-500 rounded-lg p-3 mb-3">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="h-6 w-6 text-red-700 flex-shrink-0" />
+            <AlertTriangle className="h-7 w-7 text-red-700 flex-shrink-0" />
             <div className="flex-1">
-              <div className="font-black text-lg text-red-900">ЗАКЪСНЯВА</div>
-              <div className="text-red-800 font-semibold">Доплащане: €{reservation.lateSurcharge || 0}</div>
+              <div className="font-black text-xl text-red-900">⚠️ ЗАКЪСНЯВА</div>
+              <div className="text-red-800 font-bold text-lg mt-1">Доплащане: €{reservation.lateSurcharge || 0}</div>
             </div>
           </div>
         </div>
@@ -321,16 +384,6 @@ export function ReservationCard({
         </div>
       )}
 
-      {/* CAPACITY INFO - SMALL */}
-      {showCapacityInfo && capacityInfo && (
-        <div className="text-xs text-gray-500 mb-3">
-          Капацитет: {capacityInfo.occupied}/{capacityInfo.total} ({capacityInfo.percentage}%)
-          {capacityInfo.leaving > 0 && (
-            <span className="text-green-600 ml-1">(-{capacityInfo.leaving})</span>
-          )}
-        </div>
-      )}
-
       {/* CANCELLATION/DECLINE/NO-SHOW REASONS */}
       {reservation.cancellationReason && (
         <div className="bg-red-100 border-2 border-red-400 rounded-lg p-3 mb-3">
@@ -368,15 +421,15 @@ export function ReservationCard({
         <div className="mb-3 bg-gray-100 border border-gray-300 rounded-lg p-2">
           <div className="text-xs font-bold text-gray-700 mb-1">Допълнителни номера:</div>
           <div className="space-y-1">
-            {reservation.licensePlate2 && <div className="font-bold text-base">🚗 {reservation.licensePlate2}</div>}
-            {reservation.licensePlate3 && <div className="font-bold text-base">🚗 {reservation.licensePlate3}</div>}
-            {reservation.licensePlate4 && <div className="font-bold text-base">🚗 {reservation.licensePlate4}</div>}
-            {reservation.licensePlate5 && <div className="font-bold text-base">🚗 {reservation.licensePlate5}</div>}
+            {reservation.licensePlate2 && <div className="font-bold text-lg">🚗 {reservation.licensePlate2}</div>}
+            {reservation.licensePlate3 && <div className="font-bold text-lg">🚗 {reservation.licensePlate3}</div>}
+            {reservation.licensePlate4 && <div className="font-bold text-lg">🚗 {reservation.licensePlate4}</div>}
+            {reservation.licensePlate5 && <div className="font-bold text-lg">🚗 {reservation.licensePlate5}</div>}
           </div>
         </div>
       )}
 
-      {/* ACTION BUTTONS - LARGE TOUCH TARGETS */}
+      {/* ACTION BUTTONS - LARGE TOUCH TARGETS (48-56px) */}
       {showActions && actions && (
         <div className="pt-3 border-t-2 border-gray-200">
           {actions}
