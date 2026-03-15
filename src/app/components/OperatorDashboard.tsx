@@ -439,18 +439,41 @@ function getDaysInMonth(date: Date) {
 
 function calculateCapacityForDate(bookings: Booking[], dateStr: string) {
   const overlappingBookings = bookings.filter(b => {
-    if (b.status !== 'confirmed' && b.status !== 'arrived') return false;
+    // If booking is 'arrived', they are physically in parking regardless of scheduled dates
+    if (b.status === 'arrived') {
+      return true;
+    }
     
-    const bookingArrival = new Date(b.arrivalDate);
-    const bookingDeparture = new Date(b.departureDate);
-    const currentDate = new Date(dateStr);
+    // For confirmed bookings, check if the date range overlaps with the target date
+    if (b.status === 'confirmed') {
+      const bookingArrival = new Date(b.arrivalDate);
+      const bookingDeparture = new Date(b.departureDate);
+      const currentDate = new Date(dateStr);
+      
+      // Include departure date - a booking occupies space from arrival through departure (inclusive)
+      return bookingArrival <= currentDate && currentDate <= bookingDeparture;
+    }
     
-    // Include departure date - a booking occupies space from arrival through departure (inclusive)
-    return bookingArrival <= currentDate && currentDate <= bookingDeparture;
+    return false;
   });
   
   let nonKeysCount = 0;
   let keysCount = 0;
+  
+  // Debug logging for today's date
+  const today = getTodayDate();
+  if (dateStr === today) {
+    console.log(`📅 CALENDAR DEBUG for ${dateStr}:`, {
+      totalOverlappingBookings: overlappingBookings.length,
+      bookings: overlappingBookings.map(b => ({
+        name: b.name,
+        status: b.status,
+        numberOfCars: b.numberOfCars,
+        carKeys: b.carKeys,
+        includeInCapacity: b.includeInCapacity
+      }))
+    });
+  }
   
   overlappingBookings.forEach(b => {
     // Only count if includeInCapacity is not explicitly false
@@ -458,13 +481,17 @@ function calculateCapacityForDate(bookings: Booking[], dateStr: string) {
       return;
     }
     
-    const carCount = Number(b.numberOfCars || 1);
+    const carCount = Number(b.numberOfCars) || 1;
     if (b.carKeys) {
       keysCount += carCount;
     } else {
       nonKeysCount += carCount;
     }
   });
+  
+  if (dateStr === today) {
+    console.log(`📅 CALENDAR TOTALS for ${dateStr}: nonKeys=${nonKeysCount}, keys=${keysCount}, total=${nonKeysCount + keysCount}`);
+  }
   
   // Calculate leaving count - bookings departing on this date (same logic as Exits tab)
   const leavingBookings = bookings.filter(b => {
@@ -475,7 +502,7 @@ function calculateCapacityForDate(bookings: Booking[], dateStr: string) {
     return b.departureDate === dateStr;
   });
   
-  const leavingCount = leavingBookings.reduce((sum, b) => sum + Number(b.numberOfCars || 1), 0);
+  const leavingCount = leavingBookings.reduce((sum, b) => sum + (Number(b.numberOfCars) || 1), 0);
   
   const totalCount = nonKeysCount + keysCount;
   const percentage = totalCount > 0 ? (totalCount / TOTAL_CAPACITY) * 100 : 0;
