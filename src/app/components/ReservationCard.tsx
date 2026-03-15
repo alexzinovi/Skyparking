@@ -237,18 +237,36 @@ export function ReservationCard({
         </div>
       </div>
 
-      {/* PRIORITY 3: ARRIVAL TIME - LARGE AND CLEAR */}
-      <div className="mb-3 bg-blue-50 border-2 border-blue-300 rounded-lg p-3">
-        <div className="flex items-center gap-2">
-          <Calendar className="h-6 w-6 text-blue-700 flex-shrink-0" />
-          <div className="flex-1">
-            <div className="text-xs text-blue-600 font-bold mb-1">ПРИСТИГА</div>
-            <div className="font-bold text-xl text-blue-900">
-              {formatDateDisplay(reservation.arrivalDate)} {reservation.arrivalTime}
+      {/* PRIORITY 3: ARRIVAL AND DEPARTURE - EQUAL IMPORTANCE, TWO COLUMNS */}
+      <div className="mb-3 grid grid-cols-2 gap-2">
+        {/* LEFT: ARRIVAL */}
+        <div className="bg-green-50 border-2 border-green-400 rounded-lg p-3">
+          <div className="flex flex-col">
+            <div className="flex items-center gap-1 mb-2">
+              <Calendar className="h-5 w-5 text-green-700 flex-shrink-0" />
+              <div className="text-xs text-green-700 font-black tracking-wide">ПРИСТИГА</div>
             </div>
-            <div className="text-sm text-blue-700 mt-1 flex items-center gap-1">
-              <span className="font-semibold">Напуска:</span>
-              <span>{formatDateDisplay(reservation.departureDate)} {reservation.departureTime}</span>
+            <div className="font-bold text-lg leading-tight text-green-900">
+              {formatDateDisplay(reservation.arrivalDate)}
+            </div>
+            <div className="font-bold text-xl text-green-900 mt-1">
+              {reservation.arrivalTime}
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT: DEPARTURE */}
+        <div className="bg-red-50 border-2 border-red-400 rounded-lg p-3">
+          <div className="flex flex-col">
+            <div className="flex items-center gap-1 mb-2">
+              <Calendar className="h-5 w-5 text-red-700 flex-shrink-0" />
+              <div className="text-xs text-red-700 font-black tracking-wide">НАПУСКА</div>
+            </div>
+            <div className="font-bold text-lg leading-tight text-red-900">
+              {formatDateDisplay(reservation.departureDate)}
+            </div>
+            <div className="font-bold text-xl text-red-900 mt-1">
+              {reservation.departureTime}
             </div>
           </div>
         </div>
