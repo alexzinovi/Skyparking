@@ -1709,23 +1709,21 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
   const renderTabActions = (booking: Booking, showActions: string) => {
     if (showActions === "arriving") {
       return (
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-col gap-3 w-full">
           <Button 
-            size="sm" 
             onClick={() => handleArrived(booking)}
-            className="bg-green-600 hover:bg-green-700 whitespace-nowrap text-xs h-7 px-2"
+            className="bg-green-600 hover:bg-green-700 text-white font-bold text-lg h-14 w-full"
           >
-            <CheckCircle className="w-3 h-3 mr-1" />
-            Пристигна
+            <CheckCircle className="w-6 h-6 mr-2" />
+            ✔ Пристигна
           </Button>
           <Button 
-            size="sm" 
             variant="destructive"
             onClick={() => handleNoShow(booking)}
-            className="whitespace-nowrap text-xs h-7 px-2"
+            className="font-bold text-lg h-14 w-full"
           >
-            <XCircle className="w-3 h-3 mr-1" />
-            Не се яви
+            <XCircle className="w-6 h-6 mr-2" />
+            ✖ Не се яви
           </Button>
         </div>
       );
@@ -1735,32 +1733,29 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
       if (booking.isLate) {
         return (
           <Button 
-            size="sm" 
             onClick={() => handleCheckout(booking)}
-            className="bg-blue-600 hover:bg-blue-700 whitespace-nowrap text-xs h-7 px-2"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg h-14 w-full"
           >
-            <CheckCircle className="w-3 h-3 mr-1" />
-            Напусна (€{booking.lateSurcharge || 0})
+            <CheckCircle className="w-6 h-6 mr-2" />
+            Напусна (доплащане €{booking.lateSurcharge || 0})
           </Button>
         );
       }
       return (
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-col gap-3 w-full">
           <Button 
-            size="sm" 
             onClick={() => handleCheckout(booking)}
-            className="bg-blue-600 hover:bg-blue-700 whitespace-nowrap text-xs h-7 px-2"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg h-14 w-full"
           >
-            <CheckCircle className="w-3 h-3 mr-1" />
+            <CheckCircle className="w-6 h-6 mr-2" />
             Напусна
           </Button>
           <Button 
-            size="sm" 
             variant="destructive"
             onClick={() => handleMarkLate(booking)}
-            className="bg-red-600 hover:bg-red-700 whitespace-nowrap text-xs h-7 px-2"
+            className="bg-red-600 hover:bg-red-700 font-bold text-lg h-14 w-full"
           >
-            <AlertCircle className="w-3 h-3 mr-1" />
+            <AlertCircle className="w-6 h-6 mr-2" />
             Закъснява
           </Button>
         </div>
@@ -1770,53 +1765,49 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
     if (showActions === "exits") {
       if (booking.status === "new" || booking.status === "pending") {
         return (
-          <Badge variant="outline" className="text-xs py-0.5 px-2 bg-yellow-50 border-yellow-400">
-            Очаква
+          <Badge variant="outline" className="text-base py-2 px-4 bg-yellow-100 border-yellow-400 border-2 font-bold">
+            ⏳ Очаква потвърждение
           </Badge>
         );
       }
       if (booking.status === "confirmed") {
         return (
           <Button 
-            size="sm" 
             onClick={() => handleArrived(booking)}
-            className="bg-green-600 hover:bg-green-700 whitespace-nowrap text-xs h-7 px-2"
+            className="bg-green-600 hover:bg-green-700 text-white font-bold text-lg h-14 w-full"
           >
-            <CheckCircle className="w-3 h-3 mr-1" />
-            Пристигна
+            <CheckCircle className="w-6 h-6 mr-2" />
+            ✔ Пристигна
           </Button>
         );
       }
       if ((booking.status === "arrived" || booking.status === "late") && booking.isLate) {
         return (
           <Button 
-            size="sm" 
             onClick={() => handleCheckout(booking)}
-            className="bg-blue-600 hover:bg-blue-700 whitespace-nowrap text-xs h-7 px-2"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg h-14 w-full"
           >
-            <CheckCircle className="w-3 h-3 mr-1" />
-            Напусна (€{booking.lateSurcharge || 0})
+            <CheckCircle className="w-6 h-6 mr-2" />
+            Напусна (доплащане €{booking.lateSurcharge || 0})
           </Button>
         );
       }
       if ((booking.status === "arrived" || booking.status === "late") && !booking.isLate) {
         return (
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-col gap-3 w-full">
             <Button 
-              size="sm" 
               onClick={() => handleCheckout(booking)}
-              className="bg-blue-600 hover:bg-blue-700 whitespace-nowrap text-xs h-7 px-2"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg h-14 w-full"
             >
-              <CheckCircle className="w-3 h-3 mr-1" />
+              <CheckCircle className="w-6 h-6 mr-2" />
               Напусна
             </Button>
             <Button 
-              size="sm" 
               variant="destructive"
               onClick={() => handleMarkLate(booking)}
-              className="bg-red-600 hover:bg-red-700 whitespace-nowrap text-xs h-7 px-2"
+              className="bg-red-600 hover:bg-red-700 font-bold text-lg h-14 w-full"
             >
-              <AlertCircle className="w-3 h-3 mr-1" />
+              <AlertCircle className="w-6 h-6 mr-2" />
               Закъснява
             </Button>
           </div>

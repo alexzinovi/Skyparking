@@ -1214,25 +1214,23 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
   // Render action buttons for a booking
   const renderBookingActions = (booking: Booking) => {
     return (
-      <div className="flex flex-wrap gap-1.5">
+      <div className="flex flex-col gap-3 w-full">
         {/* Context-aware action buttons */}
         {booking.status === "new" && (
           <>
             <Button
-              size="sm"
-              className="bg-green-600 hover:bg-green-700 text-xs h-7 px-2"
+              className="bg-green-600 hover:bg-green-700 text-white font-bold text-lg h-14 w-full"
               onClick={() => acceptBooking(booking)}
             >
-              <Check className="h-3 w-3 mr-1" />
+              <Check className="h-6 w-6 mr-2" />
               {bg.accept}
             </Button>
             <Button
-              size="sm"
               variant="destructive"
-              className="text-xs h-7 px-2"
+              className="font-bold text-lg h-14 w-full"
               onClick={() => cancelBooking(booking)}
             >
-              <X className="h-3 w-3 mr-1" />
+              <X className="h-6 w-6 mr-2" />
               {bg.reject}
             </Button>
           </>
@@ -1241,29 +1239,26 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
         {booking.status === "confirmed" && (
           <>
             <Button
-              size="sm"
-              className="bg-blue-600 hover:bg-blue-700 text-xs h-7 px-2"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg h-14 w-full"
               onClick={() => markArrived(booking)}
             >
-              <LogIn className="h-3 w-3 mr-1" />
+              <LogIn className="h-6 w-6 mr-2" />
               {bg.markArrived}
             </Button>
             <Button
-              size="sm"
               variant="outline"
-              className="text-xs h-7 px-2"
+              className="font-bold text-lg h-14 w-full border-2"
               onClick={() => markNoShow(booking)}
             >
-              <XCircle className="h-3 w-3 mr-1" />
+              <XCircle className="h-6 w-6 mr-2" />
               {bg.markNoShow}
             </Button>
             <Button
-              size="sm"
               variant="destructive"
-              className="text-xs h-7 px-2"
+              className="font-bold text-lg h-14 w-full"
               onClick={() => cancelBooking(booking)}
             >
-              <X className="h-3 w-3 mr-1" />
+              <X className="h-6 w-6 mr-2" />
               {bg.reject}
             </Button>
           </>
@@ -1271,39 +1266,40 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
         
         {booking.status === "arrived" && (
           <Button
-            size="sm"
-            className="bg-green-600 hover:bg-green-700 text-xs h-7 px-2"
+            className="bg-green-600 hover:bg-green-700 text-white font-bold text-lg h-14 w-full"
             onClick={() => checkout(booking)}
           >
-            <CheckCircle className="h-3 w-3 mr-1" />
+            <CheckCircle className="h-6 w-6 mr-2" />
             {bg.checkout}
           </Button>
         )}
         
         {/* Edit and Delete based on permissions */}
-        {permissions.includes("edit_bookings") && (
-          <Button
-            size="sm"
-            variant="outline"
-            className="text-xs h-7 px-2"
-            onClick={() => {
-              setEditingBooking(booking);
-              setFormData(booking);
-            }}
-          >
-            <Edit className="h-3 w-3" />
-          </Button>
-        )}
-        {permissions.includes("delete_bookings") && (
-          <Button
-            size="sm"
-            variant="destructive"
-            className="text-xs h-7 px-2"
-            onClick={() => deleteBooking(booking.id)}
-          >
-            <Trash2 className="h-3 w-3" />
-          </Button>
-        )}
+        <div className="flex gap-3">
+          {permissions.includes("edit_bookings") && (
+            <Button
+              variant="outline"
+              className="font-bold text-base h-12 flex-1 border-2"
+              onClick={() => {
+                setEditingBooking(booking);
+                setFormData(booking);
+              }}
+            >
+              <Edit className="h-5 w-5 mr-2" />
+              Редактирай
+            </Button>
+          )}
+          {permissions.includes("delete_bookings") && (
+            <Button
+              variant="destructive"
+              className="font-bold text-base h-12 flex-1"
+              onClick={() => deleteBooking(booking.id)}
+            >
+              <Trash2 className="h-5 w-5 mr-2" />
+              Изтрий
+            </Button>
+          )}
+        </div>
       </div>
     );
   };
@@ -1526,29 +1522,21 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header */}
       <div className="bg-white border-b">
-        <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <h1 className="text-3xl sm:text-4xl font-bold">{bg.dashboardTitle}</h1>
-              <div className="flex items-center gap-2 mt-2">
-                <p className="text-lg sm:text-xl text-gray-500">{currentUser.fullName}</p>
-                {getRoleBadge(currentUser.role)}
+        <div className="container mx-auto px-3 py-3">
+          <div className="flex flex-col gap-3">
+            <div className="flex justify-between items-center">
+              <div>
+                <h1 className="text-2xl font-bold">{bg.dashboardTitle}</h1>
+                <div className="flex items-center gap-2 mt-1">
+                  <p className="text-sm text-gray-500">{currentUser.fullName}</p>
+                  {getRoleBadge(currentUser.role)}
+                </div>
               </div>
-            </div>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
-              <Button 
-                onClick={handleDeleteAllBookings} 
-                variant="destructive"
-                className="bg-red-600 hover:bg-red-700 text-base sm:text-lg py-5 sm:py-6 px-6"
-              >
-                <Trash2 className="mr-2 h-5 w-5 sm:h-6 sm:w-6" />
-                Изтрий всички
-              </Button>
-              <Button onClick={onLogout} variant="outline" className="text-base sm:text-lg py-5 sm:py-6 px-6">
-                <LogOut className="mr-2 h-5 w-5 sm:h-6 sm:w-6" />
+              <Button onClick={onLogout} variant="outline" className="text-sm h-10 px-3">
+                <LogOut className="mr-1 h-4 w-4" />
                 {bg.logout}
               </Button>
             </div>
@@ -1556,10 +1544,26 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="bg-white border-b">
-        <div className="container mx-auto px-4 sm:px-6">
-          <div className="flex gap-1 overflow-x-auto scrollbar-hide">
+      {/* Sticky Search Bar */}
+      <div className="sticky top-0 z-40 bg-white border-b shadow-sm">
+        <div className="container mx-auto px-3 py-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <Input
+              type="text"
+              placeholder={bg.search}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 h-12 text-base border-2 border-gray-300 focus:border-blue-500"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Sticky Tabs */}
+      <div className="sticky top-[73px] z-30 bg-white border-b shadow-sm">
+        <div className="overflow-x-auto scrollbar-hide">
+          <div className="flex gap-0 min-w-max px-2">
             <button
               onClick={() => setActiveTab("new")}
               className={`px-4 sm:px-6 py-4 sm:py-5 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors ${

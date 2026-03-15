@@ -121,40 +121,40 @@ export function ReservationCard({
   showStatusHistory = false,
 }: ReservationCardProps) {
   
-  // Status badge helper
+  // Status badge helper with strong color signals
   const getStatusBadge = () => {
     const statusMap: Record<string, { label: string; className: string }> = {
-      'new': { label: '🆕 Нова', className: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
-      'confirmed': { label: '✅ Потвърдена', className: 'bg-green-100 text-green-800 border-green-300' },
-      'arrived': { label: '🚗 Пристигнала', className: 'bg-blue-100 text-blue-800 border-blue-300' },
+      'new': { label: '🆕 Нова', className: 'bg-yellow-100 text-yellow-800 border-yellow-400' },
+      'confirmed': { label: '✅ Потвърдена', className: 'bg-blue-100 text-blue-800 border-blue-400' },
+      'arrived': { label: '🚗 Пристигнала', className: 'bg-green-100 text-green-800 border-green-400' },
       'checked-out': { label: '✔️ Приключена', className: 'bg-gray-100 text-gray-800 border-gray-300' },
-      'cancelled': { label: '❌ Отказана', className: 'bg-red-100 text-red-800 border-red-300' },
-      'declined': { label: '⛔ Отхвърлена', className: 'bg-red-100 text-red-800 border-red-300' },
-      'no-show': { label: '⭕ Не се яви', className: 'bg-gray-100 text-gray-800 border-gray-300' },
+      'cancelled': { label: '❌ Отказана', className: 'bg-red-100 text-red-800 border-red-400' },
+      'declined': { label: '⛔ Отхвърлена', className: 'bg-red-100 text-red-800 border-red-400' },
+      'no-show': { label: '⭕ Не се яви', className: 'bg-red-100 text-red-800 border-red-400' },
     };
 
     const status = statusMap[reservation.status] || { label: reservation.status, className: 'bg-gray-100 text-gray-800 border-gray-300' };
     
     return (
-      <Badge variant="outline" className={`${status.className} text-xs py-0.5 px-2 font-semibold flex-shrink-0`}>
+      <Badge variant="outline" className={`${status.className} text-sm py-1 px-3 font-bold flex-shrink-0 border-2`}>
         {status.label}
       </Badge>
     );
   };
 
-  // Payment status badge helper
+  // Payment status badge helper with strong color signals
   const getPaymentStatusBadge = () => {
     if (reservation.paymentStatus === 'paid') {
       return (
-        <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300 text-xs py-0.5 px-2 font-semibold flex-shrink-0">
-          <CheckCircle className="h-3 w-3 mr-1" />
+        <Badge variant="outline" className="bg-green-100 text-green-800 border-green-400 text-sm py-1 px-3 font-bold flex-shrink-0 border-2">
+          <CheckCircle className="h-4 w-4 mr-1" />
           Платено
         </Badge>
       );
     } else if (reservation.paymentStatus === 'pending') {
       return (
-        <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-300 text-xs py-0.5 px-2 font-semibold flex-shrink-0">
-          <Clock className="h-3 w-3 mr-1" />
+        <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-400 text-sm py-1 px-3 font-bold flex-shrink-0 border-2">
+          <Clock className="h-4 w-4 mr-1" />
           Очаква плащане
         </Badge>
       );
@@ -163,245 +163,223 @@ export function ReservationCard({
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-2.5 shadow-sm hover:shadow-md transition-shadow">
-      {/* ROW 1: Reservation ID, Customer Name, Status Badges (No Wrap) */}
-      <div className="flex items-center justify-between gap-2 mb-1.5">
-        <div className="flex items-center gap-2 min-w-0 flex-1">
-          {/* Reservation ID Badge */}
-          {reservation.bookingCode && (
-            <Badge className="bg-[#f1c933] text-[#073590] font-bold text-xs px-2 py-0.5 flex-shrink-0">
-              {reservation.bookingCode}
-            </Badge>
-          )}
-          
-          {/* Customer Name */}
-          <div className="flex items-center gap-1 min-w-0">
-            <User className="h-3.5 w-3.5 text-gray-500 flex-shrink-0" />
-            <span className="font-bold text-sm text-gray-900 truncate">{reservation.name}</span>
-          </div>
-        </div>
+    <div className="bg-white border-2 border-gray-300 rounded-lg p-3 shadow-md hover:shadow-lg transition-shadow w-full">
+      {/* ROW 1: Booking ID & Status Badges */}
+      <div className="flex items-center justify-between gap-2 mb-3">
+        {reservation.bookingCode && (
+          <Badge className="bg-[#f1c933] text-[#073590] font-bold text-base py-1.5 px-3 flex-shrink-0 border-2 border-[#073590]">
+            {reservation.bookingCode}
+          </Badge>
+        )}
         
-        {/* Status Badges - Right Aligned, No Wrap */}
-        <div className="flex items-center gap-1 flex-shrink-0">
+        <div className="flex flex-wrap items-center gap-2 justify-end">
           {getStatusBadge()}
           {getPaymentStatusBadge()}
-          
-          {/* Payment Method Badge */}
-          {reservation.paymentMethod && (
-            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300 text-xs py-0.5 px-1.5 flex-shrink-0">
-              {reservation.paymentMethod === 'cash' && '💰'}
-              {reservation.paymentMethod === 'card' && '💳'}
-              {reservation.paymentMethod === 'pay-on-leave' && '⏰'}
-            </Badge>
-          )}
-          
-          {/* Car Keys Badge */}
-          {reservation.carKeys && (
-            <Badge 
-              variant="outline" 
-              className={`${reservation.includeInCapacity === false ? 'bg-orange-50 text-orange-700 border-orange-300' : 'bg-purple-50 text-purple-700 border-purple-300'} text-xs py-0.5 px-1.5 flex-shrink-0`}
-            >
-              <Key className="h-3 w-3 mr-0.5" />
-              {reservation.keyNumber || 'К'}
-              {reservation.includeInCapacity === false && ' 🚫'}
-            </Badge>
-          )}
-          
-          {/* Capacity Override Badge */}
-          {reservation.capacityOverride && (
-            <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-300 text-xs py-0.5 px-1.5 flex-shrink-0">
-              <AlertTriangle className="h-3 w-3" />
-            </Badge>
-          )}
         </div>
       </div>
 
-      {/* ROW 2 & 3: Contact & Vehicle Information (Two Compact Rows) */}
-      <div className="space-y-1 mb-1.5">
-        {/* Contact Row */}
-        <div className="flex items-center gap-3 text-xs text-gray-700">
-          <div className="flex items-center gap-1">
-            <Phone className="h-3 w-3 text-gray-500" />
-            <span className="font-medium">{reservation.phone}</span>
-          </div>
-          <div className="flex items-center gap-1 min-w-0 flex-1">
-            <Mail className="h-3 w-3 text-gray-500" />
-            <span className="font-medium truncate">{reservation.email}</span>
-          </div>
-        </div>
-        
-        {/* Vehicle Row */}
-        <div className="flex items-center gap-3 text-xs text-gray-700">
-          <div className="flex items-center gap-1">
-            <Car className="h-3 w-3 text-gray-500" />
-            <span className="font-bold">{reservation.licensePlate}</span>
-            {reservation.licensePlate2 && <span className="text-gray-500">+{(reservation.numberOfCars || 1) - 1}</span>}
-          </div>
-          <div className="flex items-center gap-1">
-            <Users className="h-3 w-3 text-gray-500" />
-            <span>{reservation.passengers} / {reservation.numberOfCars || 1}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* ROW 4: Reservation Period (Compact Blue Bar) */}
-      <div className="flex items-center gap-1.5 text-xs mb-1.5 bg-blue-50/70 border border-blue-200/50 rounded px-2 py-1">
-        <Calendar className="h-3 w-3 text-blue-700 flex-shrink-0" />
-        <div className="flex items-center gap-1 font-medium text-blue-900">
-          <span className="whitespace-nowrap">{formatDateDisplay(reservation.arrivalDate)} {reservation.arrivalTime}</span>
-          <span className="text-blue-400">→</span>
-          <span className="whitespace-nowrap">{formatDateDisplay(reservation.departureDate)} {reservation.departureTime}</span>
-        </div>
-      </div>
-
-      {/* ROW 5: Price & Capacity (Inline) */}
-      <div className="flex items-center justify-between mb-1.5">
-        {/* Price */}
-        <div className="flex items-center gap-1">
-          <Euro className="h-3 w-3 text-gray-500" />
-          <span className="font-bold text-base text-gray-900">€{reservation.finalPrice || reservation.totalPrice}</span>
-          {reservation.basePrice && reservation.discountApplied && (
-            <span className="text-xs text-green-600 font-semibold">
-              (-{reservation.discountApplied.discountType === 'percentage' 
-                ? `${reservation.discountApplied.discountValue}%` 
-                : `€${reservation.discountApplied.discountValue}`})
-            </span>
-          )}
-        </div>
-
-        {/* Capacity Info (if enabled) */}
-        {showCapacityInfo && capacityInfo && (
-          <div className="text-xs text-gray-500">
-            Капацитет: {capacityInfo.occupied}/{capacityInfo.total} ({capacityInfo.percentage}%)
-            {capacityInfo.leaving > 0 && (
-              <span className="text-green-600 ml-1">(-{capacityInfo.leaving})</span>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* LATE WARNING (Compact) */}
-      {reservation.isLate && (
-        <div className="bg-red-100 border border-red-400 rounded px-2 py-1 mb-1.5">
-          <div className="flex items-center gap-2 text-xs">
-            <AlertTriangle className="h-3.5 w-3.5 text-red-700 flex-shrink-0" />
-            <span className="font-bold text-red-900">ЗАКЪСНЯВА</span>
-            <span className="text-red-800">€{reservation.lateSurcharge || 0}</span>
-          </div>
-        </div>
-      )}
-
-      {/* NOTES SECTION (Only show if exists) */}
-      {reservation.notes && (
-        <div className="bg-amber-50 border border-amber-200 rounded px-2 py-1 mb-1.5">
-          <div className="flex items-start gap-1 text-xs">
-            <StickyNote className="h-3 w-3 text-amber-700 flex-shrink-0 mt-0.5" />
-            <span className="text-amber-800 line-clamp-2">{reservation.notes}</span>
-          </div>
-        </div>
-      )}
-
-      {/* CAR KEYS NOTES (Only show if exists) */}
-      {reservation.carKeysNotes && (
-        <div className="bg-purple-50 border border-purple-200 rounded px-2 py-1 mb-1.5">
-          <div className="flex items-start gap-1 text-xs">
-            <Key className="h-3 w-3 text-purple-700 flex-shrink-0 mt-0.5" />
-            <span className="text-purple-800 line-clamp-1">{reservation.carKeysNotes}</span>
-          </div>
-        </div>
-      )}
-
-      {/* INVOICE INFO (Compact, Only show if exists) */}
-      {reservation.needsInvoice && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded px-2 py-1 mb-1.5">
-          <div className="flex items-center gap-2 text-xs flex-wrap">
-            {reservation.invoiceUrl ? (
-              <a 
-                href={reservation.invoiceUrl} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 text-yellow-700 hover:text-yellow-900 font-medium hover:underline"
-              >
-                <FileText className="h-3 w-3" />
-                <span>Фактура ✔</span>
-              </a>
-            ) : (
-              <div className="flex items-center gap-1 text-yellow-700">
-                <FileText className="h-3 w-3" />
-                <span>Фактура ✔</span>
+      {/* ROW 2: LICENSE PLATE - LARGEST, MOST PROMINENT */}
+      <div className="mb-3 bg-gray-50 border-2 border-gray-300 rounded-lg p-3">
+        <div className="flex items-center gap-2">
+          <Car className="h-8 w-8 text-gray-700 flex-shrink-0" />
+          <div className="flex-1">
+            <div className="font-black text-3xl text-gray-900 tracking-wide">
+              {reservation.licensePlate}
+            </div>
+            {reservation.licensePlate2 && (
+              <div className="text-sm text-gray-600 mt-1">
+                +{(reservation.numberOfCars || 1) - 1} допълнителни коли
               </div>
             )}
-            {reservation.companyName && (
-              <>
-                <span className="text-gray-400">|</span>
-                <span className="text-yellow-800 font-medium truncate">{reservation.companyName}</span>
-              </>
-            )}
-            {reservation.taxNumber && (
-              <>
-                <span className="text-gray-400">|</span>
-                <span className="text-yellow-800">{reservation.taxNumber}</span>
-              </>
-            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ROW 3: ARRIVAL TIME - VERY LARGE */}
+      <div className="mb-3 bg-blue-50 border-2 border-blue-300 rounded-lg p-3">
+        <div className="flex items-center gap-2">
+          <Calendar className="h-7 w-7 text-blue-700 flex-shrink-0" />
+          <div className="flex-1">
+            <div className="text-xs text-blue-600 font-semibold mb-1">ПРИСТИГА</div>
+            <div className="font-bold text-2xl text-blue-900">
+              {formatDateDisplay(reservation.arrivalDate)} {reservation.arrivalTime}
+            </div>
+            <div className="text-xs text-blue-700 mt-1 flex items-center gap-1">
+              <span>→ Напуска:</span>
+              <span className="font-semibold">{formatDateDisplay(reservation.departureDate)} {reservation.departureTime}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ROW 4: CUSTOMER NAME - LARGE */}
+      <div className="mb-3">
+        <div className="flex items-center gap-2">
+          <User className="h-6 w-6 text-gray-600 flex-shrink-0" />
+          <span className="font-bold text-xl text-gray-900">{reservation.name}</span>
+        </div>
+      </div>
+
+      {/* ROW 5: CONTACT INFO - SMALLER */}
+      <div className="mb-3 space-y-2">
+        <div className="flex items-center gap-2 text-base">
+          <Phone className="h-4 w-4 text-gray-500 flex-shrink-0" />
+          <a href={`tel:${reservation.phone}`} className="font-semibold text-blue-600 underline">
+            {reservation.phone}
+          </a>
+        </div>
+        <div className="flex items-center gap-2 text-sm">
+          <Mail className="h-4 w-4 text-gray-500 flex-shrink-0" />
+          <span className="text-gray-700 truncate">{reservation.email}</span>
+        </div>
+      </div>
+
+      {/* ROW 6: PASSENGERS & PRICE */}
+      <div className="flex items-center justify-between mb-3 bg-gray-50 border border-gray-200 rounded-lg p-2">
+        <div className="flex items-center gap-2 text-sm">
+          <Users className="h-4 w-4 text-gray-600" />
+          <span className="text-gray-700">{reservation.passengers} пътник • {reservation.numberOfCars || 1} кола</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <Euro className="h-5 w-5 text-gray-600" />
+          <span className="font-bold text-xl text-gray-900">€{reservation.finalPrice || reservation.totalPrice}</span>
+        </div>
+      </div>
+
+      {/* LATE WARNING - PROMINENT */}
+      {reservation.isLate && (
+        <div className="bg-red-100 border-2 border-red-500 rounded-lg p-3 mb-3">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-6 w-6 text-red-700 flex-shrink-0" />
+            <div className="flex-1">
+              <div className="font-black text-lg text-red-900">ЗАКЪСНЯВА</div>
+              <div className="text-red-800 font-semibold">Доплащане: €{reservation.lateSurcharge || 0}</div>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Cancellation/No-show/Decline Reasons (Compact) */}
+      {/* NOTES - PROMINENT IF EXISTS */}
+      {reservation.notes && (
+        <div className="bg-amber-100 border-2 border-amber-400 rounded-lg p-3 mb-3">
+          <div className="flex items-start gap-2">
+            <StickyNote className="h-5 w-5 text-amber-700 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <div className="text-xs text-amber-700 font-bold mb-1">БЕЛЕЖКА</div>
+              <div className="text-sm text-amber-900 font-medium">{reservation.notes}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CAR KEYS */}
+      {reservation.carKeys && (
+        <div className="bg-purple-100 border-2 border-purple-400 rounded-lg p-3 mb-3">
+          <div className="flex items-center gap-2">
+            <Key className="h-5 w-5 text-purple-700 flex-shrink-0" />
+            <div className="flex-1">
+              <div className="font-bold text-sm text-purple-900">
+                Ключове: {reservation.keyNumber || 'Да'}
+                {reservation.includeInCapacity === false && ' (Не включено в капацитета)'}
+              </div>
+              {reservation.carKeysNotes && (
+                <div className="text-xs text-purple-800 mt-1">{reservation.carKeysNotes}</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* INVOICE INFO */}
+      {reservation.needsInvoice && (
+        <div className="bg-yellow-100 border-2 border-yellow-400 rounded-lg p-3 mb-3">
+          <div className="flex items-start gap-2">
+            <FileText className="h-5 w-5 text-yellow-700 flex-shrink-0 mt-0.5" />
+            <div className="flex-1 space-y-1">
+              <div className="font-bold text-sm text-yellow-900">
+                {reservation.invoiceUrl ? (
+                  <a 
+                    href={reservation.invoiceUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="hover:underline"
+                  >
+                    Фактура ✔
+                  </a>
+                ) : (
+                  'Фактура изисквана'
+                )}
+              </div>
+              {reservation.companyName && (
+                <div className="text-xs text-yellow-800">{reservation.companyName}</div>
+              )}
+              {reservation.taxNumber && (
+                <div className="text-xs text-yellow-800">{reservation.taxNumber}</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CAPACITY INFO - SMALL */}
+      {showCapacityInfo && capacityInfo && (
+        <div className="text-xs text-gray-500 mb-3">
+          Капацитет: {capacityInfo.occupied}/{capacityInfo.total} ({capacityInfo.percentage}%)
+          {capacityInfo.leaving > 0 && (
+            <span className="text-green-600 ml-1">(-{capacityInfo.leaving})</span>
+          )}
+        </div>
+      )}
+
+      {/* CANCELLATION/DECLINE/NO-SHOW REASONS */}
       {reservation.cancellationReason && (
-        <div className="bg-red-50 border border-red-200 rounded px-2 py-1 mb-1.5">
-          <div className="text-xs text-red-700">
-            <span className="font-semibold">Причина:</span> {reservation.cancellationReason}
+        <div className="bg-red-100 border-2 border-red-400 rounded-lg p-3 mb-3">
+          <div className="text-sm text-red-800">
+            <span className="font-bold">Причина за отказ:</span> {reservation.cancellationReason}
           </div>
         </div>
       )}
 
       {reservation.noShowReason && (
-        <div className="bg-gray-100 border border-gray-300 rounded px-2 py-1 mb-1.5">
-          <div className="text-xs text-gray-700">
-            <span className="font-semibold">Причина:</span> {reservation.noShowReason}
+        <div className="bg-gray-200 border-2 border-gray-400 rounded-lg p-3 mb-3">
+          <div className="text-sm text-gray-800">
+            <span className="font-bold">Причина:</span> {reservation.noShowReason}
           </div>
         </div>
       )}
 
       {reservation.declineReason && (
-        <div className="bg-red-50 border border-red-200 rounded px-2 py-1 mb-1.5">
-          <div className="text-xs text-red-700">
-            <span className="font-semibold">Отхвърлена:</span> {reservation.declineReason}
+        <div className="bg-red-100 border-2 border-red-400 rounded-lg p-3 mb-3">
+          <div className="text-sm text-red-800">
+            <span className="font-bold">Отхвърлена:</span> {reservation.declineReason}
           </div>
         </div>
       )}
 
-      {/* Edit History (Compact) */}
-      {showEditHistory && reservation.editHistory && reservation.editHistory.length > 0 && (
-        <div className="text-xs text-gray-500 mb-1.5">
-          История: {reservation.editHistory.length} промени
-        </div>
-      )}
-
-      {/* Timestamps (Compact) */}
+      {/* TIMESTAMPS */}
       {showTimestamps && reservation.createdAt && (
-        <div className="text-xs text-gray-500 mb-1.5">
+        <div className="text-xs text-gray-500 mb-2">
           Създадена: {formatDateTimeDisplay(reservation.createdAt)}
         </div>
       )}
 
-      {/* ACTION BUTTONS (Slightly Smaller but Tappable) */}
-      {showActions && actions && (
-        <div className="flex items-center justify-end gap-1.5 pt-1.5 border-t border-gray-200">
-          {actions}
+      {/* ADDITIONAL LICENSE PLATES */}
+      {(reservation.licensePlate2 || reservation.licensePlate3 || reservation.licensePlate4 || reservation.licensePlate5) && (
+        <div className="mb-3 bg-gray-100 border border-gray-300 rounded-lg p-2">
+          <div className="text-xs font-bold text-gray-700 mb-1">Допълнителни номера:</div>
+          <div className="space-y-1">
+            {reservation.licensePlate2 && <div className="font-bold text-base">🚗 {reservation.licensePlate2}</div>}
+            {reservation.licensePlate3 && <div className="font-bold text-base">🚗 {reservation.licensePlate3}</div>}
+            {reservation.licensePlate4 && <div className="font-bold text-base">🚗 {reservation.licensePlate4}</div>}
+            {reservation.licensePlate5 && <div className="font-bold text-base">🚗 {reservation.licensePlate5}</div>}
+          </div>
         </div>
       )}
 
-      {/* Additional License Plates (Expandable Info) */}
-      {(reservation.licensePlate2 || reservation.licensePlate3 || reservation.licensePlate4 || reservation.licensePlate5) && (
-        <div className="mt-1.5 pt-1.5 border-t border-gray-100">
-          <div className="text-xs text-gray-600 space-y-0.5">
-            {reservation.licensePlate2 && <div>🚗 {reservation.licensePlate2}</div>}
-            {reservation.licensePlate3 && <div>🚗 {reservation.licensePlate3}</div>}
-            {reservation.licensePlate4 && <div>🚗 {reservation.licensePlate4}</div>}
-            {reservation.licensePlate5 && <div>🚗 {reservation.licensePlate5}</div>}
-          </div>
+      {/* ACTION BUTTONS - LARGE TOUCH TARGETS */}
+      {showActions && actions && (
+        <div className="pt-3 border-t-2 border-gray-200">
+          {actions}
         </div>
       )}
     </div>
