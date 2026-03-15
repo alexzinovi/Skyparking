@@ -1573,13 +1573,24 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
       dateString = getTodayDate();
     }
     
-    // Count only cars that have actually arrived (physically in parking lot)
-    // A car is in the parking lot if: status = 'arrived' AND arrivalDate <= today AND departureDate >= today
-    const carsInParking = bookings.filter(b => 
-      b.status === 'arrived' &&
-      b.arrivalDate <= dateString &&
-      b.departureDate >= dateString
-    ).reduce((sum, b) => sum + Number(b.numberOfCars || 1), 0);
+    // Count all cars that have status 'arrived' (physically in parking lot)
+    // Status 'arrived' means they've checked in and are currently in the parking
+    const arrivedBookings = bookings.filter(b => b.status === 'arrived');
+    
+    // Debug: Log all arrived bookings with their car counts
+    console.log('🚗 ARRIVED BOOKINGS DEBUG:');
+    arrivedBookings.forEach(b => {
+      const carCount = Number(b.numberOfCars) || 1;
+      console.log(`  - ${b.name} (${b.bookingCode || b.id}): numberOfCars = ${b.numberOfCars} → counted as ${carCount} cars`);
+    });
+    
+    const carsInParking = arrivedBookings.reduce((sum, b) => {
+      // Use Number() for conversion, but handle 0, null, undefined, "" as 1
+      const carCount = Number(b.numberOfCars) || 1;
+      return sum + carCount;
+    }, 0);
+    
+    console.log(`📊 TOTAL CARS IN PARKING: ${carsInParking} (from ${arrivedBookings.length} reservations)`);
     
     // Calculate percentage based on actual cars in parking (not confirmed reservations)
     const percentage = carsInParking > 0 ? Math.round((carsInParking / BASE_CAPACITY) * 100) : 0;
@@ -3347,7 +3358,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-base font-semibold">ЕИК / Булстат *</Label>
+                    <Label className="text-base font-semibold">ЕИ�� / Булстат *</Label>
                     <Input
                       value={bookingForm.taxNumber}
                       onChange={(e) => setBookingForm({...bookingForm, taxNumber: e.target.value})}
