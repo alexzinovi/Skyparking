@@ -2312,6 +2312,17 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                     </div>
                   )}
 
+                  {/* Car Keys Notes */}
+                  {booking.carKeysNotes && (
+                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mt-4">
+                      <div className="flex items-center text-base font-semibold text-purple-900 mb-2">
+                        <FileText className="h-5 w-5 mr-2" />
+                        {bg.carKeysNotes}
+                      </div>
+                      <div className="text-base text-purple-800">{booking.carKeysNotes}</div>
+                    </div>
+                  )}
+
                   {/* Cancellation/No-show reason */}
                   {booking.cancellationReason && (
                     <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-base space-y-1">
@@ -2814,18 +2825,8 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                     )}
                   </div>
 
-                  {/* Invoice URL field */}
-                  <div>
-                    <Label htmlFor="invoiceUrl" className="text-base font-semibold">URL на фактура</Label>
-                    <Input
-                      id="invoiceUrl"
-                      value={formData.invoiceUrl || ""}
-                      onChange={(e) => setFormData({ ...formData, invoiceUrl: e.target.value })}
-                      placeholder="https://example.com/invoice.pdf"
-                      className="bg-white h-12 text-base"
-                    />
-                    <p className="text-sm text-gray-500 mt-1">Въведете URL адрес към качената фактура (PDF, Google Drive, Dropbox, и т.н.)</p>
-                  </div>
+                  {/* Invoice URL field - REMOVED per user request */}
+                  {/* Invoices should be managed through external system */}
                 </div>
               )}
             </div>

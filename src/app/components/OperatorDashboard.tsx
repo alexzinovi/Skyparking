@@ -34,7 +34,9 @@ import {
   ChevronUp,
   ChevronLeft,
   ChevronRight,
-  RefreshCw
+  RefreshCw,
+  Key,
+  X
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "./ui/dialog";
 import { toast } from "sonner";
@@ -62,6 +64,10 @@ interface Booking {
   email: string;
   phone: string;
   licensePlate: string;
+  licensePlate2?: string;
+  licensePlate3?: string;
+  licensePlate4?: string;
+  licensePlate5?: string;
   arrivalDate: string;
   arrivalTime: string;
   departureDate: string;
@@ -70,6 +76,7 @@ interface Booking {
   numberOfCars?: number;
   totalPrice: number;
   carKeys?: boolean;
+  carKeysNotes?: string; // Notes about the car keys
   keyNumber?: string; // Physical key number in the key box
   includeInCapacity?: boolean; // Whether to include in extra capacity calculations
   needsInvoice?: boolean;
@@ -473,6 +480,11 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
   
   // Status filter for "all" tab
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  
+  // Additional filters for "all" tab
+  const [keysFilter, setKeysFilter] = useState<string>("all"); // "all", "with-keys", "without-keys"
+  const [invoiceFilter, setInvoiceFilter] = useState<string>("all"); // "all", "with-invoice", "without-invoice"
+  const [arrivalDateFilter, setArrivalDateFilter] = useState<string>(""); // Date string for filtering by arrival date
   
   // Filters for confirmed tab
   const [filterStartDate, setFilterStartDate] = useState("");
@@ -879,13 +891,32 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
       }
     }
     
+    // Apply car keys filter
+    if (keysFilter === "with-keys") {
+      filtered = filtered.filter(b => b.carKeys === true);
+    } else if (keysFilter === "without-keys") {
+      filtered = filtered.filter(b => !b.carKeys);
+    }
+    
+    // Apply invoice filter
+    if (invoiceFilter === "with-invoice") {
+      filtered = filtered.filter(b => b.needsInvoice === true);
+    } else if (invoiceFilter === "without-invoice") {
+      filtered = filtered.filter(b => !b.needsInvoice);
+    }
+    
+    // Apply arrival date filter
+    if (arrivalDateFilter) {
+      filtered = filtered.filter(b => b.arrivalDate === arrivalDateFilter);
+    }
+    
     return filtered.sort((a, b) => {
       // Sort by arrival date/time, newest first
       const aTime = new Date(`${a.arrivalDate}T${a.arrivalTime}`).getTime();
       const bTime = new Date(`${b.arrivalDate}T${b.arrivalTime}`).getTime();
       return bTime - aTime; // Newest first
     });
-  }, [bookings, searchQuery, statusFilter]);
+  }, [bookings, searchQuery, statusFilter, keysFilter, invoiceFilter, arrivalDateFilter]);
 
   // Helper function to get status badge for a booking
   const getStatusBadge = (booking: Booking) => {
@@ -1710,9 +1741,15 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-lg text-gray-700 font-medium">
             <div>📞 {booking.phone}</div>
-            <div>🚗 {booking.licensePlate}</div>
-            <div>📅 {formatDateDisplay(booking.arrivalDate)} {booking.arrivalTime}</div>
-            <div>📅 {formatDateDisplay(booking.departureDate)} {booking.departureTime}</div>
+            <div>
+              🚗 {booking.licensePlate}
+              {booking.licensePlate2 && <div className="ml-5">{booking.licensePlate2}</div>}
+              {booking.licensePlate3 && <div className="ml-5">{booking.licensePlate3}</div>}
+              {booking.licensePlate4 && <div className="ml-5">{booking.licensePlate4}</div>}
+              {booking.licensePlate5 && <div className="ml-5">{booking.licensePlate5}</div>}
+            </div>
+            <div>📅 От: {formatDateDisplay(booking.arrivalDate)} {booking.arrivalTime}</div>
+            <div>📅 До: {formatDateDisplay(booking.departureDate)} {booking.departureTime}</div>
             <div>🚙 {booking.numberOfCars || 1} кола/коли</div>
             <div>👥 {booking.passengers} пътник(а)</div>
             <div className="font-bold text-xl">💶 €{Number(booking.totalPrice).toFixed(2)}</div>
@@ -1756,6 +1793,18 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                 {booking.paymentMethod === "pay-on-leave" && "⏰ Ще плати при напускане"}
                 {booking.paymentStatus === "paid" && " ✓"}
               </Badge>
+            </div>
+          )}
+
+          {/* Car Keys Notes */}
+          {booking.carKeysNotes && (
+            <div className="mt-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+              <div className="text-purple-900 font-semibold text-base mb-2">
+                📝 Бележки за ключовете:
+              </div>
+              <div className="text-purple-800 text-base">
+                {booking.carKeysNotes}
+              </div>
             </div>
           )}
 
@@ -2191,6 +2240,14 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                           <div className="flex flex-wrap items-center gap-3 mb-4">
                             <User className="w-6 h-6 text-gray-500" />
                             <span className="font-bold text-2xl">{booking.name}</span>
+                            {booking.carKeys && (
+                              <Badge 
+                                variant="secondary" 
+                                className={`${booking.includeInCapacity === false ? 'bg-orange-100 text-orange-800' : ''} text-base py-1 px-3`}
+                              >
+                                🔑 С ключове{booking.keyNumber && ` - ${booking.keyNumber}`}{booking.includeInCapacity === false && ' 🚫'}
+                              </Badge>
+                            )}
                             {booking.needsInvoice && (
                               booking.invoiceUrl ? (
                                 <a 
@@ -2213,9 +2270,15 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                           </div>
                           <div className="grid grid-cols-2 gap-3 text-lg text-gray-700 font-medium">
                             <div>📞 {booking.phone}</div>
-                            <div>🚗 {booking.licensePlate}</div>
-                            <div>📅 {formatDateDisplay(booking.arrivalDate)} {booking.arrivalTime}</div>
-                            <div>📅 {formatDateDisplay(booking.departureDate)} {booking.departureTime}</div>
+                            <div>
+                              🚗 {booking.licensePlate}
+                              {booking.licensePlate2 && <div className="ml-5">{booking.licensePlate2}</div>}
+                              {booking.licensePlate3 && <div className="ml-5">{booking.licensePlate3}</div>}
+                              {booking.licensePlate4 && <div className="ml-5">{booking.licensePlate4}</div>}
+                              {booking.licensePlate5 && <div className="ml-5">{booking.licensePlate5}</div>}
+                            </div>
+                            <div>📅 От: {formatDateDisplay(booking.arrivalDate)} {booking.arrivalTime}</div>
+                            <div>📅 До: {formatDateDisplay(booking.departureDate)} {booking.departureTime}</div>
                             <div>🚙 {booking.numberOfCars || 1} кола/коли</div>
                             <div>👥 {booking.passengers} пътник(а)</div>
                             <div className="font-bold text-xl">💶 €{booking.totalPrice}</div>
@@ -2231,6 +2294,18 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                               </div>
                             )}
                           </div>
+                          
+                          {/* Car Keys Notes */}
+                          {booking.carKeysNotes && (
+                            <div className="mt-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                              <div className="text-purple-900 font-semibold text-base mb-2">
+                                📝 Бележки за ключовете:
+                              </div>
+                              <div className="text-purple-800 text-base">
+                                {booking.carKeysNotes}
+                              </div>
+                            </div>
+                          )}
                           {(() => {
                             const capacityOnArrival = calculateCapacityForSingleDate(
                               bookings,
@@ -2384,12 +2459,31 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                           </div>
                           <div className="grid grid-cols-2 gap-3 text-lg text-gray-700 font-medium">
                             <div>📞 {booking.phone}</div>
-                            <div>🚗 {booking.licensePlate}</div>
-                            <div>📅 {formatDateDisplay(booking.arrivalDate)} - {formatDateDisplay(booking.departureDate)}</div>
+                            <div>
+                              🚗 {booking.licensePlate}
+                              {booking.licensePlate2 && <div className="ml-5">{booking.licensePlate2}</div>}
+                              {booking.licensePlate3 && <div className="ml-5">{booking.licensePlate3}</div>}
+                              {booking.licensePlate4 && <div className="ml-5">{booking.licensePlate4}</div>}
+                              {booking.licensePlate5 && <div className="ml-5">{booking.licensePlate5}</div>}
+                            </div>
+                            <div>📅 От: {formatDateDisplay(booking.arrivalDate)} {booking.arrivalTime}</div>
+                            <div>📅 До: {formatDateDisplay(booking.departureDate)} {booking.departureTime}</div>
                             <div>🚙 {booking.numberOfCars || 1} кола/коли</div>
                             <div>👥 {booking.passengers} пътник(а)</div>
                             <div className="font-bold text-xl">💶 €{booking.totalPrice}</div>
                           </div>
+                          
+                          {/* Car Keys Notes */}
+                          {booking.carKeysNotes && (
+                            <div className="mt-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                              <div className="text-purple-900 font-semibold text-base mb-2">
+                                📝 Бележки за ключовете:
+                              </div>
+                              <div className="text-purple-800 text-base">
+                                {booking.carKeysNotes}
+                              </div>
+                            </div>
+                          )}
                           {(() => {
                             const capacityOnArrival = calculateCapacityForSingleDate(
                               bookings,
@@ -2672,16 +2766,20 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
             {/* All Bookings */}
             {activeTab === "all" && (
               <div className="space-y-6">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-                  <h2 className="text-3xl font-semibold">Всички резервации</h2>
-                  
+                <h2 className="text-3xl font-semibold mb-4">Всички резервации</h2>
+                
+                {/* Filter Controls */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                   {/* Status Filter */}
-                  <div className="flex items-center gap-3">
-                    <Filter className="w-5 h-5 text-gray-500" />
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <Filter className="w-4 h-4 inline mr-1" />
+                      Статус
+                    </label>
                     <select
                       value={statusFilter}
                       onChange={(e) => setStatusFilter(e.target.value)}
-                      className="px-4 py-2 text-base border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 bg-white"
+                      className="w-full px-4 py-2 text-base border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 bg-white"
                     >
                       <option value="all">Всички статуси ({statusCounts.all})</option>
                       <option value="new">🆕 Нови ({statusCounts.new})</option>
@@ -2693,11 +2791,96 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                       <option value="late">⏰ Закъснели ({statusCounts.late})</option>
                     </select>
                   </div>
+                  
+                  {/* Car Keys Filter */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <Key className="w-4 h-4 inline mr-1" />
+                      Ключове
+                    </label>
+                    <select
+                      value={keysFilter}
+                      onChange={(e) => setKeysFilter(e.target.value)}
+                      className="w-full px-4 py-2 text-base border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 bg-white"
+                    >
+                      <option value="all">Всички</option>
+                      <option value="with-keys">🔑 С ключове</option>
+                      <option value="without-keys">Без ключове</option>
+                    </select>
+                  </div>
+                  
+                  {/* Invoice Filter */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <FileText className="w-4 h-4 inline mr-1" />
+                      Фактура
+                    </label>
+                    <select
+                      value={invoiceFilter}
+                      onChange={(e) => setInvoiceFilter(e.target.value)}
+                      className="w-full px-4 py-2 text-base border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 bg-white"
+                    >
+                      <option value="all">Всички</option>
+                      <option value="with-invoice">📄 С фактура</option>
+                      <option value="without-invoice">Без фактура</option>
+                    </select>
+                  </div>
+                  
+                  {/* Arrival Date Filter */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <Calendar className="w-4 h-4 inline mr-1" />
+                      Дата на пристигане
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="date"
+                        value={arrivalDateFilter}
+                        onChange={(e) => setArrivalDateFilter(e.target.value)}
+                        className="flex-1 px-4 py-2 text-base border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 bg-white"
+                      />
+                      {arrivalDateFilter && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setArrivalDateFilter("")}
+                          className="px-3"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Results count and clear filters */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="text-lg font-medium text-gray-700">
+                    Показани: <span className="font-bold text-blue-600">{allBookings.length}</span> резервации
+                  </div>
+                  {(statusFilter !== "all" || keysFilter !== "all" || invoiceFilter !== "all" || arrivalDateFilter) && (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setStatusFilter("all");
+                        setKeysFilter("all");
+                        setInvoiceFilter("all");
+                        setArrivalDateFilter("");
+                      }}
+                      className="text-base"
+                    >
+                      <X className="w-4 h-4 mr-2" />
+                      Изчисти всички филтри
+                    </Button>
+                  )}
                 </div>
                 
                 {allBookings.length === 0 ? (
                   <Card className="p-16 text-center text-gray-500 text-xl">
-                    {searchQuery ? `Няма резултати за "${searchQuery}"` : statusFilter !== "all" ? "Няма резервации с този статус" : "Няма резервации"}
+                    {searchQuery ? `Няма резултати за "${searchQuery}"` : 
+                     (statusFilter !== "all" || keysFilter !== "all" || invoiceFilter !== "all" || arrivalDateFilter) ? 
+                     "Няма резервации, които отговарят на избраните филтри" : 
+                     "Няма резервации"}
                   </Card>
                 ) : (
                   allBookings.map(booking => (
@@ -2722,13 +2905,66 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                           <div className="grid grid-cols-2 gap-3 text-lg text-gray-700 font-medium">
                             <div>📞 {booking.phone}</div>
                             <div>✉️ {booking.email}</div>
-                            <div>🚗 {booking.licensePlate}</div>
-                            <div>📅 {formatDateDisplay(booking.arrivalDate)} - {formatDateDisplay(booking.departureDate)}</div>
-                            <div>🕐 {booking.arrivalTime} - {booking.departureTime}</div>
+                            <div>
+                              🚗 {booking.licensePlate}
+                              {booking.licensePlate2 && <div className="ml-5">{booking.licensePlate2}</div>}
+                              {booking.licensePlate3 && <div className="ml-5">{booking.licensePlate3}</div>}
+                              {booking.licensePlate4 && <div className="ml-5">{booking.licensePlate4}</div>}
+                              {booking.licensePlate5 && <div className="ml-5">{booking.licensePlate5}</div>}
+                            </div>
+                            <div>📅 От: {formatDateDisplay(booking.arrivalDate)} {booking.arrivalTime}</div>
+                            <div>📅 До: {formatDateDisplay(booking.departureDate)} {booking.departureTime}</div>
                             <div>🚙 {booking.numberOfCars || 1} кола/коли</div>
                             <div>👥 {booking.passengers} пътник(а)</div>
                             <div className="font-bold text-xl">💶 €{booking.finalPrice || booking.totalPrice}</div>
                           </div>
+                          
+                          {/* Car Keys Notes */}
+                          {booking.carKeysNotes && (
+                            <div className="mt-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                              <div className="text-purple-900 font-semibold text-base mb-2">
+                                📝 Бележки за ключовете:
+                              </div>
+                              <div className="text-purple-800 text-base">
+                                {booking.carKeysNotes}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Invoice Badge */}
+                          {booking.needsInvoice && (
+                            <div className="mt-3">
+                              {booking.invoiceUrl ? (
+                                <a 
+                                  href={booking.invoiceUrl} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                >
+                                  <Badge variant="outline" className="text-base py-1 px-3 bg-yellow-50 border-yellow-300 cursor-pointer hover:bg-yellow-100 transition-colors">
+                                    <FileText className="w-5 h-5 inline mr-1" />
+                                    Фактура
+                                  </Badge>
+                                </a>
+                              ) : (
+                                <Badge variant="outline" className="text-base py-1 px-3 bg-yellow-50 border-yellow-300">
+                                  <FileText className="w-5 h-5 inline mr-1" />
+                                  Фактура
+                                </Badge>
+                              )}
+                            </div>
+                          )}
+                          
+                          {/* Car Keys Badge */}
+                          {booking.carKeys && (
+                            <div className="mt-3">
+                              <Badge 
+                                variant="secondary" 
+                                className={`${booking.includeInCapacity === false ? 'bg-orange-100 text-orange-800' : ''} text-base py-1 px-3`}
+                              >
+                                🔑 С ключове{booking.keyNumber && ` - ${booking.keyNumber}`}{booking.includeInCapacity === false && ' 🚫'}
+                              </Badge>
+                            </div>
+                          )}
                           {booking.paymentMethod && (
                             <div className="mt-3">
                               <Badge 
