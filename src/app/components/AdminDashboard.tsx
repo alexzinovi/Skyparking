@@ -42,6 +42,7 @@ import { DiscountManager } from "./DiscountManager";
 import { SettingsManager } from "./SettingsManager";
 import { RevenueManagement } from "./RevenueManagement";
 import { calculatePrice } from "@/app/utils/pricing";
+import { ReservationCard, type ReservationData } from "./ReservationCard";
 
 const projectId = "dbybybmjjeeocoecaewv";
 const publicAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRieWJ5Ym1qamVlb2NvZWNhZXd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODgxMzAsImV4cCI6MjA4MjA2NDEzMH0.fMZ3Yi5gZpE6kBBz-y1x0FKZcGczxSJZ9jL-Zeau340";
@@ -192,7 +193,7 @@ const bg = {
   carKeys: "Ключове от кола",
   carKeysYes: "ДА - можем да преместим",
   carKeysNo: "НЕ - няма ключове",
-  carKeysNotes: "Бележки за ключовете",
+  carKeysNotes: "Бележки за ключовет��",
   carKeysNotesPlaceholder: "Напр.: Ключове оставени в офиса, паркирана в зона B...",
   keyNumber: "Номер на ключ",
   keyNumberPlaceholder: "напр., Ключ #12",
@@ -1210,6 +1211,95 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
     );
   };
 
+  // Render action buttons for a booking
+  const renderBookingActions = (booking: Booking) => {
+    return (
+      <div className="flex flex-wrap gap-2 sm:gap-3">
+        {/* Context-aware action buttons */}
+        {booking.status === "new" && (
+          <>
+            <Button
+              className="bg-green-600 hover:bg-green-700 text-base sm:text-lg py-5 sm:py-6 px-4 sm:px-6"
+              onClick={() => acceptBooking(booking)}
+            >
+              <Check className="h-5 w-5 sm:h-6 sm:w-6 mr-2" />
+              {bg.accept}
+            </Button>
+            <Button
+              variant="destructive"
+              className="text-base sm:text-lg py-5 sm:py-6 px-4 sm:px-6"
+              onClick={() => cancelBooking(booking)}
+            >
+              <X className="h-5 w-5 sm:h-6 sm:w-6 mr-2" />
+              {bg.reject}
+            </Button>
+          </>
+        )}
+        
+        {booking.status === "confirmed" && (
+          <>
+            <Button
+              className="bg-blue-600 hover:bg-blue-700 text-base sm:text-lg py-5 sm:py-6 px-4 sm:px-6"
+              onClick={() => markArrived(booking)}
+            >
+              <LogIn className="h-5 w-5 sm:h-6 sm:w-6 mr-2" />
+              {bg.markArrived}
+            </Button>
+            <Button
+              variant="outline"
+              className="text-base sm:text-lg py-5 sm:py-6 px-4 sm:px-6"
+              onClick={() => markNoShow(booking)}
+            >
+              <XCircle className="h-5 w-5 sm:h-6 sm:w-6 mr-2" />
+              {bg.markNoShow}
+            </Button>
+            <Button
+              variant="destructive"
+              className="text-base sm:text-lg py-5 sm:py-6 px-4 sm:px-6"
+              onClick={() => cancelBooking(booking)}
+            >
+              <X className="h-5 w-5 sm:h-6 sm:w-6 mr-2" />
+              {bg.reject}
+            </Button>
+          </>
+        )}
+        
+        {booking.status === "arrived" && (
+          <Button
+            className="bg-green-600 hover:bg-green-700 text-base sm:text-lg py-5 sm:py-6 px-4 sm:px-6"
+            onClick={() => checkout(booking)}
+          >
+            <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 mr-2" />
+            {bg.checkout}
+          </Button>
+        )}
+        
+        {/* Edit and Delete based on permissions */}
+        {permissions.includes("edit_bookings") && (
+          <Button
+            variant="outline"
+            className="text-base sm:text-lg py-5 sm:py-6 px-4 sm:px-6"
+            onClick={() => {
+              setEditingBooking(booking);
+              setFormData(booking);
+            }}
+          >
+            <Edit className="h-5 w-5 sm:h-6 sm:w-6" />
+          </Button>
+        )}
+        {permissions.includes("delete_bookings") && (
+          <Button
+            variant="destructive"
+            className="text-base sm:text-lg py-5 sm:py-6 px-4 sm:px-6"
+            onClick={() => deleteBooking(booking.id)}
+          >
+            <Trash2 className="h-5 w-5 sm:h-6 sm:w-6" />
+          </Button>
+        )}
+      </div>
+    );
+  };
+
   const getActionName = (action: string) => {
     switch (action) {
       case "accept": return bg.actionAccept;
@@ -2062,356 +2152,14 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
         ) : (
           <div className="grid gap-4">
             {filteredBookings.map((booking) => (
-              <Card key={booking.id} className="p-6">
-                <div className="space-y-4">
-                  {/* Booking Code at the very top */}
-                  {booking.bookingCode && (
-                    <div className="mb-2 inline-block bg-[#f1c933] text-[#073590] font-bold text-lg px-4 py-2 rounded-lg">
-                      📋 {booking.bookingCode}
-                    </div>
-                  )}
-                  
-                  {/* Top row - Status and Actions */}
-                  <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b">
-                    <div className="flex items-center gap-3">
-                      {getStatusBadge(booking.status)}
-                      {getPaymentStatusBadge(booking.paymentStatus)}
-                      {booking.paymentMethod && (
-                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300 text-base py-1 px-3">
-                          {booking.paymentMethod === "cash" && "💰 В брой"}
-                          {booking.paymentMethod === "card" && "💳 С карта"}
-                          {booking.paymentMethod === "pay-on-leave" && "⏰ При напускане"}
-                        </Badge>
-                      )}
-                      {booking.carKeys && (
-                        <Badge variant="outline" className={`${booking.includeInCapacity === false ? 'bg-orange-50 text-orange-700 border-orange-300' : 'bg-purple-50 text-purple-700 border-purple-300'} text-base py-1 px-3`}>
-                          <Key className="h-4 w-4 mr-1" />
-                          {bg.carKeysYes}
-                          {booking.keyNumber && ` - ${booking.keyNumber}`}
-                          {booking.includeInCapacity === false && ' 🚫'}
-                        </Badge>
-                      )}
-                      {booking.capacityOverride && (
-                        <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-300 text-base py-1 px-3">
-                          <AlertTriangle className="h-4 w-4 mr-1" />
-                          Capacity Override
-                        </Badge>
-                      )}
-                    </div>
-                    
-                    <div className="flex flex-wrap gap-2 sm:gap-3">
-                      {/* Context-aware action buttons */}
-                      {booking.status === "new" && (
-                        <>
-                          <Button
-                            className="bg-green-600 hover:bg-green-700 text-base sm:text-lg py-5 sm:py-6 px-4 sm:px-6"
-                            onClick={() => acceptBooking(booking)}
-                          >
-                            <Check className="h-5 w-5 sm:h-6 sm:w-6 mr-2" />
-                            {bg.accept}
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            className="text-base sm:text-lg py-5 sm:py-6 px-4 sm:px-6"
-                            onClick={() => cancelBooking(booking)}
-                          >
-                            <X className="h-5 w-5 sm:h-6 sm:w-6 mr-2" />
-                            {bg.reject}
-                          </Button>
-                        </>
-                      )}
-                      
-                      {booking.status === "confirmed" && (
-                        <>
-                          <Button
-                            className="bg-blue-600 hover:bg-blue-700 text-base sm:text-lg py-5 sm:py-6 px-4 sm:px-6"
-                            onClick={() => markArrived(booking)}
-                          >
-                            <LogIn className="h-5 w-5 sm:h-6 sm:w-6 mr-2" />
-                            {bg.markArrived}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            className="text-base sm:text-lg py-5 sm:py-6 px-4 sm:px-6"
-                            onClick={() => markNoShow(booking)}
-                          >
-                            <XCircle className="h-5 w-5 sm:h-6 sm:w-6 mr-2" />
-                            {bg.markNoShow}
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            className="text-base sm:text-lg py-5 sm:py-6 px-4 sm:px-6"
-                            onClick={() => cancelBooking(booking)}
-                          >
-                            <X className="h-5 w-5 sm:h-6 sm:w-6 mr-2" />
-                            {bg.reject}
-                          </Button>
-                        </>
-                      )}
-                      
-                      {booking.status === "arrived" && (
-                        <Button
-                          className="bg-green-600 hover:bg-green-700 text-base sm:text-lg py-5 sm:py-6 px-4 sm:px-6"
-                          onClick={() => checkout(booking)}
-                        >
-                          <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 mr-2" />
-                          {bg.checkout}
-                        </Button>
-                      )}
-                      
-                      {/* Edit and Delete based on permissions */}
-                      {permissions.includes("edit_bookings") && (
-                        <Button
-                          variant="outline"
-                          className="text-base sm:text-lg py-5 sm:py-6 px-4 sm:px-6"
-                          onClick={() => {
-                            setEditingBooking(booking);
-                            setFormData(booking);
-                          }}
-                        >
-                          <Edit className="h-5 w-5 sm:h-6 sm:w-6" />
-                        </Button>
-                      )}
-                      {permissions.includes("delete_bookings") && (
-                        <Button
-                          variant="destructive"
-                          className="text-base sm:text-lg py-5 sm:py-6 px-4 sm:px-6"
-                          onClick={() => deleteBooking(booking.id)}
-                        >
-                          <Trash2 className="h-5 w-5 sm:h-6 sm:w-6" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Booking details */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div>
-                      <div className="flex items-center text-lg text-gray-600 mb-3 font-medium">
-                        <User className="h-6 w-6 mr-2" />
-                        {bg.customer}
-                      </div>
-                      <div className="font-bold text-xl mb-1">{booking.name}</div>
-                      <div className="text-lg text-gray-700">{booking.email}</div>
-                      <div className="text-lg text-gray-700">{booking.phone}</div>
-                    </div>
-
-                    <div>
-                      <div className="flex items-center text-lg text-gray-600 mb-3 font-medium">
-                        <Calendar className="h-6 w-6 mr-2" />
-                        {bg.dates}
-                      </div>
-                      <div className="text-lg space-y-1">
-                        <div><strong>{bg.arrival}:</strong> {formatDateDisplay(booking.arrivalDate)} {booking.arrivalTime}</div>
-                        <div><strong>{bg.departure}:</strong> {formatDateDisplay(booking.departureDate)} {booking.departureTime}</div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex items-center text-lg text-gray-600 mb-3 font-medium">
-                        <Car className="h-6 w-6 mr-2" />
-                        {booking.numberOfCars && booking.numberOfCars > 1 ? bg.vehicles : bg.vehicle}
-                      </div>
-                      <div className="font-bold text-xl mb-1">{booking.licensePlate}</div>
-                      {booking.licensePlate2 && <div className="text-lg text-gray-700">{booking.licensePlate2}</div>}
-                      {booking.licensePlate3 && <div className="text-lg text-gray-700">{booking.licensePlate3}</div>}
-                      {booking.licensePlate4 && <div className="text-lg text-gray-700">{booking.licensePlate4}</div>}
-                      {booking.licensePlate5 && <div className="text-lg text-gray-700">{booking.licensePlate5}</div>}
-                      <div className="text-lg text-gray-700 mt-2">{booking.passengers} {bg.passengers}</div>
-                    </div>
-
-                    <div>
-                      <div className="flex items-center text-lg text-gray-600 mb-3 font-medium">
-                        <Euro className="h-6 w-6 mr-2" />
-                        {bg.payment}
-                      </div>
-                      <div className="font-bold text-3xl text-gray-900">€{booking.totalPrice}</div>
-                      {booking.needsInvoice && (
-                        <div className="mt-3">
-                          {booking.invoiceUrl ? (
-                            <a 
-                              href={booking.invoiceUrl} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="inline-block"
-                            >
-                              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300 text-base py-1 px-3 cursor-pointer hover:bg-blue-100 transition-colors">
-                                <FileText className="h-4 w-4 mr-1" />
-                                {bg.invoiceRequested}
-                              </Badge>
-                            </a>
-                          ) : (
-                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300 text-base py-1 px-3">
-                              <FileText className="h-4 w-4 mr-1" />
-                              {bg.invoiceRequested}
-                            </Badge>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Invoice details */}
-                  {booking.needsInvoice && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
-                      <div className="flex items-center text-base font-semibold text-blue-900 mb-3">
-                        <FileText className="h-5 w-5 mr-2" />
-                        {bg.invoiceDetails}
-                      </div>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-base">
-                        {booking.companyName && (
-                          <div>
-                            <span className="text-gray-600">{bg.company}:</span>
-                            <div className="font-medium">{booking.companyName}</div>
-                          </div>
-                        )}
-                        {booking.companyOwner && (
-                          <div>
-                            <span className="text-gray-600">{bg.owner}:</span>
-                            <div className="font-medium">{booking.companyOwner}</div>
-                          </div>
-                        )}
-                        {booking.taxNumber && (
-                          <div>
-                            <span className="text-gray-600">{bg.taxNumber}:</span>
-                            <div className="font-medium">{booking.taxNumber}</div>
-                          </div>
-                        )}
-                        {booking.isVAT && booking.vatNumber && (
-                          <div>
-                            <span className="text-gray-600">{bg.vatNumber}:</span>
-                            <div className="font-medium text-green-700">{booking.vatNumber}</div>
-                          </div>
-                        )}
-                        {booking.city && (
-                          <div>
-                            <span className="text-gray-600">{bg.city}:</span>
-                            <div className="font-medium">{booking.city}</div>
-                          </div>
-                        )}
-                        {booking.address && (
-                          <div className="md:col-span-2">
-                            <span className="text-gray-600">{bg.address}:</span>
-                            <div className="font-medium">{booking.address}</div>
-                          </div>
-                        )}
-                        {booking.invoiceUrl && (
-                          <div className="md:col-span-3 mt-2 pt-2 border-t border-blue-300">
-                            <a 
-                              href={booking.invoiceUrl} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 text-blue-700 hover:text-blue-900 font-medium hover:underline"
-                            >
-                              <FileText className="h-5 w-5" />
-                              Отвори фактура (PDF)
-                            </a>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Car Keys Notes */}
-                  {booking.carKeysNotes && (
-                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mt-4">
-                      <div className="flex items-center text-base font-semibold text-purple-900 mb-2">
-                        <FileText className="h-5 w-5 mr-2" />
-                        {bg.carKeysNotes}
-                      </div>
-                      <div className="text-base text-purple-800">{booking.carKeysNotes}</div>
-                    </div>
-                  )}
-
-                  {/* Cancellation/No-show reason */}
-                  {booking.cancellationReason && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-base space-y-1">
-                      <div>
-                        <span className="font-semibold text-red-900">{bg.reason}:</span>
-                        <span className="text-red-700 ml-2">{booking.cancellationReason}</span>
-                      </div>
-                      {booking.cancelledBy && (
-                        <div className="text-sm text-red-600">
-                          <span className="font-semibold">{bg.cancelledBy}:</span>
-                          <span className="ml-2">{booking.cancelledBy}</span>
-                          {booking.cancelledAt && (
-                            <span className="ml-2">({bg.at} {formatDateTimeDisplay(booking.cancelledAt)})</span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  {booking.noShowReason && (
-                    <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 text-base space-y-1">
-                      <div>
-                        <span className="font-semibold text-gray-900">{bg.reason}:</span>
-                        <span className="text-gray-700 ml-2">{booking.noShowReason}</span>
-                      </div>
-                      {booking.noShowBy && (
-                        <div className="text-sm text-gray-600">
-                          <span className="font-semibold">{bg.noShowBy}:</span>
-                          <span className="ml-2">{booking.noShowBy}</span>
-                          {booking.noShowAt && (
-                            <span className="ml-2">({bg.at} {formatDateTimeDisplay(booking.noShowAt)})</span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  {booking.declineReason && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-base space-y-1">
-                      <div>
-                        <span className="font-semibold text-red-900">{bg.reason}:</span>
-                        <span className="text-red-700 ml-2">{booking.declineReason}</span>
-                      </div>
-                      {booking.declinedBy && (
-                        <div className="text-sm text-red-600">
-                          <span className="font-semibold">{bg.cancelledBy}:</span>
-                          <span className="ml-2">{booking.declinedBy}</span>
-                          {booking.declinedAt && (
-                            <span className="ml-2">({bg.at} {formatDateTimeDisplay(booking.declinedAt)})</span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Edit History */}
-                  {booking.editHistory && booking.editHistory.length > 0 && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
-                      <div className="flex items-center text-base font-semibold text-blue-900 mb-3">
-                        <Edit className="h-5 w-5 mr-2" />
-                        {bg.editHistory}
-                      </div>
-                      <div className="space-y-3">
-                        {booking.editHistory.map((edit, index) => (
-                          <div key={index} className="bg-white rounded p-3 border border-blue-100">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="font-medium text-blue-900">{edit.editor}</span>
-                              <span className="text-sm text-gray-600">{formatDateTimeDisplay(edit.timestamp)}</span>
-                            </div>
-                            <div className="text-sm text-gray-700">
-                              <span className="font-semibold">{bg.changes}:</span>
-                              <div className="mt-1 ml-2">{edit.changes}</div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Timestamps */}
-                  <div className="text-sm text-gray-500 pt-3 border-t space-y-1">
-                    <div>{bg.created}: {formatDateTimeDisplay(booking.createdAt)}</div>
-                    {booking.updatedAt && (
-                      <div>{bg.updated}: {formatDateTimeDisplay(booking.updatedAt)}</div>
-                    )}
-                  </div>
-
-                  {/* Status history */}
-                  {formatStatusHistory(booking.statusHistory)}
-                </div>
-              </Card>
+              <ReservationCard
+                key={booking.id}
+                reservation={booking as ReservationData}
+                showActions={true}
+                actions={renderBookingActions(booking)}
+                showTimestamps={true}
+                showEditHistory={true}
+              />
             ))}
           </div>
         )}
