@@ -1122,7 +1122,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
 
   // Mark as no-show
   const handleNoShow = async (booking: Booking) => {
-    if (!confirm(`Сигурни ли сте, че искате да маркирате ${booking.name} като неявил се?`)) return;
+    if (!confirm(`Сигурни ли сте, че искате да ма��кирате ${booking.name} като неявил се?`)) return;
 
     try {
       const token = localStorage.getItem("skyparking-token");
@@ -1745,6 +1745,28 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
 
   // Render action buttons based on tab type
   const renderTabActions = (booking: Booking, showActions: string) => {
+    if (showActions === "new") {
+      return (
+        <div className="flex flex-col gap-3 w-full">
+          <Button 
+            onClick={() => handleAcceptReservation(booking)}
+            className="bg-green-600 hover:bg-green-700 text-white font-bold text-lg h-14 w-full"
+          >
+            <CheckCircle className="w-6 h-6 mr-2" />
+            ✔ Приеми
+          </Button>
+          <Button 
+            variant="destructive"
+            onClick={() => handleDeclineReservation(booking)}
+            className="font-bold text-lg h-14 w-full"
+          >
+            <XCircle className="w-6 h-6 mr-2" />
+            ✖ Откажи
+          </Button>
+        </div>
+      );
+    }
+    
     if (showActions === "arriving") {
       return (
         <div className="flex flex-col gap-3 w-full">

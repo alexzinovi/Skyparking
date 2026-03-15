@@ -1261,16 +1261,16 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
               className="bg-green-600 hover:bg-green-700 text-white font-bold text-lg h-14 w-full"
               onClick={() => acceptBooking(booking)}
             >
-              <Check className="h-6 w-6 mr-2" />
-              {bg.accept}
+              <CheckCircle className="h-6 w-6 mr-2" />
+              ✔ {bg.accept}
             </Button>
             <Button
               variant="destructive"
               className="font-bold text-lg h-14 w-full"
               onClick={() => cancelBooking(booking)}
             >
-              <X className="h-6 w-6 mr-2" />
-              {bg.reject}
+              <XCircle className="h-6 w-6 mr-2" />
+              ✖ {bg.reject}
             </Button>
           </>
         )}
