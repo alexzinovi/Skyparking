@@ -42,6 +42,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { toast } from "sonner";
 import type { User as UserType } from "./LoginScreen";
 import { calculatePrice as calculateDynamicPrice } from "@/app/utils/pricing";
+import { ReservationCard, type ReservationData } from "./ReservationCard";
 
 const projectId = "dbybybmjjeeocoecaewv";
 const publicAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRieWJ5Ym1qamVlb2NvZWNhZXd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODgxMzAsImV4cCI6MjA4MjA2NDEzMH0.fMZ3Yi5gZpE6kBBz-y1x0FKZcGczxSJZ9jL-Zeau340";
@@ -918,6 +919,23 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
     });
   }, [bookings, searchQuery, statusFilter, keysFilter, invoiceFilter, arrivalDateFilter]);
 
+  // Render action buttons for operator
+  const renderOperatorActions = (booking: Booking) => {
+    return (
+      <Button
+        onClick={() => {
+          handleEditReservation(booking);
+          setShowBookingForm(true);
+        }}
+        className="h-12 text-base"
+        variant="outline"
+      >
+        <Edit className="w-5 h-5 mr-2" />
+        Редактирай
+      </Button>
+    );
+  };
+
   // Helper function to get status badge for a booking
   const getStatusBadge = (booking: Booking) => {
     const badges = [];
@@ -1376,7 +1394,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
     }
 
     if (!manualPrice || parseFloat(manualPrice) <= 0) {
-      toast.error("Моля въведете валидна цена");
+      toast.error("Моля в��ведете валидна цена");
       return;
     }
 
@@ -1686,6 +1704,128 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
     };
   }, [bookings, shiftRange]);
 
+  // Render action buttons based on tab type
+  const renderTabActions = (booking: Booking, showActions: string) => {
+    if (showActions === "arriving") {
+      return (
+        <div className="flex flex-wrap gap-2">
+          <Button 
+            size="sm" 
+            onClick={() => handleArrived(booking)}
+            className="bg-green-600 hover:bg-green-700 whitespace-nowrap text-lg px-5 py-3"
+          >
+            <CheckCircle className="w-6 h-6 mr-2" />
+            Пристигна
+          </Button>
+          <Button 
+            size="sm" 
+            variant="destructive"
+            onClick={() => handleNoShow(booking)}
+            className="whitespace-nowrap text-lg px-5 py-3"
+          >
+            <XCircle className="w-6 h-6 mr-2" />
+            Не се яви
+          </Button>
+        </div>
+      );
+    }
+
+    if (showActions === "leaving") {
+      if (booking.isLate) {
+        return (
+          <Button 
+            size="sm" 
+            onClick={() => handleCheckout(booking)}
+            className="bg-blue-600 hover:bg-blue-700 whitespace-nowrap text-lg px-5 py-3"
+          >
+            <CheckCircle className="w-6 h-6 mr-2" />
+            Напусна (с доплащане)
+          </Button>
+        );
+      }
+      return (
+        <div className="flex flex-wrap gap-3">
+          <Button 
+            size="sm" 
+            onClick={() => handleCheckout(booking)}
+            className="bg-blue-600 hover:bg-blue-700 whitespace-nowrap text-lg px-5 py-3"
+          >
+            <CheckCircle className="w-6 h-6 mr-2" />
+            Напусна
+          </Button>
+          <Button 
+            size="sm" 
+            variant="destructive"
+            onClick={() => handleMarkLate(booking)}
+            className="bg-red-600 hover:bg-red-700 whitespace-nowrap text-lg px-5 py-3"
+          >
+            <AlertCircle className="w-6 h-6 mr-2" />
+            Закъснява
+          </Button>
+        </div>
+      );
+    }
+    
+    if (showActions === "exits") {
+      if (booking.status === "new" || booking.status === "pending") {
+        return (
+          <Badge variant="outline" className="text-base py-2 px-4 bg-yellow-50 border-yellow-400">
+            Очаква потвърждение
+          </Badge>
+        );
+      }
+      if (booking.status === "confirmed") {
+        return (
+          <Button 
+            size="sm" 
+            onClick={() => handleArrived(booking)}
+            className="bg-green-600 hover:bg-green-700 whitespace-nowrap text-lg px-5 py-3"
+          >
+            <CheckCircle className="w-6 h-6 mr-2" />
+            Пристигна
+          </Button>
+        );
+      }
+      if ((booking.status === "arrived" || booking.status === "late") && booking.isLate) {
+        return (
+          <Button 
+            size="sm" 
+            onClick={() => handleCheckout(booking)}
+            className="bg-blue-600 hover:bg-blue-700 whitespace-nowrap text-lg px-5 py-3"
+          >
+            <CheckCircle className="w-6 h-6 mr-2" />
+            Напусна (с доплащане)
+          </Button>
+        );
+      }
+      if ((booking.status === "arrived" || booking.status === "late") && !booking.isLate) {
+        return (
+          <div className="flex flex-wrap gap-3">
+            <Button 
+              size="sm" 
+              onClick={() => handleCheckout(booking)}
+              className="bg-blue-600 hover:bg-blue-700 whitespace-nowrap text-lg px-5 py-3"
+            >
+              <CheckCircle className="w-6 h-6 mr-2" />
+              Напусна
+            </Button>
+            <Button 
+              size="sm" 
+              variant="destructive"
+              onClick={() => handleMarkLate(booking)}
+              className="bg-red-600 hover:bg-red-700 whitespace-nowrap text-lg px-5 py-3"
+            >
+              <AlertCircle className="w-6 h-6 mr-2" />
+              Закъснява
+            </Button>
+          </div>
+        );
+      }
+    }
+
+    return null;
+  };
+
   // Render booking card
   const renderBookingCard = (booking: Booking, showActions: string) => {
     // Calculate capacity for the arrival date specifically
@@ -1696,249 +1836,16 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
     );
     
     return (
-    <Card key={booking.id} className="p-4 sm:p-6">
-      <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
-        <div className="flex-1 w-full">
-          {/* Booking Code at the top */}
-          {booking.bookingCode && (
-            <div className="mb-3 inline-block bg-[#f1c933] text-[#073590] font-bold text-lg px-4 py-2 rounded-lg">
-              📋 {booking.bookingCode}
-            </div>
-          )}
-          
-          <div className="flex flex-wrap items-center gap-3 mb-4">
-            <User className="w-6 h-6 text-gray-500" />
-            <span className="font-bold text-2xl">{booking.name}</span>
-            {booking.carKeys && (
-              <Badge 
-                variant="secondary" 
-                className={`${booking.includeInCapacity === false ? 'bg-orange-100 text-orange-800' : ''} text-base py-1 px-3`}
-              >
-                🔑 С ключове{booking.keyNumber && ` - ${booking.keyNumber}`}{booking.includeInCapacity === false && ' 🚫'}
-              </Badge>
-            )}
-            {booking.needsInvoice && (
-              booking.invoiceUrl ? (
-                <a 
-                  href={booking.invoiceUrl} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <Badge variant="outline" className="text-base py-1 px-3 bg-yellow-50 border-yellow-300 cursor-pointer hover:bg-yellow-100 transition-colors">
-                    <FileText className="w-5 h-5 inline mr-1" />
-                    Фактура
-                  </Badge>
-                </a>
-              ) : (
-                <Badge variant="outline" className="text-base py-1 px-3 bg-yellow-50 border-yellow-300">
-                  <FileText className="w-5 h-5 inline mr-1" />
-                  Фактура
-                </Badge>
-              )
-            )}
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-lg text-gray-700 font-medium">
-            <div>📞 {booking.phone}</div>
-            <div>
-              🚗 {booking.licensePlate}
-              {booking.licensePlate2 && <div className="ml-5">{booking.licensePlate2}</div>}
-              {booking.licensePlate3 && <div className="ml-5">{booking.licensePlate3}</div>}
-              {booking.licensePlate4 && <div className="ml-5">{booking.licensePlate4}</div>}
-              {booking.licensePlate5 && <div className="ml-5">{booking.licensePlate5}</div>}
-            </div>
-            <div>📅 От: {formatDateDisplay(booking.arrivalDate)} {booking.arrivalTime}</div>
-            <div>📅 До: {formatDateDisplay(booking.departureDate)} {booking.departureTime}</div>
-            <div>🚙 {booking.numberOfCars || 1} кола/коли</div>
-            <div>👥 {booking.passengers} пътник(а)</div>
-            <div className="font-bold text-xl">💶 €{Number(booking.totalPrice).toFixed(2)}</div>
-            
-            {/* Show discount if applied */}
-            {booking.discountApplied && booking.basePrice && (
-              <div className="text-base text-green-600 font-semibold col-span-1 sm:col-span-2">
-                🎫 Отстъпка {booking.discountCode}: 
-                {booking.discountApplied.discountType === 'percentage' 
-                  ? ` -${booking.discountApplied.discountValue}%` 
-                  : ` -€${booking.discountApplied.discountValue}`}
-                {' '}(от €{Number(booking.basePrice).toFixed(2)})
-              </div>
-            )}
-          </div>
-
-          {/* Capacity info */}
-          <div className="mt-4">
-            <div className="text-base text-gray-600 font-medium">
-              Капацитет за {formatDateDisplay(booking.arrivalDate)}: {capacityOnArrival.occupied}/{capacityOnArrival.total} ({capacityOnArrival.percentage}%)
-              {capacityOnArrival.leaving > 0 && (
-                <span className="text-green-600 ml-2">
-                  (-{capacityOnArrival.leaving} напускат)
-                </span>
-              )}
-            </div>
-          </div>
-
-          {booking.paymentMethod && (
-            <div className="mt-3">
-              <Badge 
-                variant={booking.paymentStatus === "paid" ? "default" : "secondary"} 
-                className={`text-base py-1 px-3 ${
-                  booking.paymentMethod === "pay-on-leave" 
-                    ? "bg-orange-100 text-orange-800 border-orange-300 font-semibold" 
-                    : ""
-                }`}
-              >
-                {booking.paymentMethod === "cash" && "💰 В брой"}
-                {booking.paymentMethod === "card" && "💳 С карта"}
-                {booking.paymentMethod === "pay-on-leave" && "⏰ Ще плати при напускане"}
-                {booking.paymentStatus === "paid" && " ✓"}
-              </Badge>
-            </div>
-          )}
-
-          {/* Car Keys Notes */}
-          {booking.carKeysNotes && (
-            <div className="mt-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
-              <div className="text-purple-900 font-semibold text-base mb-2">
-                📝 Бележки за ключовете:
-              </div>
-              <div className="text-purple-800 text-base">
-                {booking.carKeysNotes}
-              </div>
-            </div>
-          )}
-
-          {/* Late warning */}
-          {booking.isLate && (
-            <div className="mt-4 p-5 bg-red-100 border-2 border-red-500 rounded-lg">
-              <div className="text-red-900 font-bold text-2xl uppercase mb-3">
-                ⚠️ ТОЗИ КЛИЕНТ ЗАКЪСНЯВА
-              </div>
-              <div className="text-red-800 text-xl font-bold">
-                Доплащане: €{booking.lateSurcharge || 0}
-              </div>
-              <div className="text-red-700 text-base mt-2">
-                Оригинална дата на напускане: {booking.originalDepartureDate} {booking.originalDepartureTime}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Action buttons */}
-        {showActions === "arriving" && (
-          <div className="flex flex-row sm:flex-col gap-2 w-full sm:w-auto">
-            <Button 
-              size="sm" 
-              onClick={() => handleArrived(booking)}
-              className="bg-green-600 hover:bg-green-700 whitespace-nowrap text-lg px-5 py-3"
-            >
-              <CheckCircle className="w-6 h-6 mr-2" />
-              Пристигна
-            </Button>
-            <Button 
-              size="sm" 
-              variant="destructive"
-              onClick={() => handleNoShow(booking)}
-              className="whitespace-nowrap text-lg px-5 py-3"
-            >
-              <XCircle className="w-6 h-6 mr-2" />
-              Не се яви
-            </Button>
-          </div>
-        )}
-
-        {showActions === "leaving" && !booking.isLate && (
-          <div className="flex flex-row sm:flex-col gap-3 w-full sm:w-auto">
-            <Button 
-              size="sm" 
-              onClick={() => handleCheckout(booking)}
-              className="bg-blue-600 hover:bg-blue-700 whitespace-nowrap text-lg px-5 py-3"
-            >
-              <CheckCircle className="w-6 h-6 mr-2" />
-              Напусна
-            </Button>
-            <Button 
-              size="sm" 
-              variant="destructive"
-              onClick={() => handleMarkLate(booking)}
-              className="bg-red-600 hover:bg-red-700 whitespace-nowrap text-lg px-5 py-3"
-            >
-              <AlertCircle className="w-6 h-6 mr-2" />
-              Закъснява
-            </Button>
-          </div>
-        )}
-        
-        {showActions === "leaving" && booking.isLate && (
-          <div className="flex flex-row sm:flex-col gap-3 w-full sm:w-auto">
-            <Button 
-              size="sm" 
-              onClick={() => handleCheckout(booking)}
-              className="bg-blue-600 hover:bg-blue-700 whitespace-nowrap text-lg px-5 py-3"
-            >
-              <CheckCircle className="w-6 h-6 mr-2" />
-              Напусна (с доплащане)
-            </Button>
-          </div>
-        )}
-        
-        {showActions === "exits" && (booking.status === "new" || booking.status === "pending") && (
-          <div className="flex flex-row sm:flex-col gap-2 w-full sm:w-auto">
-            <Badge variant="outline" className="text-base py-2 px-4 bg-yellow-50 border-yellow-400">
-              Очаква потвърждение
-            </Badge>
-          </div>
-        )}
-        
-        {showActions === "exits" && booking.status === "confirmed" && (
-          <div className="flex flex-row sm:flex-col gap-2 w-full sm:w-auto">
-            <Button 
-              size="sm" 
-              onClick={() => handleArrived(booking)}
-              className="bg-green-600 hover:bg-green-700 whitespace-nowrap text-lg px-5 py-3"
-            >
-              <CheckCircle className="w-6 h-6 mr-2" />
-              Пристигна
-            </Button>
-          </div>
-        )}
-        
-        {showActions === "exits" && (booking.status === "arrived" || booking.status === "late") && !booking.isLate && (
-          <div className="flex flex-row sm:flex-col gap-3 w-full sm:w-auto">
-            <Button 
-              size="sm" 
-              onClick={() => handleCheckout(booking)}
-              className="bg-blue-600 hover:bg-blue-700 whitespace-nowrap text-lg px-5 py-3"
-            >
-              <CheckCircle className="w-6 h-6 mr-2" />
-              Напусна
-            </Button>
-            <Button 
-              size="sm" 
-              variant="destructive"
-              onClick={() => handleMarkLate(booking)}
-              className="bg-red-600 hover:bg-red-700 whitespace-nowrap text-lg px-5 py-3"
-            >
-              <AlertCircle className="w-6 h-6 mr-2" />
-              Закъснява
-            </Button>
-          </div>
-        )}
-        
-        {showActions === "exits" && booking.isLate && (
-          <div className="flex flex-row sm:flex-col gap-3 w-full sm:w-auto">
-            <Button 
-              size="sm" 
-              onClick={() => handleCheckout(booking)}
-              className="bg-blue-600 hover:bg-blue-700 whitespace-nowrap text-lg px-5 py-3"
-            >
-              <CheckCircle className="w-6 h-6 mr-2" />
-              Напусна (с доплащане)
-            </Button>
-          </div>
-        )}
-      </div>
-    </Card>
+      <ReservationCard
+        key={booking.id}
+        reservation={booking as ReservationData}
+        showActions={true}
+        actions={renderTabActions(booking, showActions)}
+        showCapacityInfo={true}
+        capacityInfo={capacityOnArrival}
+        showTimestamps={false}
+        showEditHistory={false}
+      />
     );
   };
 
@@ -2884,120 +2791,14 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                   </Card>
                 ) : (
                   allBookings.map(booking => (
-                    <Card key={booking.id} className="p-6">
-                      <div className="flex flex-col sm:flex-row items-start justify-between gap-5">
-                        <div className="flex-1 w-full">
-                          {/* Booking Code at the top */}
-                          {booking.bookingCode && (
-                            <div className="mb-3 inline-block bg-[#f1c933] text-[#073590] font-bold text-lg px-4 py-2 rounded-lg">
-                              📋 {booking.bookingCode}
-                            </div>
-                          )}
-                          
-                          <div className="flex flex-wrap items-center gap-3 mb-4">
-                            <User className="w-6 h-6 text-gray-500" />
-                            <span className="font-bold text-2xl">{booking.name}</span>
-                            {/* Status badges */}
-                            <div className="flex flex-wrap gap-2">
-                              {getStatusBadge(booking)}
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-2 gap-3 text-lg text-gray-700 font-medium">
-                            <div>📞 {booking.phone}</div>
-                            <div>✉️ {booking.email}</div>
-                            <div>
-                              🚗 {booking.licensePlate}
-                              {booking.licensePlate2 && <div className="ml-5">{booking.licensePlate2}</div>}
-                              {booking.licensePlate3 && <div className="ml-5">{booking.licensePlate3}</div>}
-                              {booking.licensePlate4 && <div className="ml-5">{booking.licensePlate4}</div>}
-                              {booking.licensePlate5 && <div className="ml-5">{booking.licensePlate5}</div>}
-                            </div>
-                            <div>📅 От: {formatDateDisplay(booking.arrivalDate)} {booking.arrivalTime}</div>
-                            <div>📅 До: {formatDateDisplay(booking.departureDate)} {booking.departureTime}</div>
-                            <div>🚙 {booking.numberOfCars || 1} кола/коли</div>
-                            <div>👥 {booking.passengers} пътник(а)</div>
-                            <div className="font-bold text-xl">💶 €{booking.finalPrice || booking.totalPrice}</div>
-                          </div>
-                          
-                          {/* Car Keys Notes */}
-                          {booking.carKeysNotes && (
-                            <div className="mt-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
-                              <div className="text-purple-900 font-semibold text-base mb-2">
-                                📝 Бележки за ключовете:
-                              </div>
-                              <div className="text-purple-800 text-base">
-                                {booking.carKeysNotes}
-                              </div>
-                            </div>
-                          )}
-                          
-                          {/* Invoice Badge */}
-                          {booking.needsInvoice && (
-                            <div className="mt-3">
-                              {booking.invoiceUrl ? (
-                                <a 
-                                  href={booking.invoiceUrl} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                >
-                                  <Badge variant="outline" className="text-base py-1 px-3 bg-yellow-50 border-yellow-300 cursor-pointer hover:bg-yellow-100 transition-colors">
-                                    <FileText className="w-5 h-5 inline mr-1" />
-                                    Фактура
-                                  </Badge>
-                                </a>
-                              ) : (
-                                <Badge variant="outline" className="text-base py-1 px-3 bg-yellow-50 border-yellow-300">
-                                  <FileText className="w-5 h-5 inline mr-1" />
-                                  Фактура
-                                </Badge>
-                              )}
-                            </div>
-                          )}
-                          
-                          {/* Car Keys Badge */}
-                          {booking.carKeys && (
-                            <div className="mt-3">
-                              <Badge 
-                                variant="secondary" 
-                                className={`${booking.includeInCapacity === false ? 'bg-orange-100 text-orange-800' : ''} text-base py-1 px-3`}
-                              >
-                                🔑 С ключове{booking.keyNumber && ` - ${booking.keyNumber}`}{booking.includeInCapacity === false && ' 🚫'}
-                              </Badge>
-                            </div>
-                          )}
-                          {booking.paymentMethod && (
-                            <div className="mt-3">
-                              <Badge 
-                                variant={booking.paymentStatus === "paid" ? "default" : "secondary"} 
-                                className={`text-base py-1 px-3 ${
-                                  booking.paymentMethod === "pay-on-leave" 
-                                    ? "bg-orange-100 text-orange-800 border-orange-300 font-semibold" 
-                                    : ""
-                                }`}
-                              >
-                                {booking.paymentMethod === "cash" && "💰 В брой"}
-                                {booking.paymentMethod === "card" && "💳 С карта"}
-                                {booking.paymentMethod === "pay-on-leave" && "⏰ Ще плати при напускане"}
-                                {booking.paymentStatus === "paid" && " ✓"}
-                              </Badge>
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex flex-col gap-3">
-                          <Button
-                            onClick={() => {
-                              handleEditReservation(booking);
-                              setShowBookingForm(true);
-                            }}
-                            className="h-12 text-base"
-                            variant="outline"
-                          >
-                            <Edit className="w-5 h-5 mr-2" />
-                            Редактирай
-                          </Button>
-                        </div>
-                      </div>
-                    </Card>
+                    <ReservationCard
+                      key={booking.id}
+                      reservation={booking as ReservationData}
+                      showActions={true}
+                      actions={renderOperatorActions(booking)}
+                      showTimestamps={false}
+                      showEditHistory={false}
+                    />
                   ))
                 )}
               </div>
