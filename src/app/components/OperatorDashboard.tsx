@@ -44,6 +44,8 @@ import { toast } from "sonner";
 import type { User as UserType } from "./LoginScreen";
 import { calculatePrice as calculateDynamicPrice } from "@/app/utils/pricing";
 import { ReservationCard, type ReservationData } from "./ReservationCard";
+import { DatePicker } from "./DatePicker";
+import { TimePicker } from "./TimePicker";
 
 const projectId = "dbybybmjjeeocoecaewv";
 const publicAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRieWJ5Ym1qamVlb2NvZWNhZXd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODgxMzAsImV4cCI6MjA4MjA2NDEzMH0.fMZ3Yi5gZpE6kBBz-y1x0FKZcGczxSJZ9jL-Zeau340";
@@ -3190,60 +3192,50 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
               })}
             </div>
 
-            {/* Arrival DateTime - Combined Field */}
+            {/* Arrival - Separate Date and Time */}
             <div className="space-y-2">
-              <Label className="text-base font-semibold">Пристигане *</Label>
-              <Input
-                id="booking-arrival"
-                type="datetime-local"
-                min={new Date().toISOString().slice(0, 16)}
-                value={combineDateTimeLocal(bookingForm.arrivalDate, bookingForm.arrivalTime)}
-                onChange={(e) => {
-                  const { date, time } = parseDateTimeLocal(e.target.value);
-                  setBookingForm({...bookingForm, arrivalDate: date, arrivalTime: time});
+              <Label className="text-base font-semibold">Дата на пристигане *</Label>
+              <DatePicker
+                id="booking-arrival-date"
+                value={bookingForm.arrivalDate ? new Date(bookingForm.arrivalDate) : undefined}
+                onChange={(date) => {
+                  const dateStr = date ? date.toISOString().split('T')[0] : '';
+                  setBookingForm({...bookingForm, arrivalDate: dateStr});
                 }}
-                className="h-14 text-base"
-                enterKeyHint="next"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    document.getElementById('booking-departure')?.focus();
-                  }
-                }}
+                minDate={new Date()}
               />
-              {bookingForm.arrivalDate && bookingForm.arrivalTime && (
-                <p className="text-sm text-gray-600">
-                  {formatDateTimeForDisplay(bookingForm.arrivalDate, bookingForm.arrivalTime)}
-                </p>
-              )}
             </div>
 
-            {/* Departure DateTime - Combined Field */}
             <div className="space-y-2">
-              <Label className="text-base font-semibold">Напускане *</Label>
-              <Input
-                id="booking-departure"
-                type="datetime-local"
-                min={bookingForm.arrivalDate ? combineDateTimeLocal(bookingForm.arrivalDate, bookingForm.arrivalTime || '00:00') : new Date().toISOString().slice(0, 16)}
-                value={combineDateTimeLocal(bookingForm.departureDate, bookingForm.departureTime)}
-                onChange={(e) => {
-                  const { date, time } = parseDateTimeLocal(e.target.value);
-                  setBookingForm({...bookingForm, departureDate: date, departureTime: time});
-                }}
-                className="h-14 text-base"
-                enterKeyHint="next"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    document.getElementById('booking-price')?.focus();
-                  }
-                }}
+              <Label className="text-base font-semibold">Час на пристигане *</Label>
+              <TimePicker
+                id="booking-arrival-time"
+                value={bookingForm.arrivalTime}
+                onChange={(time) => setBookingForm({...bookingForm, arrivalTime: time})}
               />
-              {bookingForm.departureDate && bookingForm.departureTime && (
-                <p className="text-sm text-gray-600">
-                  {formatDateTimeForDisplay(bookingForm.departureDate, bookingForm.departureTime)}
-                </p>
-              )}
+            </div>
+
+            {/* Departure - Separate Date and Time */}
+            <div className="space-y-2">
+              <Label className="text-base font-semibold">Дата на напускане *</Label>
+              <DatePicker
+                id="booking-departure-date"
+                value={bookingForm.departureDate ? new Date(bookingForm.departureDate) : undefined}
+                onChange={(date) => {
+                  const dateStr = date ? date.toISOString().split('T')[0] : '';
+                  setBookingForm({...bookingForm, departureDate: dateStr});
+                }}
+                minDate={bookingForm.arrivalDate ? new Date(bookingForm.arrivalDate) : new Date()}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-base font-semibold">Час на напускане *</Label>
+              <TimePicker
+                id="booking-departure-time"
+                value={bookingForm.departureTime}
+                onChange={(time) => setBookingForm({...bookingForm, departureTime: time})}
+              />
             </div>
 
             {/* Price - Auto-filled, Editable */}
@@ -3455,7 +3447,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
             )}
           </div>
 
-          <DialogFooter className="sticky bottom-0 left-0 right-0 bg-white border-t border-gray-200 pt-4 pb-4 mt-6 gap-3 flex-col sm:flex-row z-10">
+          <DialogFooter className="border-t border-gray-200 pt-6 mt-6 gap-3 flex-col sm:flex-row">
             <Button 
               variant="outline" 
               onClick={() => setShowBookingForm(false)}
