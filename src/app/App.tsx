@@ -6,6 +6,7 @@ import { OperatorDashboard } from "./components/OperatorDashboard";
 import { LoginScreen } from "./components/LoginScreen";
 import { router } from "./routes";
 import { preloadPricing } from "./utils/pricing";
+import { LanguageProvider } from "./components/LanguageContext";
 
 interface User {
   id: string;
@@ -116,27 +117,29 @@ export default function App() {
     }
 
     return (
-      <div className="min-h-screen">
-        <Toaster />
-        {isLoggedIn ? (
-          // Show OperatorDashboard for operator role, AdminDashboard for admin/manager
-          currentUser?.role === "operator" ? (
-            <OperatorDashboard 
-              onLogout={handleLogout} 
-              currentUser={currentUser!} 
-              permissions={permissions} 
-            />
+      <LanguageProvider>
+        <div className="min-h-screen">
+          <Toaster />
+          {isLoggedIn ? (
+            // Show OperatorDashboard for operator role, AdminDashboard for admin/manager
+            currentUser?.role === "operator" ? (
+              <OperatorDashboard 
+                onLogout={handleLogout} 
+                currentUser={currentUser!} 
+                permissions={permissions} 
+              />
+            ) : (
+              <AdminDashboard 
+                onLogout={handleLogout} 
+                currentUser={currentUser!} 
+                permissions={permissions} 
+              />
+            )
           ) : (
-            <AdminDashboard 
-              onLogout={handleLogout} 
-              currentUser={currentUser!} 
-              permissions={permissions} 
-            />
-          )
-        ) : (
-          <LoginScreen onLogin={handleLogin} />
-        )}
-      </div>
+            <LoginScreen onLogin={handleLogin} />
+          )}
+        </div>
+      </LanguageProvider>
     );
   }
 

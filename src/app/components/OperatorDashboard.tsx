@@ -623,6 +623,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
     vatNumber: "",
     city: "",
     address: "",
+    invoiceUrl: "",
   });
   const [manualPrice, setManualPrice] = useState<string>("");
   const [calculatedPrice, setCalculatedPrice] = useState<number>(0);
@@ -1425,6 +1426,8 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
       passengers: 2, // Default value
       numberOfCars: 1,
       carKeys: false,
+      keyNumber: "",
+      includeInCapacity: true,
       needsInvoice: false,
       notes: "",
       // Invoice fields
@@ -1435,6 +1438,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
       vatNumber: "",
       city: "",
       address: "",
+      invoiceUrl: "",
     });
     setManualPrice("");
     setCalculatedPrice(0);
@@ -1456,6 +1460,8 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
       passengers: booking.passengers,
       numberOfCars: booking.numberOfCars || 1,
       carKeys: booking.carKeys || false,
+      keyNumber: booking.keyNumber || "",
+      includeInCapacity: booking.includeInCapacity !== false,
       needsInvoice: booking.needsInvoice || false,
       notes: "",
       // Invoice fields
@@ -1466,6 +1472,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
       vatNumber: booking.vatNumber || "",
       city: booking.city || "",
       address: booking.address || "",
+      invoiceUrl: booking.invoiceUrl || "",
     });
     setManualPrice(booking.totalPrice?.toString() || "");
     setCalculatedPrice(0);
