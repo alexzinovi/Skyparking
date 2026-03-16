@@ -40,7 +40,7 @@ export function DatePicker({ value, onChange, minDate, label, error, id, default
           {label}
         </label>
       )}
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={open} onOpenChange={setOpen} modal={true}>
         <PopoverTrigger asChild>
           <button
             id={id}
@@ -53,7 +53,7 @@ export function DatePicker({ value, onChange, minDate, label, error, id, default
             {value ? format(value, "PPP", { locale }) : <span>{placeholder}</span>}
           </button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0 bg-white" align="start">
+        <PopoverContent className="w-auto p-0 bg-white z-[100]" align="start">
           <DayPicker
             mode="single"
             selected={value}

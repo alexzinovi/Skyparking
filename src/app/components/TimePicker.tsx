@@ -42,7 +42,7 @@ export function TimePicker({ value, onChange, label, error, id }: TimePickerProp
           {label}
         </label>
       )}
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={open} onOpenChange={setOpen} modal={true}>
         <PopoverTrigger asChild>
           <button
             id={id}
@@ -55,8 +55,8 @@ export function TimePicker({ value, onChange, label, error, id }: TimePickerProp
             {value ? <span>{value}</span> : <span>{placeholder}</span>}
           </button>
         </PopoverTrigger>
-        <PopoverContent className="w-[200px] p-0 bg-white" align="start">
-          <div className="max-h-[300px] overflow-y-auto">
+        <PopoverContent className="w-[200px] p-0 bg-white z-[100]" align="start">
+          <div className="max-h-[300px] overflow-y-auto overscroll-contain">
             {timeOptions.map((time) => (
               <button
                 key={time}
