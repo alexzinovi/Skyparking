@@ -32,6 +32,11 @@ export function DatePicker({ value, onChange, minDate, label, error, id, default
     setOpen(false); // Auto-close on selection
   };
 
+  // Helper function to normalize dates to midnight local time
+  const normalizeDate = (date: Date): Date => {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
+  };
+
   return (
     <div className="space-y-2 md:space-y-3">
       {label && (
@@ -62,10 +67,10 @@ export function DatePicker({ value, onChange, minDate, label, error, id, default
             defaultMonth={defaultMonth || value || minDate || new Date()} // Show month based on defaultMonth, current value, minDate, or today
             disabled={(date) => {
               if (minDate) {
-                // Compare dates only (ignore time) - allow today, block past dates
-                const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-                const minDateOnly = new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate());
-                if (dateOnly < minDateOnly) return true;
+                // Normalize both dates to midnight local time for accurate comparison
+                const dateNormalized = normalizeDate(date);
+                const minDateNormalized = normalizeDate(minDate);
+                if (dateNormalized < minDateNormalized) return true;
               }
               return false;
             }}

@@ -195,7 +195,7 @@ const bg = {
   
   // Car Keys
   carKeys: "Ключове от кола",
-  carKeysYes: "ДА - можем да преместим",
+  carKeysYes: "ДА - ��ожем да преместим",
   carKeysNo: "НЕ - няма ключове",
   carKeysNotes: "Бележки за ключовет��",
   carKeysNotesPlaceholder: "Напр.: Ключове оставени в офиса, паркирана в зона B...",
@@ -203,7 +203,7 @@ const bg = {
   keyNumberPlaceholder: "напр., Ключ #12",
   keyNumberHint: "Физически номер на ключа в кутията",
   includeInCapacity: "Включи в допълнителен капацитет (преливащи места)",
-  includeInCapacityHint: "Ако не е отметнато, това запазване няма да заема място в капацитета (за коли паркирани извън паркинга)",
+  includeInCapacityHint: "Ако не е отметнато, това запазване няма да заема място в капацитета (за коли пар��ирани извън паркинга)",
   
   // Capacity
   capacityWarning: "⚠️ Предупреждение за ка�����ацитет",
@@ -2400,9 +2400,12 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
               <Label className="text-base font-semibold">Дата на пристигане *</Label>
               <DatePicker
                 id="arrivalDate"
-                value={formData.arrivalDate ? new Date(formData.arrivalDate) : undefined}
+                value={formData.arrivalDate ? new Date(formData.arrivalDate + 'T00:00:00') : undefined}
                 onChange={(date) => {
-                  const dateStr = date ? date.toISOString().split('T')[0] : '';
+                  // Format date as YYYY-MM-DD in local timezone
+                  const dateStr = date 
+                    ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+                    : '';
                   setFormData({ ...formData, arrivalDate: dateStr });
                 }}
                 minDate={new Date()}
@@ -2423,12 +2426,15 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
               <Label className="text-base font-semibold">Дата на напускане *</Label>
               <DatePicker
                 id="departureDate"
-                value={formData.departureDate ? new Date(formData.departureDate) : undefined}
+                value={formData.departureDate ? new Date(formData.departureDate + 'T00:00:00') : undefined}
                 onChange={(date) => {
-                  const dateStr = date ? date.toISOString().split('T')[0] : '';
+                  // Format date as YYYY-MM-DD in local timezone
+                  const dateStr = date 
+                    ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+                    : '';
                   setFormData({ ...formData, departureDate: dateStr });
                 }}
-                minDate={formData.arrivalDate ? new Date(formData.arrivalDate) : new Date()}
+                minDate={formData.arrivalDate ? new Date(formData.arrivalDate + 'T00:00:00') : new Date()}
               />
             </div>
 

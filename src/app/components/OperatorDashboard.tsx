@@ -3204,9 +3204,12 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
               <Label className="text-base font-semibold">Дата на пристигане *</Label>
               <DatePicker
                 id="booking-arrival-date"
-                value={bookingForm.arrivalDate ? new Date(bookingForm.arrivalDate) : undefined}
+                value={bookingForm.arrivalDate ? new Date(bookingForm.arrivalDate + 'T00:00:00') : undefined}
                 onChange={(date) => {
-                  const dateStr = date ? date.toISOString().split('T')[0] : '';
+                  // Format date as YYYY-MM-DD in local timezone
+                  const dateStr = date 
+                    ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+                    : '';
                   setBookingForm({...bookingForm, arrivalDate: dateStr});
                 }}
                 minDate={new Date()}
@@ -3227,12 +3230,15 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
               <Label className="text-base font-semibold">Дата на напускане *</Label>
               <DatePicker
                 id="booking-departure-date"
-                value={bookingForm.departureDate ? new Date(bookingForm.departureDate) : undefined}
+                value={bookingForm.departureDate ? new Date(bookingForm.departureDate + 'T00:00:00') : undefined}
                 onChange={(date) => {
-                  const dateStr = date ? date.toISOString().split('T')[0] : '';
+                  // Format date as YYYY-MM-DD in local timezone
+                  const dateStr = date 
+                    ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+                    : '';
                   setBookingForm({...bookingForm, departureDate: dateStr});
                 }}
-                minDate={bookingForm.arrivalDate ? new Date(bookingForm.arrivalDate) : new Date()}
+                minDate={bookingForm.arrivalDate ? new Date(bookingForm.arrivalDate + 'T00:00:00') : new Date()}
               />
             </div>
 
