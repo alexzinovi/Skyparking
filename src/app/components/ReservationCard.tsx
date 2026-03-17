@@ -203,6 +203,18 @@ export function ReservationCard({
                 +{(reservation.numberOfCars || 1) - 1} допълнителни коли
               </div>
             )}
+            {/* Passenger Count - Clear and Easy to Read */}
+            <div className="mt-2 flex items-center gap-2 text-base font-semibold text-gray-700">
+              <Users className="h-5 w-5 text-[#073590] flex-shrink-0" />
+              <span>{reservation.passengers} {reservation.passengers === 1 ? 'пътник' : 'пътника'}</span>
+              {reservation.numberOfCars && reservation.numberOfCars > 1 && (
+                <>
+                  <span className="text-gray-400">|</span>
+                  <Car className="h-4 w-4 text-gray-600 flex-shrink-0" />
+                  <span className="text-gray-600">{reservation.numberOfCars}</span>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>

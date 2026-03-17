@@ -58,7 +58,7 @@ export function DatePicker({ value, onChange, minDate, label, error, id, default
             {value ? format(value, "PPP", { locale }) : <span>{placeholder}</span>}
           </button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0 bg-white z-[100]" align="start">
+        <PopoverContent className="w-auto p-0 bg-white z-[100] max-h-[90vh] overflow-auto touch-pan-y" align="start" style={{ WebkitOverflowScrolling: 'touch' }}>
           <DayPicker
             mode="single"
             selected={value}

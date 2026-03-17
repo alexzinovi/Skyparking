@@ -56,7 +56,7 @@ export function TimePicker({ value, onChange, label, error, id }: TimePickerProp
           </button>
         </PopoverTrigger>
         <PopoverContent className="w-[200px] p-0 bg-white z-[100]" align="start">
-          <div className="max-h-[300px] overflow-y-auto overscroll-contain">
+          <div className="max-h-[300px] overflow-y-auto overscroll-contain touch-pan-y" style={{ WebkitOverflowScrolling: 'touch' }}>
             {timeOptions.map((time) => (
               <button
                 key={time}

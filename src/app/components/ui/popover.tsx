@@ -17,7 +17,14 @@ const cleanProps = <T extends Record<string, any>>(props: T): Partial<T> => {
   return cleaned;
 };
 
-const Popover = PopoverPrimitive.Root;
+// Accept and forward modal prop to PopoverPrimitive.Root
+const Popover = React.forwardRef<
+  React.ElementRef<typeof PopoverPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Root>
+>(({ modal = false, ...props }, ref) => {
+  return <PopoverPrimitive.Root modal={modal} {...props} />;
+});
+Popover.displayName = "Popover";
 
 function PopoverTrigger(
   { children, ...props }: React.ComponentProps<typeof PopoverPrimitive.Trigger>
