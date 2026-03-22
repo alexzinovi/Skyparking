@@ -440,42 +440,50 @@ function getDaysInMonth(date: Date) {
 }
 
 function calculateCapacityForDate(bookings: Booking[], dateStr: string) {
+  // NEW LOGIC: Calculate projected occupancy independently for each day
+  // This is a FORECASTING tool based on confirmed reservations
+  
+  // Get the date we're calculating for
+  const targetDate = new Date(dateStr);
+  const todayStr = getTodayDate();
+  const isToday = dateStr === todayStr;
+  
+  // Step 1: Calculate arrivals for this specific date
+  const arrivingBookings = bookings.filter(b => {
+    if (b.status === 'cancelled' || b.status === 'no-show' || b.status === 'declined') return false;
+    if (b.status !== 'confirmed' && b.status !== 'arrived') return false;
+    return b.arrivalDate === dateStr;
+  });
+  const arrivingCount = arrivingBookings.reduce((sum, b) => {
+    const numCars = Number(b.numberOfCars);
+    return sum + ((numCars > 0) ? numCars : 1);
+  }, 0);
+  
+  // Step 2: Calculate departures for this specific date
+  const leavingBookings = bookings.filter(b => {
+    if (b.status === 'cancelled' || b.status === 'no-show' || b.status === 'checked-out' || b.status === 'declined') return false;
+    return b.departureDate === dateStr;
+  });
+  const leavingCount = leavingBookings.reduce((sum, b) => {
+    const numCars = Number(b.numberOfCars);
+    return sum + ((numCars > 0) ? numCars : 1);
+  }, 0);
+  
+  // Step 3: Calculate projected occupancy (cars that should be parked on this date)
+  // Based on confirmed reservations whose stay includes this date
   const overlappingBookings = bookings.filter(b => {
-    // If booking is 'arrived', they are physically in parking regardless of scheduled dates
-    if (b.status === 'arrived') {
-      return true;
-    }
+    // Only count confirmed and arrived reservations for projections
+    if (b.status !== 'confirmed' && b.status !== 'arrived') return false;
     
-    // For confirmed bookings, check if the date range overlaps with the target date
-    if (b.status === 'confirmed') {
-      const bookingArrival = new Date(b.arrivalDate);
-      const bookingDeparture = new Date(b.departureDate);
-      const currentDate = new Date(dateStr);
-      
-      // Include departure date - a booking occupies space from arrival through departure (inclusive)
-      return bookingArrival <= currentDate && currentDate <= bookingDeparture;
-    }
+    const bookingArrival = new Date(b.arrivalDate);
+    const bookingDeparture = new Date(b.departureDate);
     
-    return false;
+    // Booking occupies space from arrival through departure (inclusive)
+    return bookingArrival <= targetDate && targetDate <= bookingDeparture;
   });
   
   let nonKeysCount = 0;
   let keysCount = 0;
-  
-  // Debug logging for today's date
-  const today = getTodayDate();
-  if (dateStr === today) {
-    console.log(`📅 CALENDAR DEBUG for ${dateStr}:`, {
-      totalOverlappingBookings: overlappingBookings.length,
-      bookings: overlappingBookings.map(b => ({
-        name: b.name,
-        status: b.status,
-        numberOfCars: b.numberOfCars,
-        carKeys: b.carKeys,
-        includeInCapacity: b.includeInCapacity
-      }))
-    });
-  }
   
   overlappingBookings.forEach(b => {
     // Only count if includeInCapacity is not explicitly false
@@ -483,13 +491,8 @@ function calculateCapacityForDate(bookings: Booking[], dateStr: string) {
       return;
     }
     
-    // More explicit numberOfCars handling
     const numCars = Number(b.numberOfCars);
     const carCount = (numCars > 0) ? numCars : 1;
-    
-    if (dateStr === today) {
-      console.log(`  → ${b.name}: numberOfCars=${b.numberOfCars}, numCars=${numCars}, carCount=${carCount}, carKeys=${b.carKeys}, includeInCapacity=${b.includeInCapacity}`);
-    }
     
     if (b.carKeys) {
       keysCount += carCount;
@@ -498,36 +501,8 @@ function calculateCapacityForDate(bookings: Booking[], dateStr: string) {
     }
   });
   
-  if (dateStr === today) {
-    console.log(`📅 CALENDAR TOTALS for ${dateStr}: nonKeys=${nonKeysCount}, keys=${keysCount}, total=${nonKeysCount + keysCount}`);
-  }
-  
-  // Calculate leaving count - bookings departing on this date (same logic as Exits tab)
-  const leavingBookings = bookings.filter(b => {
-    // Exclude cancelled, no-show, and already checked-out
-    if (b.status === 'cancelled' || b.status === 'no-show' || b.status === 'checked-out') return false;
-    
-    // Check if departure date matches
-    return b.departureDate === dateStr;
-  });
-  
-  const leavingCount = leavingBookings.reduce((sum, b) => {
-    const numCars = Number(b.numberOfCars);
-    return sum + ((numCars > 0) ? numCars : 1);
-  }, 0);
-  
   const totalCount = nonKeysCount + keysCount;
   const percentage = totalCount > 0 ? (totalCount / TOTAL_CAPACITY) * 100 : 0;
-  
-  // Calculate arriving count for this date
-  const arrivingBookings = bookings.filter(b => {
-    if (b.status === 'cancelled' || b.status === 'no-show' || b.status === 'declined') return false;
-    return b.arrivalDate === dateStr;
-  });
-  const arrivingCount = arrivingBookings.reduce((sum, b) => {
-    const numCars = Number(b.numberOfCars);
-    return sum + ((numCars > 0) ? numCars : 1);
-  }, 0);
   
   return {
     nonKeysCount,
@@ -540,6 +515,7 @@ function calculateCapacityForDate(bookings: Booking[], dateStr: string) {
     isMedium: percentage >= 50 && percentage < 80,
     isHigh: percentage >= 80 && percentage < 100,
     isFull: percentage >= 100,
+    isToday, // Flag to show this is today's date
   };
 }
 
@@ -2742,6 +2718,12 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
             {activeTab === "calendar" && (
               <div className="space-y-4">
                 <Card className="p-3">
+                  {/* Calendar Title and Helper Text */}
+                  <div className="mb-3">
+                    <h2 className="text-xl sm:text-2xl font-bold text-[#073590]">Очаквана заетост</h2>
+                    <p className="text-xs sm:text-sm text-gray-600 italic">Базирано на потвърдени резервации</p>
+                  </div>
+                  
                   {/* Month Navigation - Single Row, Mobile-Optimized */}
                   <div className="flex items-center justify-between mb-4 gap-2">
                     <Button
@@ -2822,9 +2804,14 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                               } ${isToday ? 'ring-4 ring-[#f1c933] font-black border-[#073590] border-4' : ''}`}
                             >
                               <div className={`${isToday ? 'text-base sm:text-lg' : 'text-sm sm:text-base'} font-bold leading-none`}>{day}</div>
-                              <div className={`${isToday ? 'text-xs sm:text-sm font-bold' : 'text-[10px] sm:text-xs'} mt-0.5`}>
-                                {capacity.totalCount > 0 ? `${capacity.totalCount}` : '-'}
+                              <div className={`${isToday ? 'text-xs sm:text-sm font-bold' : 'text-[10px] sm:text-xs'} mt-0.5 font-semibold`}>
+                                {capacity.totalCount > 0 ? capacity.totalCount : '-'}
                               </div>
+                              {(capacity.arrivingCount > 0 || capacity.leavingCount > 0) && (
+                                <div className={`${isToday ? 'text-[9px]' : 'text-[8px]'} text-gray-600 mt-0.5 leading-none`}>
+                                  +{capacity.arrivingCount}/-{capacity.leavingCount}
+                                </div>
+                              )}
                             </button>
                           );
                         }
@@ -2863,67 +2850,118 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                     const capacity = calculateCapacityForDate(bookings, selectedDate);
                     const availableSpots = TOTAL_CAPACITY - capacity.totalCount;
                     
+                    // Calculate REAL parking status (only for today)
+                    const realParked = bookings.filter(b => b.status === 'arrived').reduce((sum, b) => {
+                      const numCars = Number(b.numberOfCars);
+                      return sum + ((numCars > 0) ? numCars : 1);
+                    }, 0);
+                    const realAvailable = TOTAL_CAPACITY - realParked;
+                    
                     return (
                       <Card className="p-3 bg-gradient-to-br from-blue-50 to-purple-50">
                         <h3 className="text-base sm:text-lg font-bold mb-3 flex items-center gap-2">
                           <Calendar className="h-5 w-5" />
-                          {formatDateDisplay(selectedDate)}
+                          Детайли за {formatDateDisplay(selectedDate)}
                         </h3>
                         
-                        <div className="grid grid-cols-2 gap-2 mb-3">
-                          <div className="bg-white p-3 rounded-lg shadow border-2 border-blue-200">
-                            <div className="text-gray-600 text-xs font-semibold mb-1">БЕЗ КЛЮЧОВЕ</div>
-                            <div className="text-2xl font-black text-blue-600">{capacity.nonKeysCount}</div>
-                            <div className="text-xs text-gray-500">/ {BASE_CAPACITY}</div>
-                          </div>
-                          
-                          <div className="bg-white p-3 rounded-lg shadow border-2 border-purple-200">
-                            <div className="text-gray-600 text-xs font-semibold mb-1">С КЛЮЧОВЕ</div>
-                            <div className="text-2xl font-black text-purple-600">{capacity.keysCount}</div>
-                            <div className="text-xs text-gray-500">/ {OVERFLOW_CAPACITY}</div>
-                          </div>
-                          
-                          <div className="bg-white p-3 rounded-lg shadow border-2 border-gray-300">
-                            <div className="text-gray-600 text-xs font-semibold mb-1">ОБЩО КОЛИ</div>
-                            <div className="text-2xl font-black text-gray-800">{capacity.totalCount}</div>
-                            <div className="text-xs text-gray-500">/ {TOTAL_CAPACITY}</div>
-                          </div>
-                          
-                          <div className={`bg-white p-3 rounded-lg shadow border-2 ${availableSpots <= 0 ? 'border-red-400' : availableSpots < 40 ? 'border-yellow-400' : 'border-green-400'}`}>
-                            <div className="text-gray-600 text-xs font-semibold mb-1">СВОБОДНИ</div>
-                            <div className={`text-2xl font-black ${availableSpots <= 0 ? 'text-red-600' : availableSpots < 40 ? 'text-yellow-600' : 'text-green-600'}`}>
-                              {availableSpots}
+                        {/* Show BOTH real and projected for today */}
+                        {capacity.isToday && (
+                          <>
+                            {/* Section 1: Real-time Status (Live) */}
+                            <div className="mb-3 p-3 bg-white rounded-lg border-2 border-[#073590]">
+                              <h4 className="text-sm sm:text-base font-bold text-[#073590] mb-2 flex items-center gap-1">
+                                <Car className="h-4 w-4" />
+                                📍 Реално (Live)
+                              </h4>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div className="text-center p-2 bg-blue-50 rounded">
+                                  <div className="text-xs text-gray-600 font-semibold mb-1">В ПАРКИНГА</div>
+                                  <div className="text-3xl font-black text-[#073590]">{realParked}</div>
+                                </div>
+                                <div className="text-center p-2 bg-green-50 rounded">
+                                  <div className="text-xs text-gray-600 font-semibold mb-1">СВОБОДНИ</div>
+                                  <div className="text-3xl font-black text-green-600">{realAvailable}</div>
+                                </div>
+                              </div>
                             </div>
-                            <div className="text-xs text-gray-500">места</div>
-                          </div>
-                        </div>
+                            
+                            {/* Section 2: Forecast for Today */}
+                            <div className="mb-3 p-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border-2 border-purple-300">
+                              <h4 className="text-sm sm:text-base font-bold text-purple-700 mb-2 flex items-center gap-1">
+                                <Calendar className="h-4 w-4" />
+                                📊 Прогноза днес
+                              </h4>
+                              <div className="grid grid-cols-3 gap-2">
+                                <div className="text-center p-2 bg-white rounded shadow-sm">
+                                  <div className="text-[10px] text-gray-600 font-semibold mb-1">Очаквани</div>
+                                  <div className="text-2xl font-bold text-purple-700">{capacity.totalCount}</div>
+                                </div>
+                                <div className="text-center p-2 bg-white rounded shadow-sm">
+                                  <div className="text-[10px] text-gray-600 font-semibold mb-1">⬇️ Приходи</div>
+                                  <div className="text-2xl font-bold text-green-600">{capacity.arrivingCount}</div>
+                                </div>
+                                <div className="text-center p-2 bg-white rounded shadow-sm">
+                                  <div className="text-[10px] text-gray-600 font-semibold mb-1">⬆️ Напускат</div>
+                                  <div className="text-2xl font-bold text-orange-600">{capacity.leavingCount}</div>
+                                </div>
+                              </div>
+                            </div>
+                          </>
+                        )}
                         
-                        {/* Arrivals and Departures */}
-                        <div className="grid grid-cols-2 gap-2">
-                          <div className="bg-white p-3 rounded-lg shadow border-2 border-green-200">
-                            <div className="text-gray-600 text-xs font-semibold mb-1">⬇️ ПРИСТИГАНИЯ</div>
-                            <div className="text-2xl font-black text-green-600">{capacity.arrivingCount}</div>
-                            <div className="text-xs text-gray-500">коли</div>
-                          </div>
-                          
-                          <div className="bg-white p-3 rounded-lg shadow border-2 border-orange-200">
-                            <div className="text-gray-600 text-xs font-semibold mb-1">⬆️ НАПУСКАНИЯ</div>
-                            <div className="text-2xl font-black text-orange-600">{capacity.leavingCount}</div>
-                            <div className="text-xs text-gray-500">коли</div>
-                          </div>
-                        </div>
-                        
-                        {/* Status Indicator */}
-                        <div className="mt-3 p-3 rounded-lg text-center text-base font-bold" style={{
-                          backgroundColor: capacity.isFull ? '#fee' : capacity.isHigh ? '#ffc' : capacity.isMedium ? '#def' : '#efe'
-                        }}>
-                          {
-                            capacity.isFull ? '🔴 ПЪЛЕН' :
-                            capacity.isHigh ? '🟡 ВИСОК' :
-                            capacity.isMedium ? '🔵 СРЕДЕН' :
-                            '🟢 НИСЪК'
-                          }
-                        </div>
+                        {/* For future/past dates - only show projected */}
+                        {!capacity.isToday && (
+                          <>
+                            <div className="mb-3 p-2 bg-purple-50 rounded border border-purple-200">
+                              <p className="text-xs sm:text-sm text-purple-800 font-semibold">
+                                📊 Прогноза (потвърдени резервации)
+                              </p>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-2 mb-3">
+                              <div className="bg-white p-3 rounded-lg shadow border-2 border-blue-200">
+                                <div className="text-gray-600 text-xs font-semibold mb-1">БЕЗ КЛЮЧОВЕ</div>
+                                <div className="text-2xl font-black text-blue-600">{capacity.nonKeysCount}</div>
+                                <div className="text-xs text-gray-500">/ {BASE_CAPACITY}</div>
+                              </div>
+                              
+                              <div className="bg-white p-3 rounded-lg shadow border-2 border-purple-200">
+                                <div className="text-gray-600 text-xs font-semibold mb-1">С КЛЮЧОВЕ</div>
+                                <div className="text-2xl font-black text-purple-600">{capacity.keysCount}</div>
+                                <div className="text-xs text-gray-500">/ {OVERFLOW_CAPACITY}</div>
+                              </div>
+                              
+                              <div className="bg-white p-3 rounded-lg shadow border-2 border-gray-300">
+                                <div className="text-gray-600 text-xs font-semibold mb-1">ОБЩО КОЛИ</div>
+                                <div className="text-2xl font-black text-gray-800">{capacity.totalCount}</div>
+                                <div className="text-xs text-gray-500">/ {TOTAL_CAPACITY}</div>
+                              </div>
+                              
+                              <div className={`bg-white p-3 rounded-lg shadow border-2 ${availableSpots <= 0 ? 'border-red-400' : availableSpots < 40 ? 'border-yellow-400' : 'border-green-400'}`}>
+                                <div className="text-gray-600 text-xs font-semibold mb-1">СВОБОДНИ</div>
+                                <div className={`text-2xl font-black ${availableSpots <= 0 ? 'text-red-600' : availableSpots < 40 ? 'text-yellow-600' : 'text-green-600'}`}>
+                                  {availableSpots}
+                                </div>
+                                <div className="text-xs text-gray-500">места</div>
+                              </div>
+                            </div>
+                            
+                            {/* Arrivals and Departures */}
+                            <div className="grid grid-cols-2 gap-2">
+                              <div className="bg-white p-3 rounded-lg shadow border-2 border-green-200">
+                                <div className="text-gray-600 text-xs font-semibold mb-1">⬇️ ПРИСТИГАНИЯ</div>
+                                <div className="text-2xl font-black text-green-600">{capacity.arrivingCount}</div>
+                                <div className="text-xs text-gray-500">коли</div>
+                              </div>
+                              
+                              <div className="bg-white p-3 rounded-lg shadow border-2 border-orange-200">
+                                <div className="text-gray-600 text-xs font-semibold mb-1">⬆️ НАПУСКАНИЯ</div>
+                                <div className="text-2xl font-black text-orange-600">{capacity.leavingCount}</div>
+                                <div className="text-xs text-gray-500">коли</div>
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </Card>
                     );
                   })()}

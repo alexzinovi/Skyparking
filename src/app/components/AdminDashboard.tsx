@@ -1369,23 +1369,46 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
   };
   
   const calculateCapacityForDate = (dateStr: string) => {
+    // NEW LOGIC: Calculate projected occupancy independently for each day
+    // This is a FORECASTING tool based on confirmed reservations
+    
+    // Get the date we're calculating for
+    const targetDate = new Date(dateStr);
+    const todayStr = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`;
+    const isToday = dateStr === todayStr;
+    
+    // Step 1: Calculate arrivals for this specific date
+    const arrivingBookings = bookings.filter(b => {
+      if (b.status === 'cancelled' || b.status === 'no-show' || b.status === 'declined') return false;
+      if (b.status !== 'confirmed' && b.status !== 'arrived') return false;
+      return b.arrivalDate === dateStr;
+    });
+    const arrivingCount = arrivingBookings.reduce((sum, b) => {
+      const numCars = Number(b.numberOfCars);
+      return sum + ((numCars > 0) ? numCars : 1);
+    }, 0);
+    
+    // Step 2: Calculate departures for this specific date
+    const leavingBookings = bookings.filter(b => {
+      if (b.status === 'cancelled' || b.status === 'no-show' || b.status === 'checked-out' || b.status === 'declined') return false;
+      return b.departureDate === dateStr;
+    });
+    const leavingCount = leavingBookings.reduce((sum, b) => {
+      const numCars = Number(b.numberOfCars);
+      return sum + ((numCars > 0) ? numCars : 1);
+    }, 0);
+    
+    // Step 3: Calculate projected occupancy (cars that should be parked on this date)
+    // Based on confirmed reservations whose stay includes this date
     const overlappingBookings = bookings.filter(b => {
-      // If booking is 'arrived', they are physically in parking regardless of scheduled dates
-      if (b.status === 'arrived') {
-        return true;
-      }
+      // Only count confirmed and arrived reservations for projections
+      if (b.status !== 'confirmed' && b.status !== 'arrived') return false;
       
-      // For confirmed bookings, check if the date range overlaps with the target date
-      if (b.status === 'confirmed') {
-        const bookingArrival = new Date(b.arrivalDate);
-        const bookingDeparture = new Date(b.departureDate);
-        const currentDate = new Date(dateStr);
-        
-        // Include departure date - a booking occupies space from arrival through departure (inclusive)
-        return bookingArrival <= currentDate && currentDate <= bookingDeparture;
-      }
+      const bookingArrival = new Date(b.arrivalDate);
+      const bookingDeparture = new Date(b.departureDate);
       
-      return false;
+      // Booking occupies space from arrival through departure (inclusive)
+      return bookingArrival <= targetDate && targetDate <= bookingDeparture;
     });
     
     let nonKeysCount = 0;
@@ -1397,7 +1420,6 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
         return;
       }
       
-      // More explicit numberOfCars handling
       const numCars = Number(b.numberOfCars);
       const carCount = (numCars > 0) ? numCars : 1;
       
@@ -1407,30 +1429,6 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
         nonKeysCount += carCount;
       }
     });
-    
-    // Calculate leaving count - bookings departing on this date (same logic as Exits tab)
-    const leavingBookings = bookings.filter(b => {
-      // Exclude cancelled, no-show, and already checked-out
-      if (b.status === 'cancelled' || b.status === 'no-show' || b.status === 'checked-out') return false;
-      
-      // Check if departure date matches
-      return b.departureDate === dateStr;
-    });
-    
-    const leavingCount = leavingBookings.reduce((sum, b) => {
-      const numCars = Number(b.numberOfCars);
-      return sum + ((numCars > 0) ? numCars : 1);
-    }, 0);
-    
-    // Calculate arriving count for this date
-    const arrivingBookings = bookings.filter(b => {
-      if (b.status === 'cancelled' || b.status === 'no-show' || b.status === 'declined') return false;
-      return b.arrivalDate === dateStr;
-    });
-    const arrivingCount = arrivingBookings.reduce((sum, b) => {
-      const numCars = Number(b.numberOfCars);
-      return sum + ((numCars > 0) ? numCars : 1);
-    }, 0);
     
     const totalCount = nonKeysCount + keysCount;
     const percentage = totalCount > 0 ? (totalCount / 200) * 100 : 0;
@@ -1446,6 +1444,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
       isMedium: percentage >= 50 && percentage < 80,
       isHigh: percentage >= 80 && percentage < 100,
       isFull: percentage >= 100,
+      isToday, // Flag to show this is today's date
     };
   };
 
@@ -1979,6 +1978,12 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
 
             {/* Monthly Calendar View */}
             <Card className="p-6">
+            {/* Calendar Title and Helper Text */}
+            <div className="mb-4">
+              <h2 className="text-2xl font-bold text-[#073590] mb-2">Очаквана заетост</h2>
+              <p className="text-sm text-gray-600 italic">Базирано на потвърдени резервации</p>
+            </div>
+            
             {/* Month Navigation */}
             <div className="flex items-center justify-between mb-6">
               <Button
@@ -1993,9 +1998,9 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                 {bg.previousMonth}
               </Button>
               
-              <h2 className="text-2xl font-bold">
+              <h3 className="text-xl font-bold">
                 {currentMonth.toLocaleDateString('bg-BG', { month: 'long', year: 'numeric' })}
-              </h2>
+              </h3>
               
               <Button
                 variant="outline"
@@ -2061,9 +2066,14 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                         } ${isToday ? 'ring-4 ring-[#f1c933] font-black border-[#073590] border-4' : ''}`}
                       >
                         <div className={`${isToday ? 'text-xl' : 'text-lg'} font-medium mb-1`}>{day}</div>
-                        <div className={`${isToday ? 'text-sm font-bold' : 'text-xs'}`}>
-                          {capacity.totalCount > 0 ? `${capacity.totalCount}/200` : '-'}
+                        <div className={`${isToday ? 'text-base font-bold' : 'text-sm'} font-semibold`}>
+                          {capacity.totalCount > 0 ? capacity.totalCount : '-'}
                         </div>
+                        {(capacity.arrivingCount > 0 || capacity.leavingCount > 0) && (
+                          <div className={`${isToday ? 'text-xs' : 'text-[10px]'} text-gray-600 mt-1`}>
+                            +{capacity.arrivingCount} / -{capacity.leavingCount}
+                          </div>
+                        )}
                       </button>
                     );
                   }
@@ -2102,51 +2112,114 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
               const capacity = calculateCapacityForDate(selectedDate);
               const availableSpots = 200 - capacity.totalCount;
               
+              // Calculate REAL parking status (only for today)
+              const realParked = bookings.filter(b => b.status === 'arrived').reduce((sum, b) => {
+                const numCars = Number(b.numberOfCars);
+                return sum + ((numCars > 0) ? numCars : 1);
+              }, 0);
+              const realAvailable = 200 - realParked;
+              
               return (
                 <Card className="p-6 bg-gradient-to-br from-blue-50 to-purple-50">
                   <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
                     <Calendar className="h-6 w-6" />
-                    {bg.capacityForDate} {formatDateDisplay(selectedDate)}
+                    Детайли за {formatDateDisplay(selectedDate)}
                   </h3>
                   
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                    <div className="bg-white p-4 rounded-lg shadow border-2 border-blue-200">
-                      <div className="text-gray-600 text-sm font-semibold mb-1">{bg.carsWithoutKeys}</div>
-                      <div className="text-3xl font-bold text-blue-600">{capacity.nonKeysCount}/180</div>
-                    </div>
-                    
-                    <div className="bg-white p-4 rounded-lg shadow border-2 border-purple-200">
-                      <div className="text-gray-600 text-sm font-semibold mb-1">{bg.carsWithKeys}</div>
-                      <div className="text-3xl font-bold text-purple-600">{capacity.keysCount}/20</div>
-                    </div>
-                    
-                    <div className="bg-white p-4 rounded-lg shadow border-2 border-gray-300">
-                      <div className="text-gray-600 text-sm font-semibold mb-1">{bg.totalCars}</div>
-                      <div className="text-3xl font-bold text-gray-800">{capacity.totalCount}/200</div>
-                    </div>
-                    
-                    <div className={`bg-white p-4 rounded-lg shadow border-2 ${availableSpots <= 0 ? 'border-red-400' : availableSpots < 40 ? 'border-yellow-400' : 'border-green-400'}`}>
-                      <div className="text-gray-600 text-sm font-semibold mb-1">{bg.availableSpots}</div>
-                      <div className={`text-3xl font-bold ${availableSpots <= 0 ? 'text-red-600' : availableSpots < 40 ? 'text-yellow-600' : 'text-green-600'}`}>
-                        {availableSpots}
+                  {/* Show BOTH real and projected for today */}
+                  {capacity.isToday && (
+                    <>
+                      {/* Section 1: Real-time Status (Live) */}
+                      <div className="mb-6 p-4 bg-white rounded-lg border-2 border-[#073590]">
+                        <h4 className="text-lg font-bold text-[#073590] mb-3 flex items-center gap-2">
+                          <Car className="h-5 w-5" />
+                          📍 Реално състояние (Live)
+                        </h4>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="text-center p-3 bg-blue-50 rounded">
+                            <div className="text-sm text-gray-600 font-semibold mb-1">В ПАРКИНГА</div>
+                            <div className="text-4xl font-black text-[#073590]">{realParked}</div>
+                          </div>
+                          <div className="text-center p-3 bg-green-50 rounded">
+                            <div className="text-sm text-gray-600 font-semibold mb-1">СВОБОДНИ</div>
+                            <div className="text-4xl font-black text-green-600">{realAvailable}</div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                      
+                      {/* Section 2: Forecast for Today */}
+                      <div className="mb-4 p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border-2 border-purple-300">
+                        <h4 className="text-lg font-bold text-purple-700 mb-3 flex items-center gap-2">
+                          <Calendar className="h-5 w-5" />
+                          📊 Прогноза за днес
+                        </h4>
+                        <div className="grid grid-cols-3 gap-3 mb-3">
+                          <div className="text-center p-3 bg-white rounded shadow">
+                            <div className="text-xs text-gray-600 font-semibold mb-1">Очаквани коли</div>
+                            <div className="text-3xl font-bold text-purple-700">{capacity.totalCount}</div>
+                          </div>
+                          <div className="text-center p-3 bg-white rounded shadow">
+                            <div className="text-xs text-gray-600 font-semibold mb-1">⬇️ Пристигания</div>
+                            <div className="text-3xl font-bold text-green-600">{capacity.arrivingCount}</div>
+                          </div>
+                          <div className="text-center p-3 bg-white rounded shadow">
+                            <div className="text-xs text-gray-600 font-semibold mb-1">⬆️ Напускания</div>
+                            <div className="text-3xl font-bold text-orange-600">{capacity.leavingCount}</div>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
                   
-                  {/* Arrivals and Departures */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-white p-4 rounded-lg shadow border-2 border-green-200">
-                      <div className="text-gray-600 text-sm font-semibold mb-1">⬇️ {bg.arrivingToday || 'ПРИСТИГАНИЯ'}</div>
-                      <div className="text-3xl font-bold text-green-600">{capacity.arrivingCount}</div>
-                      <div className="text-xs text-gray-500">коли</div>
-                    </div>
-                    
-                    <div className="bg-white p-4 rounded-lg shadow border-2 border-orange-200">
-                      <div className="text-gray-600 text-sm font-semibold mb-1">⬆️ {bg.leavingToday}</div>
-                      <div className="text-3xl font-bold text-orange-600">{capacity.leavingCount}</div>
-                      <div className="text-xs text-gray-500">коли</div>
-                    </div>
-                  </div>
+                  {/* For future/past dates - only show projected */}
+                  {!capacity.isToday && (
+                    <>
+                      <div className="mb-4 p-3 bg-purple-50 rounded border border-purple-200">
+                        <p className="text-sm text-purple-800 font-semibold">
+                          📊 Прогнозна заетост (базирано на потвърдени резервации)
+                        </p>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                        <div className="bg-white p-4 rounded-lg shadow border-2 border-blue-200">
+                          <div className="text-gray-600 text-sm font-semibold mb-1">{bg.carsWithoutKeys}</div>
+                          <div className="text-3xl font-bold text-blue-600">{capacity.nonKeysCount}/180</div>
+                        </div>
+                        
+                        <div className="bg-white p-4 rounded-lg shadow border-2 border-purple-200">
+                          <div className="text-gray-600 text-sm font-semibold mb-1">{bg.carsWithKeys}</div>
+                          <div className="text-3xl font-bold text-purple-600">{capacity.keysCount}/20</div>
+                        </div>
+                        
+                        <div className="bg-white p-4 rounded-lg shadow border-2 border-gray-300">
+                          <div className="text-gray-600 text-sm font-semibold mb-1">{bg.totalCars}</div>
+                          <div className="text-3xl font-bold text-gray-800">{capacity.totalCount}/200</div>
+                        </div>
+                        
+                        <div className={`bg-white p-4 rounded-lg shadow border-2 ${availableSpots <= 0 ? 'border-red-400' : availableSpots < 40 ? 'border-yellow-400' : 'border-green-400'}`}>
+                          <div className="text-gray-600 text-sm font-semibold mb-1">{bg.availableSpots}</div>
+                          <div className={`text-3xl font-bold ${availableSpots <= 0 ? 'text-red-600' : availableSpots < 40 ? 'text-yellow-600' : 'text-green-600'}`}>
+                            {availableSpots}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Arrivals and Departures */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-white p-4 rounded-lg shadow border-2 border-green-200">
+                          <div className="text-gray-600 text-sm font-semibold mb-1">⬇️ Пристигания</div>
+                          <div className="text-3xl font-bold text-green-600">{capacity.arrivingCount}</div>
+                          <div className="text-xs text-gray-500">коли</div>
+                        </div>
+                        
+                        <div className="bg-white p-4 rounded-lg shadow border-2 border-orange-200">
+                          <div className="text-gray-600 text-sm font-semibold mb-1">⬆️ Напускания</div>
+                          <div className="text-3xl font-bold text-orange-600">{capacity.leavingCount}</div>
+                          <div className="text-xs text-gray-500">коли</div>
+                        </div>
+                      </div>
+                    </>
+                  )}
                   
                   {/* Status Indicator */}
                   <div className="mt-6 p-4 rounded-lg text-center text-lg font-semibold" style={{
