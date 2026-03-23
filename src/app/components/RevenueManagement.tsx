@@ -8,34 +8,23 @@ import {
   Banknote,
   CreditCard,
   TrendingUp,
-  TrendingDown,
   Calendar,
   Download,
-  User,
-  RefreshCw
+  ChevronDown,
+  ChevronUp,
+  Filter,
+  Search
 } from "lucide-react";
 import { formatDateDisplay } from "../utils/dateFormat";
-import {
-  BarChart,
-  Bar,
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer
-} from "recharts";
 
 interface Booking {
   id: string;
+  bookingCode?: string;
   arrivalDate: string;
   departureDate: string;
   name: string;
+  email: string;
+  phone: string;
   status: string;
   totalPrice: number;
   finalPrice?: number;
@@ -52,6 +41,7 @@ interface Booking {
 interface User {
   username: string;
   role: string;
+  fullName?: string;
 }
 
 interface RevenueManagementProps {
@@ -61,13 +51,18 @@ interface RevenueManagementProps {
 
 type PeriodType = "today" | "yesterday" | "thisWeek" | "lastWeek" | "thisMonth" | "lastMonth" | "last3Months" | "last6Months" | "thisYear" | "next30Days" | "next90Days" | "next6Months" | "next12Months" | "custom";
 
-const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
-
 export function RevenueManagement({ bookings, users }: RevenueManagementProps) {
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>("thisMonth");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [viewMode, setViewMode] = useState<"overview" | "daily" | "operator" | "payment">("overview");
+  const [expandedCollected, setExpandedCollected] = useState(false);
+  const [expandedForecast, setExpandedForecast] = useState(false);
+  
+  // Filters
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>("all");
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState<string>("all");
 
   // Calculate date range based on selected period
   const dateRange = useMemo(() => {
@@ -85,7 +80,7 @@ export function RevenueManagement({ bookings, users }: RevenueManagementProps) {
         end.setDate(end.getDate() - 1);
         break;
       case "thisWeek":
-        start.setDate(start.getDate() - start.getDay() + 1); // Monday
+        start.setDate(start.getDate() - start.getDay() + 1);
         end.setDate(start.getDate() + 6);
         break;
       case "lastWeek":
@@ -132,221 +127,211 @@ export function RevenueManagement({ bookings, users }: RevenueManagementProps) {
     return { start, end };
   }, [selectedPeriod, startDate, endDate]);
 
-  // Filter bookings by date range and calculate revenue
-  const revenueData = useMemo(() => {
-    const isPastPeriod = dateRange.end <= new Date();
-    const isFuturePeriod = dateRange.start > new Date();
+  // Determine period type
+  const periodType = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
     
-    // For past periods, only count completed bookings
-    // For future periods, count confirmed and arrived bookings (projected)
-    // For mixed periods, count both
-    const relevantBookings = bookings.filter(booking => {
-      // Use arrivalDate for revenue calculation since customers pay on arrival
-      const bookingDate = new Date(booking.arrivalDate);
-      const isInRange = bookingDate >= dateRange.start && bookingDate <= dateRange.end;
+    if (dateRange.end < today) {
+      return "past";
+    } else if (dateRange.start > today) {
+      return "future";
+    } else {
+      return "mixed";
+    }
+  }, [dateRange]);
+
+  // Filter and calculate revenue
+  const revenueData = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Collected Revenue (Past, Paid Only)
+    const collectedBookings = bookings.filter(booking => {
+      const arrivalDate = new Date(booking.arrivalDate);
+      const isInRange = arrivalDate >= dateRange.start && arrivalDate <= dateRange.end;
+      const isPast = arrivalDate < today;
+      const isPaid = booking.paymentStatus === "paid";
       
-      if (!isInRange) return false;
-      
-      const now = new Date();
-      const isPast = bookingDate < now;
-      
-      if (isPast) {
-        // Past bookings: only completed
-        return booking.status === "completed";
-      } else {
-        // Future bookings: confirmed or arrived (projected)
-        return booking.status === "confirmed" || booking.status === "arrived";
-      }
+      return isInRange && isPast && isPaid;
     });
-
-    let totalRevenue = 0;
-    let cashRevenue = 0;
-    let cardRevenue = 0;
-    let projectedRevenue = 0;
-    let totalLateFees = 0;
-    let totalDiscounts = 0;
-    let totalBasePrice = 0;
-    let paidCount = 0;
-    let unpaidCount = 0;
-
-    relevantBookings.forEach(booking => {
+    
+    // Forecast Revenue (Future, Confirmed Only)
+    const forecastBookings = bookings.filter(booking => {
+      const arrivalDate = new Date(booking.arrivalDate);
+      const isInRange = arrivalDate >= dateRange.start && arrivalDate <= dateRange.end;
+      const isFuture = arrivalDate >= today;
+      const isConfirmed = booking.status === "confirmed" || booking.status === "arrived";
+      
+      return isInRange && isFuture && isConfirmed;
+    });
+    
+    // Calculate collected totals
+    let collectedTotal = 0;
+    let cashTotal = 0;
+    let cardTotal = 0;
+    
+    collectedBookings.forEach(booking => {
       const amount = booking.finalPrice || booking.totalPrice;
-      const lateFee = booking.lateFee || 0;
-      const discount = booking.discountAmount || 0;
+      collectedTotal += amount;
       
-      totalRevenue += amount;
-      totalLateFees += lateFee;
-      totalDiscounts += discount;
-      totalBasePrice += booking.totalPrice;
-
-      const now = new Date();
-      // Use arrivalDate to determine if payment has been collected
-      const bookingDate = new Date(booking.arrivalDate);
-      const isPast = bookingDate < now;
-      
-      if (isPast) {
-        // Past completed bookings
-        if (booking.paymentStatus === "paid") {
-          paidCount++;
-          if (booking.paymentMethod === "cash") {
-            cashRevenue += amount;
-          } else if (booking.paymentMethod === "card") {
-            cardRevenue += amount;
-          }
-        } else {
-          unpaidCount++;
-        }
-      } else {
-        // Future projected bookings
-        projectedRevenue += amount;
-        unpaidCount++;
+      if (booking.paymentMethod === "cash") {
+        cashTotal += amount;
+      } else if (booking.paymentMethod === "card") {
+        cardTotal += amount;
       }
     });
-
+    
+    // Calculate forecast totals
+    let forecastTotal = 0;
+    let forecastPrepaid = 0;
+    let forecastUnpaid = 0;
+    
+    forecastBookings.forEach(booking => {
+      const amount = booking.finalPrice || booking.totalPrice;
+      forecastTotal += amount;
+      
+      if (booking.paymentStatus === "paid") {
+        forecastPrepaid += amount;
+      } else {
+        forecastUnpaid += amount;
+      }
+    });
+    
     return {
-      total: totalRevenue,
-      cash: cashRevenue,
-      card: cardRevenue,
-      projected: projectedRevenue,
-      lateFees: totalLateFees,
-      discounts: totalDiscounts,
-      basePrice: totalBasePrice,
-      count: relevantBookings.length,
-      paidCount,
-      unpaidCount,
-      averagePrice: relevantBookings.length > 0 ? totalRevenue / relevantBookings.length : 0,
-      bookings: relevantBookings
+      collected: {
+        total: collectedTotal,
+        cash: cashTotal,
+        card: cardTotal,
+        count: collectedBookings.length,
+        bookings: collectedBookings
+      },
+      forecast: {
+        total: forecastTotal,
+        prepaid: forecastPrepaid,
+        unpaid: forecastUnpaid,
+        count: forecastBookings.length,
+        bookings: forecastBookings
+      }
     };
   }, [bookings, dateRange]);
 
-  // Daily breakdown
-  const dailyBreakdown = useMemo(() => {
-    const dailyMap = new Map<string, { date: string; revenue: number; count: number; cash: number; card: number; projected: number }>();
-    
-    revenueData.bookings.forEach(booking => {
-      // Use arrivalDate for daily breakdown since that's when revenue is collected
-      const date = booking.arrivalDate;
-      const amount = booking.finalPrice || booking.totalPrice;
-      const now = new Date();
-      const bookingDate = new Date(booking.arrivalDate);
-      const isPast = bookingDate < now;
-      
-      if (!dailyMap.has(date)) {
-        dailyMap.set(date, { date, revenue: 0, count: 0, cash: 0, card: 0, projected: 0 });
+  // Apply filters to bookings
+  const applyFilters = (bookingsList: Booking[]) => {
+    return bookingsList.filter(booking => {
+      // Search filter
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const matchesSearch = 
+          booking.name.toLowerCase().includes(query) ||
+          booking.email.toLowerCase().includes(query) ||
+          booking.bookingCode?.toLowerCase().includes(query) ||
+          booking.id.toLowerCase().includes(query);
+        if (!matchesSearch) return false;
       }
       
-      const day = dailyMap.get(date)!;
-      day.revenue += amount;
-      day.count++;
-      
-      if (isPast && booking.paymentStatus === "paid") {
-        if (booking.paymentMethod === "cash") {
-          day.cash += amount;
-        } else if (booking.paymentMethod === "card") {
-          day.card += amount;
-        }
-      } else {
-        day.projected += amount;
+      // Status filter
+      if (statusFilter !== "all" && booking.status !== statusFilter) {
+        return false;
       }
+      
+      // Payment status filter
+      if (paymentStatusFilter !== "all" && booking.paymentStatus !== paymentStatusFilter) {
+        return false;
+      }
+      
+      // Payment method filter
+      if (paymentMethodFilter !== "all" && booking.paymentMethod !== paymentMethodFilter) {
+        return false;
+      }
+      
+      return true;
     });
-    
-    return Array.from(dailyMap.values()).sort((a, b) => a.date.localeCompare(b.date));
-  }, [revenueData.bookings]);
+  };
 
-  // Operator breakdown
-  const operatorBreakdown = useMemo(() => {
-    const operatorMap = new Map<string, { operator: string; revenue: number; count: number }>();
-    
-    revenueData.bookings.forEach(booking => {
-      const operator = booking.completedBy || booking.operatorName || "Система";
-      const amount = booking.finalPrice || booking.totalPrice;
-      
-      if (!operatorMap.has(operator)) {
-        operatorMap.set(operator, { operator, revenue: 0, count: 0 });
-      }
-      
-      const op = operatorMap.get(operator)!;
-      op.revenue += amount;
-      op.count++;
-    });
-    
-    return Array.from(operatorMap.values()).sort((a, b) => b.revenue - a.revenue);
-  }, [revenueData.bookings]);
+  const filteredCollected = applyFilters(revenueData.collected.bookings);
+  const filteredForecast = applyFilters(revenueData.forecast.bookings);
 
-  // Payment method breakdown
-  const paymentBreakdown = useMemo(() => {
-    const now = new Date();
-    const paid = { cash: 0, card: 0 };
-    const projected = { total: 0 };
+  // Export functions
+  const exportCollectedCSV = () => {
+    const headers = ["ID Резервация", "Име", "Email", "Телефон", "Пристигане", "Заминаване", "Сума", "Метод на плащане", "Платено на", "Оператор"];
+    const rows = filteredCollected.map(b => [
+      b.bookingCode || b.id,
+      b.name,
+      b.email,
+      b.phone,
+      formatDateDisplay(b.arrivalDate),
+      formatDateDisplay(b.departureDate),
+      `€${(b.finalPrice || b.totalPrice).toFixed(2)}`,
+      b.paymentMethod === "cash" ? "В брой" : "С карта",
+      b.completedAt || "-",
+      b.completedBy || b.operatorName || "-"
+    ]);
     
-    revenueData.bookings.forEach(booking => {
-      const amount = booking.finalPrice || booking.totalPrice;
-      // Use arrivalDate to determine if payment has been collected
-      const bookingDate = new Date(booking.arrivalDate);
-      const isPast = bookingDate < now;
-      
-      if (isPast && booking.paymentStatus === "paid") {
-        if (booking.paymentMethod === "cash") {
-          paid.cash += amount;
-        } else if (booking.paymentMethod === "card") {
-          paid.card += amount;
-        }
-      } else {
-        projected.total += amount;
-      }
-    });
-    
-    const data = [];
-    if (paid.cash > 0) data.push({ name: "В брой", value: paid.cash });
-    if (paid.card > 0) data.push({ name: "С карта", value: paid.card });
-    if (projected.total > 0) data.push({ name: "Прогнозно", value: projected.total });
-    
-    return data;
-  }, [revenueData.bookings]);
-
-  const exportData = () => {
-    const data = {
-      period: selectedPeriod,
-      dateRange: {
-        start: dateRange.start.toISOString().split('T')[0],
-        end: dateRange.end.toISOString().split('T')[0]
-      },
-      summary: {
-        totalRevenue: revenueData.total,
-        cashRevenue: revenueData.cash,
-        cardRevenue: revenueData.card,
-        projectedRevenue: revenueData.projected,
-        totalBookings: revenueData.count,
-        averagePrice: revenueData.averagePrice
-      },
-      dailyBreakdown,
-      operatorBreakdown,
-      paymentBreakdown
-    };
-    
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const csv = [headers, ...rows].map(row => row.join(",")).join("\n");
+    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = `revenue-report-${dateRange.start.toISOString().split('T')[0]}-to-${dateRange.end.toISOString().split('T')[0]}.json`;
+    a.download = `събрани-приходи-${dateRange.start.toISOString().split('T')[0]}-${dateRange.end.toISOString().split('T')[0]}.csv`;
     a.click();
+  };
+
+  const exportForecastCSV = () => {
+    const headers = ["ID Резервация", "Име", "Email", "Телефон", "Пристигане", "Заминаване", "Очаквана сума", "Статус", "Статус на плащане"];
+    const rows = filteredForecast.map(b => [
+      b.bookingCode || b.id,
+      b.name,
+      b.email,
+      b.phone,
+      formatDateDisplay(b.arrivalDate),
+      formatDateDisplay(b.departureDate),
+      `€${(b.finalPrice || b.totalPrice).toFixed(2)}`,
+      b.status === "confirmed" ? "Потвърдена" : b.status === "arrived" ? "Пристигнала" : b.status,
+      b.paymentStatus === "paid" ? "Платено" : "Неплатено"
+    ]);
+    
+    const csv = [headers, ...rows].map(row => row.join(",")).join("\n");
+    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `прогнозни-приходи-${dateRange.start.toISOString().split('T')[0]}-${dateRange.end.toISOString().split('T')[0]}.csv`;
+    a.click();
+  };
+
+  const exportAllCSV = () => {
+    exportCollectedCSV();
+    setTimeout(() => exportForecastCSV(), 500);
   };
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h2 className="text-3xl font-bold">Управление на приходи</h2>
-        <Button onClick={exportData} variant="outline">
-          <Download className="h-5 w-5 mr-2" />
-          Експортирай
-        </Button>
+        
+        {/* Export Dropdown */}
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={exportCollectedCSV} variant="outline" className="text-sm">
+            <Download className="h-4 w-4 mr-2" />
+            Експорт събрани (.csv)
+          </Button>
+          <Button onClick={exportForecastCSV} variant="outline" className="text-sm">
+            <Download className="h-4 w-4 mr-2" />
+            Експорт прогнозни (.csv)
+          </Button>
+          <Button onClick={exportAllCSV} variant="default" className="text-sm bg-[#073590]">
+            <Download className="h-4 w-4 mr-2" />
+            Експорт всички (.csv)
+          </Button>
+        </div>
       </div>
 
       {/* Period Selector */}
       <Card className="p-6">
-        <Label className="text-lg font-semibold mb-4 block">Изберете период</Label>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-4">
+        <Label className="text-lg font-semibold mb-4 block">Избран период</Label>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 mb-4">
           {/* Past periods */}
           <Button
             variant={selectedPeriod === "today" ? "default" : "outline"}
@@ -389,20 +374,6 @@ export function RevenueManagement({ bookings, users }: RevenueManagementProps) {
             className="text-sm"
           >
             Миналия месец
-          </Button>
-          <Button
-            variant={selectedPeriod === "last3Months" ? "default" : "outline"}
-            onClick={() => setSelectedPeriod("last3Months")}
-            className="text-sm"
-          >
-            Последните 3 месеца
-          </Button>
-          <Button
-            variant={selectedPeriod === "last6Months" ? "default" : "outline"}
-            onClick={() => setSelectedPeriod("last6Months")}
-            className="text-sm"
-          >
-            Последните 6 месеца
           </Button>
           <Button
             variant={selectedPeriod === "thisYear" ? "default" : "outline"}
@@ -455,7 +426,7 @@ export function RevenueManagement({ bookings, users }: RevenueManagementProps) {
           </Button>
           
           {selectedPeriod === "custom" && (
-            <div className="grid grid-cols-2 gap-4 mt-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
               <div>
                 <Label>Начална дата</Label>
                 <Input
@@ -477,332 +448,393 @@ export function RevenueManagement({ bookings, users }: RevenueManagementProps) {
         </div>
 
         {/* Current date range display */}
-        <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-          <p className="text-sm text-gray-700">
-            <strong>Избран период:</strong> {formatDateDisplay(dateRange.start.toISOString().split('T')[0])} - {formatDateDisplay(dateRange.end.toISOString().split('T')[0])}
+        <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+          <p className="text-sm text-gray-700 font-semibold">
+            📅 Избран период: {formatDateDisplay(dateRange.start.toISOString().split('T')[0])} - {formatDateDisplay(dateRange.end.toISOString().split('T')[0])}
+          </p>
+          <p className="text-xs text-gray-600 mt-1">
+            {periodType === "past" ? "📊 Минал период (само събрани приходи)" : 
+             periodType === "future" ? "📈 Бъдещ период (само прогнозни приходи)" : 
+             "🔄 Смесен период (и събрани, и прогнозни)"}
           </p>
         </div>
       </Card>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-gray-600">Обща сума</span>
-            <Euro className="h-5 w-5 text-green-600" />
-          </div>
-          <p className="text-3xl font-bold text-green-600">€{revenueData.total.toFixed(2)}</p>
-          <p className="text-sm text-gray-500 mt-1">{revenueData.count} резервации</p>
-        </Card>
+      {periodType === "past" && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Collected Revenue */}
+          <Card className="p-6 bg-gradient-to-br from-green-50 to-white border-2 border-green-300">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-gray-700 font-semibold">Събрани приходи</span>
+              <Euro className="h-6 w-6 text-green-600" />
+            </div>
+            <p className="text-4xl font-black text-green-600">€{revenueData.collected.total.toFixed(2)}</p>
+            <p className="text-sm text-gray-600 mt-2">{revenueData.collected.count} платени резервации</p>
+          </Card>
 
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-gray-600">В брой</span>
-            <Banknote className="h-5 w-5 text-blue-600" />
-          </div>
-          <p className="text-3xl font-bold text-blue-600">€{revenueData.cash.toFixed(2)}</p>
-          <p className="text-sm text-gray-500 mt-1">{revenueData.paidCount > 0 ? `${((revenueData.cash / revenueData.total) * 100).toFixed(1)}%` : '0%'}</p>
-        </Card>
+          {/* Cash */}
+          <Card className="p-6 border-2 border-blue-200">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-gray-700 font-semibold">В брой</span>
+              <Banknote className="h-6 w-6 text-blue-600" />
+            </div>
+            <p className="text-4xl font-black text-blue-600">€{revenueData.collected.cash.toFixed(2)}</p>
+            <p className="text-sm text-gray-600 mt-2">
+              {revenueData.collected.total > 0 
+                ? `${((revenueData.collected.cash / revenueData.collected.total) * 100).toFixed(1)}% от събраните` 
+                : "0%"}
+            </p>
+          </Card>
 
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-gray-600">С карта</span>
-            <CreditCard className="h-5 w-5 text-purple-600" />
-          </div>
-          <p className="text-3xl font-bold text-purple-600">€{revenueData.card.toFixed(2)}</p>
-          <p className="text-sm text-gray-500 mt-1">{revenueData.paidCount > 0 ? `${((revenueData.card / revenueData.total) * 100).toFixed(1)}%` : '0%'}</p>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-gray-600">Прогнозно</span>
-            <TrendingUp className="h-5 w-5 text-orange-600" />
-          </div>
-          <p className="text-3xl font-bold text-orange-600">€{revenueData.projected.toFixed(2)}</p>
-          <p className="text-sm text-gray-500 mt-1">{revenueData.unpaidCount} неплатени</p>
-        </Card>
-      </div>
-
-      {/* Additional Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold mb-3">Базова цена</h3>
-          <p className="text-2xl font-bold">€{revenueData.basePrice.toFixed(2)}</p>
-        </Card>
-
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold mb-3">Такси за закъснение</h3>
-          <p className="text-2xl font-bold text-red-600">€{revenueData.lateFees.toFixed(2)}</p>
-        </Card>
-
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold mb-3">Отстъпки</h3>
-          <p className="text-2xl font-bold text-blue-600">-€{revenueData.discounts.toFixed(2)}</p>
-        </Card>
-      </div>
-
-      {/* View Mode Selector */}
-      <div className="flex gap-3">
-        <Button
-          variant={viewMode === "overview" ? "default" : "outline"}
-          onClick={() => setViewMode("overview")}
-        >
-          Обща информация
-        </Button>
-        <Button
-          variant={viewMode === "daily" ? "default" : "outline"}
-          onClick={() => setViewMode("daily")}
-        >
-          По дни
-        </Button>
-        <Button
-          variant={viewMode === "operator" ? "default" : "outline"}
-          onClick={() => setViewMode("operator")}
-        >
-          По оператори
-        </Button>
-        <Button
-          variant={viewMode === "payment" ? "default" : "outline"}
-          onClick={() => setViewMode("payment")}
-        >
-          По метод на плащане
-        </Button>
-      </div>
-
-      {/* Charts and Breakdowns */}
-      {viewMode === "overview" && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Daily Revenue Chart */}
-          {dailyBreakdown.length > 0 && (
-            <Card className="p-6">
-              <h3 className="text-xl font-semibold mb-4">Приходи по дни</h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={dailyBreakdown}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="date" 
-                    tickFormatter={(value) => formatDateDisplay(value).split(' ')[0]}
-                    angle={-45}
-                    textAnchor="end"
-                    height={80}
-                  />
-                  <YAxis />
-                  <Tooltip 
-                    labelFormatter={(value) => formatDateDisplay(value)}
-                    formatter={(value: number) => `€${value.toFixed(2)}`}
-                  />
-                  <Legend />
-                  <Line type="monotone" dataKey="revenue" stroke="#10b981" name="Приходи" strokeWidth={2} />
-                </LineChart>
-              </ResponsiveContainer>
-            </Card>
-          )}
-
-          {/* Payment Method Pie Chart */}
-          {paymentBreakdown.length > 0 && (
-            <Card className="p-6">
-              <h3 className="text-xl font-semibold mb-4">Разпределение по метод</h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={paymentBreakdown}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, value }) => `${name}: €${value.toFixed(0)}`}
-                    outerRadius={100}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {paymentBreakdown.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value: number) => `€${value.toFixed(2)}`} />
-                </PieChart>
-              </ResponsiveContainer>
-            </Card>
-          )}
+          {/* Card */}
+          <Card className="p-6 border-2 border-purple-200">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-gray-700 font-semibold">С карта</span>
+              <CreditCard className="h-6 w-6 text-purple-600" />
+            </div>
+            <p className="text-4xl font-black text-purple-600">€{revenueData.collected.card.toFixed(2)}</p>
+            <p className="text-sm text-gray-600 mt-2">
+              {revenueData.collected.total > 0 
+                ? `${((revenueData.collected.card / revenueData.collected.total) * 100).toFixed(1)}% от събраните` 
+                : "0%"}
+            </p>
+          </Card>
         </div>
       )}
 
-      {viewMode === "daily" && dailyBreakdown.length > 0 && (
-        <Card className="p-6">
-          <h3 className="text-xl font-semibold mb-4">Детайлна разбивка по дни</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="text-left p-3 font-semibold">Дата</th>
-                  <th className="text-center p-3 font-semibold">Резервации</th>
-                  <th className="text-right p-3 font-semibold">В брой</th>
-                  <th className="text-right p-3 font-semibold">С карта</th>
-                  <th className="text-right p-3 font-semibold">Прогнозно</th>
-                  <th className="text-right p-3 font-semibold">Обща сума</th>
-                </tr>
-              </thead>
-              <tbody>
-                {dailyBreakdown.map((day, idx) => (
-                  <tr key={idx} className="border-b hover:bg-gray-50">
-                    <td className="p-3">{formatDateDisplay(day.date)}</td>
-                    <td className="text-center p-3">{day.count}</td>
-                    <td className="text-right p-3">€{day.cash.toFixed(2)}</td>
-                    <td className="text-right p-3">€{day.card.toFixed(2)}</td>
-                    <td className="text-right p-3 text-orange-600">€{day.projected.toFixed(2)}</td>
-                    <td className="text-right p-3 font-bold">€{day.revenue.toFixed(2)}</td>
-                  </tr>
-                ))}
-                <tr className="bg-gray-100 font-bold">
-                  <td className="p-3">Общо</td>
-                  <td className="text-center p-3">{revenueData.count}</td>
-                  <td className="text-right p-3">€{revenueData.cash.toFixed(2)}</td>
-                  <td className="text-right p-3">€{revenueData.card.toFixed(2)}</td>
-                  <td className="text-right p-3 text-orange-600">€{revenueData.projected.toFixed(2)}</td>
-                  <td className="text-right p-3">€{revenueData.total.toFixed(2)}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          {/* Daily Bar Chart */}
-          <div className="mt-6">
-            <ResponsiveContainer width="100%" height={400}>
-              <BarChart data={dailyBreakdown}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="date" 
-                  tickFormatter={(value) => formatDateDisplay(value).split(' ')[0]}
-                  angle={-45}
-                  textAnchor="end"
-                  height={100}
-                />
-                <YAxis />
-                <Tooltip 
-                  labelFormatter={(value) => formatDateDisplay(value)}
-                  formatter={(value: number) => `€${value.toFixed(2)}`}
-                />
-                <Legend />
-                <Bar dataKey="cash" fill="#10b981" name="В брой" />
-                <Bar dataKey="card" fill="#8b5cf6" name="С карта" />
-                <Bar dataKey="projected" fill="#f59e0b" name="Прогнозно" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </Card>
-      )}
-
-      {viewMode === "operator" && operatorBreakdown.length > 0 && (
-        <Card className="p-6">
-          <h3 className="text-xl font-semibold mb-4">Приходи по оператори</h3>
-          <div className="overflow-x-auto mb-6">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="text-left p-3 font-semibold">Оператор</th>
-                  <th className="text-center p-3 font-semibold">Резервации</th>
-                  <th className="text-right p-3 font-semibold">Приходи</th>
-                  <th className="text-right p-3 font-semibold">Средна цена</th>
-                </tr>
-              </thead>
-              <tbody>
-                {operatorBreakdown.map((op, idx) => (
-                  <tr key={idx} className="border-b hover:bg-gray-50">
-                    <td className="p-3 flex items-center gap-2">
-                      <User className="h-4 w-4 text-gray-400" />
-                      {op.operator}
-                    </td>
-                    <td className="text-center p-3">{op.count}</td>
-                    <td className="text-right p-3 font-bold">€{op.revenue.toFixed(2)}</td>
-                    <td className="text-right p-3 text-gray-600">€{(op.revenue / op.count).toFixed(2)}</td>
-                  </tr>
-                ))}
-                <tr className="bg-gray-100 font-bold">
-                  <td className="p-3">Общо</td>
-                  <td className="text-center p-3">{revenueData.count}</td>
-                  <td className="text-right p-3">€{revenueData.total.toFixed(2)}</td>
-                  <td className="text-right p-3">€{revenueData.averagePrice.toFixed(2)}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          {/* Operator Bar Chart */}
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={operatorBreakdown}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="operator" />
-              <YAxis />
-              <Tooltip formatter={(value: number) => `€${value.toFixed(2)}`} />
-              <Legend />
-              <Bar dataKey="revenue" fill="#3b82f6" name="Приходи" />
-            </BarChart>
-          </ResponsiveContainer>
-        </Card>
-      )}
-
-      {viewMode === "payment" && paymentBreakdown.length > 0 && (
-        <Card className="p-6">
-          <h3 className="text-xl font-semibold mb-4">Разбивка по метод на плащане</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Payment breakdown table */}
-            <div>
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="text-left p-3 font-semibold">Метод</th>
-                    <th className="text-right p-3 font-semibold">Сума</th>
-                    <th className="text-right p-3 font-semibold">%</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paymentBreakdown.map((payment, idx) => (
-                    <tr key={idx} className="border-b">
-                      <td className="p-3">{payment.name}</td>
-                      <td className="text-right p-3 font-bold">€{payment.value.toFixed(2)}</td>
-                      <td className="text-right p-3">{((payment.value / revenueData.total) * 100).toFixed(1)}%</td>
-                    </tr>
-                  ))}
-                  <tr className="bg-gray-100 font-bold">
-                    <td className="p-3">Общо</td>
-                    <td className="text-right p-3">€{revenueData.total.toFixed(2)}</td>
-                    <td className="text-right p-3">100%</td>
-                  </tr>
-                </tbody>
-              </table>
+      {periodType === "future" && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Forecast Revenue */}
+          <Card className="p-6 bg-gradient-to-br from-orange-50 to-white border-2 border-orange-300">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-gray-700 font-semibold">Прогнозни приходи</span>
+              <TrendingUp className="h-6 w-6 text-orange-600" />
             </div>
+            <p className="text-4xl font-black text-orange-600">€{revenueData.forecast.total.toFixed(2)}</p>
+            <p className="text-sm text-gray-600 mt-2">{revenueData.forecast.count} потвърдени резервации</p>
+          </Card>
 
-            {/* Pie Chart */}
-            <div>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={paymentBreakdown}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={true}
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={100}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {paymentBreakdown.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value: number) => `€${value.toFixed(2)}`} />
-                </PieChart>
-              </ResponsiveContainer>
+          {/* Prepaid */}
+          <Card className="p-6 border-2 border-green-200">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-gray-700 font-semibold">Предплатени</span>
+              <Euro className="h-6 w-6 text-green-600" />
+            </div>
+            <p className="text-4xl font-black text-green-600">€{revenueData.forecast.prepaid.toFixed(2)}</p>
+            <p className="text-sm text-gray-600 mt-2">Вече платено</p>
+          </Card>
+
+          {/* Unpaid */}
+          <Card className="p-6 border-2 border-gray-200">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-gray-700 font-semibold">Неплатени</span>
+              <TrendingUp className="h-6 w-6 text-gray-600" />
+            </div>
+            <p className="text-4xl font-black text-gray-700">€{revenueData.forecast.unpaid.toFixed(2)}</p>
+            <p className="text-sm text-gray-600 mt-2">Предстои плащане</p>
+          </Card>
+        </div>
+      )}
+
+      {periodType === "mixed" && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          {/* Collected Revenue */}
+          <Card className="p-6 bg-gradient-to-br from-green-50 to-white border-2 border-green-300">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-gray-700 font-semibold">Събрани приходи</span>
+              <Euro className="h-6 w-6 text-green-600" />
+            </div>
+            <p className="text-4xl font-black text-green-600">€{revenueData.collected.total.toFixed(2)}</p>
+            <p className="text-sm text-gray-600 mt-2">{revenueData.collected.count} платени</p>
+          </Card>
+
+          {/* Cash */}
+          <Card className="p-6 border-2 border-blue-200">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-gray-700 font-semibold">В брой</span>
+              <Banknote className="h-6 w-6 text-blue-600" />
+            </div>
+            <p className="text-3xl font-black text-blue-600">€{revenueData.collected.cash.toFixed(2)}</p>
+            <p className="text-xs text-gray-600 mt-2">
+              {revenueData.collected.total > 0 
+                ? `${((revenueData.collected.cash / revenueData.collected.total) * 100).toFixed(1)}%` 
+                : "0%"}
+            </p>
+          </Card>
+
+          {/* Card */}
+          <Card className="p-6 border-2 border-purple-200">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-gray-700 font-semibold">С карта</span>
+              <CreditCard className="h-6 w-6 text-purple-600" />
+            </div>
+            <p className="text-3xl font-black text-purple-600">€{revenueData.collected.card.toFixed(2)}</p>
+            <p className="text-xs text-gray-600 mt-2">
+              {revenueData.collected.total > 0 
+                ? `${((revenueData.collected.card / revenueData.collected.total) * 100).toFixed(1)}%` 
+                : "0%"}
+            </p>
+          </Card>
+
+          {/* Forecast Revenue */}
+          <Card className="p-6 bg-gradient-to-br from-orange-50 to-white border-2 border-orange-300">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-gray-700 font-semibold">Прогнозни приходи</span>
+              <TrendingUp className="h-6 w-6 text-orange-600" />
+            </div>
+            <p className="text-3xl font-black text-orange-600">€{revenueData.forecast.total.toFixed(2)}</p>
+            <p className="text-xs text-gray-600 mt-2">{revenueData.forecast.count} потвърдени</p>
+          </Card>
+
+          {/* Combined Total */}
+          <Card className="p-6 border-2 border-[#f1c933] bg-gradient-to-br from-yellow-50 to-white">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-gray-700 font-semibold">Комбинирано</span>
+              <Euro className="h-6 w-6 text-[#073590]" />
+            </div>
+            <p className="text-3xl font-black text-[#073590]">€{(revenueData.collected.total + revenueData.forecast.total).toFixed(2)}</p>
+            <p className="text-xs text-gray-600 mt-2">Събрани + Прогнозни</p>
+          </Card>
+        </div>
+      )}
+
+      {/* Filters */}
+      <Card className="p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Filter className="h-5 w-5 text-gray-600" />
+          <Label className="text-lg font-semibold">Филтри</Label>
+        </div>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Search */}
+          <div>
+            <Label className="text-sm mb-2">Търсене</Label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Име, email, ID..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
             </div>
           </div>
+          
+          {/* Status Filter */}
+          <div>
+            <Label className="text-sm mb-2">Статус на резервация</Label>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#073590]"
+            >
+              <option value="all">Всички статуси</option>
+              <option value="confirmed">Потвърдена</option>
+              <option value="arrived">Пристигнала</option>
+              <option value="checked-out">Завършена</option>
+              <option value="no-show">Не се е явил</option>
+              <option value="cancelled">Анулирана</option>
+            </select>
+          </div>
+          
+          {/* Payment Status Filter */}
+          <div>
+            <Label className="text-sm mb-2">Статус на плащане</Label>
+            <select
+              value={paymentStatusFilter}
+              onChange={(e) => setPaymentStatusFilter(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#073590]"
+            >
+              <option value="all">Всички</option>
+              <option value="paid">Платено</option>
+              <option value="pending">Неплатено</option>
+            </select>
+          </div>
+          
+          {/* Payment Method Filter */}
+          <div>
+            <Label className="text-sm mb-2">Метод на плащане</Label>
+            <select
+              value={paymentMethodFilter}
+              onChange={(e) => setPaymentMethodFilter(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#073590]"
+            >
+              <option value="all">Всички</option>
+              <option value="cash">В брой</option>
+              <option value="card">С карта</option>
+            </select>
+          </div>
+        </div>
+        
+        {/* Clear filters button */}
+        {(searchQuery || statusFilter !== "all" || paymentStatusFilter !== "all" || paymentMethodFilter !== "all") && (
+          <Button
+            variant="outline"
+            onClick={() => {
+              setSearchQuery("");
+              setStatusFilter("all");
+              setPaymentStatusFilter("all");
+              setPaymentMethodFilter("all");
+            }}
+            className="mt-4"
+          >
+            Изчисти всички филтри
+          </Button>
+        )}
+      </Card>
+
+      {/* Collected Revenue Details Table */}
+      {(periodType === "past" || periodType === "mixed") && (
+        <Card className="p-6">
+          <button
+            onClick={() => setExpandedCollected(!expandedCollected)}
+            className="w-full flex items-center justify-between mb-4 hover:bg-gray-50 p-3 rounded-lg transition-colors"
+          >
+            <h3 className="text-xl font-bold text-green-700">✅ Детайли по събрани приходи</h3>
+            {expandedCollected ? <ChevronUp className="h-6 w-6" /> : <ChevronDown className="h-6 w-6" />}
+          </button>
+          
+          {expandedCollected && (
+            <>
+              {/* Summary */}
+              <div className="grid grid-cols-3 gap-4 mb-6 p-4 bg-green-50 rounded-lg">
+                <div>
+                  <p className="text-sm text-gray-600">Общо събрани</p>
+                  <p className="text-2xl font-bold text-green-700">€{revenueData.collected.total.toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">В брой</p>
+                  <p className="text-2xl font-bold text-blue-600">€{revenueData.collected.cash.toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">С карта</p>
+                  <p className="text-2xl font-bold text-purple-600">€{revenueData.collected.card.toFixed(2)}</p>
+                </div>
+              </div>
+              
+              {/* Table */}
+              {filteredCollected.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-100 border-b-2 border-gray-300">
+                      <tr>
+                        <th className="text-left p-3 font-semibold">ID</th>
+                        <th className="text-left p-3 font-semibold">Клиент</th>
+                        <th className="text-left p-3 font-semibold">Пристигане</th>
+                        <th className="text-left p-3 font-semibold">Заминаване</th>
+                        <th className="text-right p-3 font-semibold">Сума</th>
+                        <th className="text-center p-3 font-semibold">Метод</th>
+                        <th className="text-left p-3 font-semibold">Оператор</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredCollected.map((booking) => (
+                        <tr key={booking.id} className="border-b hover:bg-gray-50">
+                          <td className="p-3 font-mono text-xs">{booking.bookingCode || booking.id.slice(0, 8)}</td>
+                          <td className="p-3">{booking.name}</td>
+                          <td className="p-3">{formatDateDisplay(booking.arrivalDate)}</td>
+                          <td className="p-3">{formatDateDisplay(booking.departureDate)}</td>
+                          <td className="p-3 text-right font-bold text-green-700">€{(booking.finalPrice || booking.totalPrice).toFixed(2)}</td>
+                          <td className="p-3 text-center">
+                            {booking.paymentMethod === "cash" ? "💵 В брой" : "💳 С карта"}
+                          </td>
+                          <td className="p-3 text-sm text-gray-600">{booking.completedBy || booking.operatorName || "-"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot className="bg-gray-100 font-bold border-t-2 border-gray-300">
+                      <tr>
+                        <td colSpan={4} className="p-3">Общо ({filteredCollected.length})</td>
+                        <td className="p-3 text-right text-green-700">
+                          €{filteredCollected.reduce((sum, b) => sum + (b.finalPrice || b.totalPrice), 0).toFixed(2)}
+                        </td>
+                        <td colSpan={2}></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-center text-gray-500 py-8">Няма събрани приходи за избрания период</p>
+              )}
+            </>
+          )}
         </Card>
       )}
 
-      {/* No Data Message */}
-      {revenueData.count === 0 && (
-        <Card className="p-12 text-center">
-          <TrendingDown className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-600 mb-2">Няма данни за избрания период</h3>
-          <p className="text-gray-500">Изберете друг период или проверете дали има резервации.</p>
+      {/* Forecast Revenue Details Table */}
+      {(periodType === "future" || periodType === "mixed") && (
+        <Card className="p-6">
+          <button
+            onClick={() => setExpandedForecast(!expandedForecast)}
+            className="w-full flex items-center justify-between mb-4 hover:bg-gray-50 p-3 rounded-lg transition-colors"
+          >
+            <h3 className="text-xl font-bold text-orange-700">📈 Детайли по прогнозни приходи</h3>
+            {expandedForecast ? <ChevronUp className="h-6 w-6" /> : <ChevronDown className="h-6 w-6" />}
+          </button>
+          
+          {expandedForecast && (
+            <>
+              {/* Summary */}
+              <div className="grid grid-cols-2 gap-4 mb-6 p-4 bg-orange-50 rounded-lg">
+                <div>
+                  <p className="text-sm text-gray-600">Прогнозно общо</p>
+                  <p className="text-2xl font-bold text-orange-700">€{revenueData.forecast.total.toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Брой потвърдени резервации</p>
+                  <p className="text-2xl font-bold text-orange-700">{revenueData.forecast.count}</p>
+                </div>
+              </div>
+              
+              {/* Table */}
+              {filteredForecast.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-100 border-b-2 border-gray-300">
+                      <tr>
+                        <th className="text-left p-3 font-semibold">ID</th>
+                        <th className="text-left p-3 font-semibold">Клиент</th>
+                        <th className="text-left p-3 font-semibold">Пристигане</th>
+                        <th className="text-left p-3 font-semibold">Заминаване</th>
+                        <th className="text-right p-3 font-semibold">Очаквана сума</th>
+                        <th className="text-center p-3 font-semibold">Статус</th>
+                        <th className="text-center p-3 font-semibold">Плащане</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredForecast.map((booking) => (
+                        <tr key={booking.id} className="border-b hover:bg-gray-50">
+                          <td className="p-3 font-mono text-xs">{booking.bookingCode || booking.id.slice(0, 8)}</td>
+                          <td className="p-3">{booking.name}</td>
+                          <td className="p-3">{formatDateDisplay(booking.arrivalDate)}</td>
+                          <td className="p-3">{formatDateDisplay(booking.departureDate)}</td>
+                          <td className="p-3 text-right font-bold text-orange-700">€{(booking.finalPrice || booking.totalPrice).toFixed(2)}</td>
+                          <td className="p-3 text-center">
+                            {booking.status === "confirmed" ? "✅ Потвърдена" : booking.status === "arrived" ? "🚗 Пристигнала" : booking.status}
+                          </td>
+                          <td className="p-3 text-center">
+                            {booking.paymentStatus === "paid" ? "✅ Платено" : "⏳ Неплатено"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot className="bg-gray-100 font-bold border-t-2 border-gray-300">
+                      <tr>
+                        <td colSpan={4} className="p-3">Общо ({filteredForecast.length})</td>
+                        <td className="p-3 text-right text-orange-700">
+                          €{filteredForecast.reduce((sum, b) => sum + (b.finalPrice || b.totalPrice), 0).toFixed(2)}
+                        </td>
+                        <td colSpan={2}></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-center text-gray-500 py-8">Няма прогнозни приходи за избрания период</p>
+              )}
+            </>
+          )}
         </Card>
       )}
     </div>
