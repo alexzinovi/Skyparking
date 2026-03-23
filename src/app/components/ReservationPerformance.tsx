@@ -227,30 +227,18 @@ export function ReservationPerformance({ bookings, users }: ReservationPerforman
       date: string;
       count: number;
       revenue: number;
-      arrivals: number;
-      departures: number;
     }>();
     
     filteredBookings.forEach(booking => {
       const createdDate = new Date(booking.createdAt).toISOString().split('T')[0];
       
       if (!dailyMap.has(createdDate)) {
-        dailyMap.set(createdDate, { date: createdDate, count: 0, revenue: 0, arrivals: 0, departures: 0 });
+        dailyMap.set(createdDate, { date: createdDate, count: 0, revenue: 0 });
       }
       
       const day = dailyMap.get(createdDate)!;
       day.count++;
       day.revenue += booking.finalPrice || booking.totalPrice;
-      
-      // Check if arrival is on this day
-      if (booking.arrivalDate === createdDate) {
-        day.arrivals++;
-      }
-      
-      // Check if departure is on this day
-      if (booking.departureDate === createdDate) {
-        day.departures++;
-      }
     });
     
     return Array.from(dailyMap.values()).sort((a, b) => b.date.localeCompare(a.date));
@@ -567,8 +555,6 @@ export function ReservationPerformance({ bookings, users }: ReservationPerforman
                   <th className="text-left p-3 font-semibold">Дата</th>
                   <th className="text-center p-3 font-semibold">Брой резервации</th>
                   <th className="text-right p-3 font-semibold">Приходи</th>
-                  <th className="text-center p-3 font-semibold">Пристигания</th>
-                  <th className="text-center p-3 font-semibold">Напускания</th>
                   <th className="text-center p-3 font-semibold">Детайли</th>
                 </tr>
               </thead>
@@ -578,8 +564,6 @@ export function ReservationPerformance({ bookings, users }: ReservationPerforman
                     <td className="p-3 font-semibold">{formatDateDisplay(day.date)}</td>
                     <td className="p-3 text-center font-bold text-blue-600">{day.count}</td>
                     <td className="p-3 text-right font-bold text-green-600">€{day.revenue.toFixed(2)}</td>
-                    <td className="p-3 text-center text-purple-600">{day.arrivals}</td>
-                    <td className="p-3 text-center text-orange-600">{day.departures}</td>
                     <td className="p-3 text-center">
                       <Button
                         size="sm"
