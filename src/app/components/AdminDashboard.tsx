@@ -43,6 +43,7 @@ import { PricingManager } from "./PricingManager";
 import { DiscountManager } from "./DiscountManager";
 import { SettingsManager } from "./SettingsManager";
 import { RevenueManagement } from "./RevenueManagement";
+import { ReservationPerformance } from "./ReservationPerformance";
 import { calculatePrice } from "@/app/utils/pricing";
 import { ReservationCard, type ReservationData } from "./ReservationCard";
 import { DatePicker } from "./DatePicker";
@@ -384,6 +385,8 @@ interface Booking {
     editor: string;
     changes: string;
   }>;
+  createdBy?: string; // Employee name or "Клиент (онлайн)" for who created the booking
+  acceptedBy?: string; // Employee name for who confirmed/accepted the booking
 }
 
 interface CapacityDay {
@@ -399,7 +402,7 @@ interface CapacityDay {
   wouldFit: boolean;
 }
 
-type TabType = "new" | "confirmed" | "arrived" | "completed" | "cancelled" | "no-show" | "archive" | "all" | "users" | "pricing" | "discounts" | "settings" | "calendar" | "revenue";
+type TabType = "new" | "confirmed" | "arrived" | "completed" | "cancelled" | "no-show" | "archive" | "all" | "users" | "pricing" | "discounts" | "settings" | "calendar" | "revenue" | "reservations";
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -1851,6 +1854,17 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                   <Euro className="inline h-5 w-5 sm:h-6 sm:w-6 mr-1" />
                   {bg.revenueTab}
                 </button>
+                <button
+                  onClick={() => setActiveTab("reservations")}
+                  className={`px-4 sm:px-6 py-3 sm:py-4 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors min-h-[48px] flex items-center ${
+                    activeTab === "reservations"
+                      ? "border-blue-500 text-blue-600"
+                      : "border-transparent text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  <FileText className="inline h-5 w-5 sm:h-6 sm:w-6 mr-1" />
+                  Резервации
+                </button>
               </>
             )}
           </div>
@@ -2333,6 +2347,9 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
         ) : activeTab === "revenue" ? (
           /* ========== REVENUE TAB ========== */
           <RevenueManagement bookings={bookings} users={users} />
+        ) : activeTab === "reservations" ? (
+          /* ========== RESERVATIONS TAB ========== */
+          <ReservationPerformance bookings={bookings} users={users} />
         ) : (
           /* ========== BOOKINGS TABS ========== */
           <>

@@ -530,7 +530,9 @@ app.post("/make-server-47a4914e/bookings", async (c) => {
       status: booking.status || "new", // Use provided status, default to "new"
       statusHistory: [],
       keyNumber: booking.keyNumber || null, // Optional key box number for car keys bookings
-      includeInCapacity: booking.includeInCapacity !== false // Default to true
+      includeInCapacity: booking.includeInCapacity !== false, // Default to true
+      createdBy: booking.createdBy || "Клиент (онлайн)", // Track who created the booking
+      acceptedBy: booking.acceptedBy || null // Will be set when confirmed by an operator
     };
     
     console.log("Saving booking with needsInvoice:", bookingData.needsInvoice);
@@ -910,7 +912,8 @@ app.put("/make-server-47a4914e/bookings/:id/accept", async (c) => {
       status: 'confirmed',
       statusHistory,
       updatedAt: new Date().toISOString(),
-      capacityOverride: force || undefined
+      capacityOverride: force || undefined,
+      acceptedBy: operator || 'system' // Track who confirmed the booking
     };
     
     await kv.set(id, updated);
