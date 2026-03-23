@@ -195,7 +195,7 @@ const bg = {
   
   // Car Keys
   carKeys: "Ключове от кола",
-  carKeysYes: "ДА - ��ожем да преместим",
+  carKeysYes: "ДА - ����ожем да преместим",
   carKeysNo: "НЕ - няма ключове",
   carKeysNotes: "Бележки за ключовет��",
   carKeysNotesPlaceholder: "Напр.: Ключове оставени в офиса, паркирана в зона B...",
@@ -459,6 +459,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [departureDateFilter, setDepartureDateFilter] = useState(""); // Filter by departure date
   const [isLoading, setIsLoading] = useState(true);
   const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
@@ -745,8 +746,13 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
       );
     }
 
+    // Filter by departure date
+    if (departureDateFilter) {
+      filtered = filtered.filter(booking => booking.departureDate === departureDateFilter);
+    }
+
     setFilteredBookings(filtered);
-  }, [searchTerm, bookings, activeTab]);
+  }, [searchTerm, bookings, activeTab, departureDateFilter]);
 
   // ============= USER MANAGEMENT FUNCTIONS =============
 
@@ -2331,16 +2337,42 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
           /* ========== BOOKINGS TABS ========== */
           <>
             {/* Actions Bar */}
-            <div className="mb-6 flex flex-col sm:flex-row gap-4 justify-between">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 sm:h-6 sm:w-6" />
-                <Input
-                  placeholder={bg.search}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 sm:pl-12 text-base sm:text-lg py-5 sm:py-6"
-                />
+            <div className="mb-6 flex flex-col gap-4">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 sm:h-6 sm:w-6" />
+                  <Input
+                    placeholder={bg.search}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 sm:pl-12 text-base sm:text-lg py-5 sm:py-6"
+                  />
+                </div>
+                
+                {/* Departure Date Filter - Only show in "All" tab */}
+                {activeTab === "all" && (
+                  <div className="flex items-center gap-2 sm:min-w-[300px]">
+                    <Label className="text-sm font-semibold whitespace-nowrap">Дата на заминаване:</Label>
+                    <Input
+                      type="date"
+                      value={departureDateFilter}
+                      onChange={(e) => setDepartureDateFilter(e.target.value)}
+                      className="text-base py-5 sm:py-6"
+                    />
+                    {departureDateFilter && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDepartureDateFilter("")}
+                        className="text-gray-500 hover:text-gray-700"
+                      >
+                        <X className="h-5 w-5" />
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
+              
               <div className="flex flex-wrap gap-2 sm:gap-3">
                 {/* Export Buttons - Admin Only */}
                 {permissions.includes("manage_users") && (

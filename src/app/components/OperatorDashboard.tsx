@@ -550,6 +550,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
   const [keysFilter, setKeysFilter] = useState<string>("all"); // "all", "with-keys", "without-keys"
   const [invoiceFilter, setInvoiceFilter] = useState<string>("all"); // "all", "with-invoice", "without-invoice"
   const [arrivalDateFilter, setArrivalDateFilter] = useState<string>(""); // Date string for filtering by arrival date
+  const [departureDateFilter, setDepartureDateFilter] = useState<string>(""); // Date string for filtering by departure date
   
   // Filters for confirmed tab
   const [filterStartDate, setFilterStartDate] = useState("");
@@ -976,13 +977,18 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
       filtered = filtered.filter(b => b.arrivalDate === arrivalDateFilter);
     }
     
+    // Apply departure date filter
+    if (departureDateFilter) {
+      filtered = filtered.filter(b => b.departureDate === departureDateFilter);
+    }
+    
     return filtered.sort((a, b) => {
       // Sort by arrival date/time, newest first
       const aTime = new Date(`${a.arrivalDate}T${a.arrivalTime}`).getTime();
       const bTime = new Date(`${b.arrivalDate}T${b.arrivalTime}`).getTime();
       return bTime - aTime; // Newest first
     });
-  }, [bookings, searchQuery, statusFilter, keysFilter, invoiceFilter, arrivalDateFilter]);
+  }, [bookings, searchQuery, statusFilter, keysFilter, invoiceFilter, arrivalDateFilter, departureDateFilter]);
 
   // Render action buttons for operator
   const renderOperatorActions = (booking: Booking) => {
@@ -1776,16 +1782,49 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
       isLate: b.isLate || false
     }));
 
+    // Calculate lost revenue (no-shows + cancelled)
+    const lostBookings = bookings.filter(b =>
+      (b.status === "no-show" || b.status === "cancelled" || b.status === "declined") &&
+      isInShift(b.arrivalDate, b.arrivalTime, shiftRange)
+    );
+    const lostRevenue = lostBookings.reduce((sum, b) => sum + b.totalPrice, 0);
+
     return {
       expected: expectedRevenue,
       actual: actualRevenue,
+      collected: actualRevenue, // Same as actual, for clarity in UI
       base: baseRevenue,
       lateFees: lateFees,
       cash: cashRevenue,
       card: cardRevenue,
       pending: pendingRevenue,
       pendingCount: pendingCount,
-      breakdown: breakdown
+      lost: lostRevenue,
+      breakdown: breakdown,
+      
+      // Detailed breakdowns for new UI
+      collectedBookings: paidBookings.map(b => ({
+        id: b.id,
+        name: b.name,
+        amount: b.finalPrice || b.totalPrice,
+        paymentMethod: b.paymentMethod,
+        isLate: b.isLate || false,
+        lateFee: b.isLate ? (b.lateSurcharge || 0) : 0
+      })),
+      
+      pendingBookings: pendingPaymentBookings.map(b => ({
+        id: b.id,
+        name: b.name,
+        amount: b.totalPrice,
+        status: b.status
+      })),
+      
+      lostBookings: lostBookings.map(b => ({
+        id: b.id,
+        name: b.name,
+        amount: b.totalPrice,
+        reason: b.status === "no-show" ? "Не се е явил" : "Отказана"
+      }))
     };
   }, [bookings, shiftRange]);
 
@@ -2461,100 +2500,169 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
             {/* Revenue */}
             {activeTab === "revenue" && (
               <div className="space-y-4">
-                <h2 className="text-2xl font-bold mb-4">Дневни приходи</h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-bold">Дневни приходи</h2>
+                  {/* Shift selector */}
+                  <div className="flex gap-2">
+                    <Button
+                      variant={selectedShift === "day" ? "default" : "outline"}
+                      onClick={() => setSelectedShift("day")}
+                      className="text-base px-4"
+                    >
+                      🌞 Дневна
+                    </Button>
+                    <Button
+                      variant={selectedShift === "night" ? "default" : "outline"}
+                      onClick={() => setSelectedShift("night")}
+                      className="text-base px-4"
+                    >
+                      🌙 Нощна
+                    </Button>
+                  </div>
+                </div>
                 
-                <Card className="p-4">
+                <Card className="p-4 sm:p-6">
                   <div className="flex items-center gap-3 mb-6">
-                    <div className="p-3 bg-green-100 rounded-lg">
-                      <Euro className="w-8 h-8 text-green-600" />
+                    <div className="p-3 bg-[#073590] rounded-lg">
+                      <Euro className="w-8 h-8 text-white" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-xl">Общо</h3>
+                      <h3 className="font-semibold text-xl sm:text-2xl">Общо приходи</h3>
                       <p className="text-base text-gray-600">{SHIFT_CONFIG[selectedShift].label}</p>
                     </div>
                   </div>
                   
-                  <div className="space-y-4">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-gray-50 rounded-lg gap-2">
-                      <span className="text-gray-600 text-base font-semibold">Очаквани приходи:</span>
-                      <span className="text-3xl font-black">€{revenueStats.expected.toFixed(2)}</span>
+                  {/* Top Summary - 3 Categories */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                    {/* Expected Revenue */}
+                    <div className="p-4 bg-blue-50 border-2 border-blue-300 rounded-lg">
+                      <div className="text-sm font-semibold text-blue-700 mb-1">💼 Очаквани</div>
+                      <div className="text-3xl font-black text-blue-900">€{revenueStats.expected.toFixed(2)}</div>
+                      <div className="text-xs text-blue-600 mt-1">Потвърдени + Пристигнали</div>
                     </div>
                     
-                    {/* Pending Payment Warning */}
-                    {revenueStats.pending > 0 && (
-                      <div className="bg-orange-50 border-2 border-orange-300 rounded-lg p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Clock className="w-5 h-5 text-orange-600" />
-                          <span className="text-base font-bold text-orange-900">Очакващи плащане</span>
-                        </div>
-                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                          <span className="text-sm text-orange-700">
-                            {revenueStats.pendingCount} {revenueStats.pendingCount === 1 ? 'клиент' : 'клиента'}
-                          </span>
-                          <span className="text-2xl font-black text-orange-600">€{revenueStats.pending.toFixed(2)}</span>
-                        </div>
-                      </div>
-                    )}
+                    {/* Collected Revenue */}
+                    <div className="p-4 bg-green-50 border-2 border-green-400 rounded-lg">
+                      <div className="text-sm font-semibold text-green-700 mb-1">✅ Събрани</div>
+                      <div className="text-3xl font-black text-green-900">€{revenueStats.collected.toFixed(2)}</div>
+                      <div className="text-xs text-green-600 mt-1">Реално платени</div>
+                    </div>
                     
-                    {/* Info text when there's pending payment */}
-                    {revenueStats.pending > 0 && (
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-900">
-                        <div className="flex items-start gap-2">
-                          <span className="text-blue-600 font-bold">ℹ️</span>
-                          <div className="text-xs">
-                            <span className="font-semibold">Формула:</span> €{revenueStats.actual.toFixed(2)} + €{revenueStats.pending.toFixed(2)} = €{revenueStats.expected.toFixed(2)}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    
-                    <div className="bg-green-50 rounded-lg overflow-hidden">
-                      <button 
-                        onClick={() => setRevenueExpanded(!revenueExpanded)}
-                        className="w-full flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 gap-2 hover:bg-green-100 transition-colors min-h-[56px]"
-                      >
+                    {/* Pending Payments */}
+                    <div className="p-4 bg-orange-50 border-2 border-orange-300 rounded-lg">
+                      <div className="text-sm font-semibold text-orange-700 mb-1">⏳ Неплатени</div>
+                      <div className="text-3xl font-black text-orange-900">€{revenueStats.pending.toFixed(2)}</div>
+                      <div className="text-xs text-orange-600 mt-1">{revenueStats.pendingCount} резервации</div>
+                    </div>
+                  </div>
+                  
+                  {/* Lost Revenue Section (only show if there's lost revenue) */}
+                  {revenueStats.lost > 0 && (
+                    <div className="mb-6 p-4 bg-red-50 border-2 border-red-300 rounded-lg">
+                      <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <span className="text-gray-600 text-base font-semibold">Действителни приходи:</span>
-                          {revenueExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                          <span className="text-lg font-bold text-red-800">❌ Отпаднали приходи</span>
                         </div>
-                        <span className="text-3xl font-black text-green-600">€{revenueStats.actual.toFixed(2)}</span>
-                      </button>
-                      
-                      {revenueExpanded && (
-                        <div className="px-5 pb-5 space-y-3 border-t border-green-200 pt-4">
+                        <span className="text-2xl font-black text-red-600">€{revenueStats.lost.toFixed(2)}</span>
+                      </div>
+                      <div className="text-sm text-red-700 mt-1">No-show / Отказани резервации</div>
+                    </div>
+                  )}
+                    
+                  {/* Expandable Detailed Breakdown */}
+                  <div className="border-2 border-gray-200 rounded-lg overflow-hidden">
+                    <button 
+                      onClick={() => setRevenueExpanded(!revenueExpanded)}
+                      className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+                    >
+                      <span className="text-lg font-bold text-gray-800">📊 Детайлна разбивка</span>
+                      {revenueExpanded ? <ChevronUp className="w-6 h-6" /> : <ChevronDown className="w-6 h-6" />}
+                    </button>
+                    
+                    {revenueExpanded && (
+                      <div className="p-4 border-t-2 border-gray-200 space-y-6 bg-gray-50">
+                        {/* Collected Revenue List */}
+                        <div>
+                          <h4 className="text-lg font-bold text-green-700 mb-3 flex items-center gap-2">
+                            <span className="text-2xl">🟢</span> Събрани приходи ({revenueStats.collectedBookings.length})
+                          </h4>
+                          {revenueStats.collectedBookings.length > 0 ? (
+                            <div className="space-y-2 max-h-80 overflow-y-auto">
+                              {revenueStats.collectedBookings.map(item => (
+                                <div key={item.id} className="flex justify-between items-center bg-white p-3 rounded-lg border border-green-200">
+                                  <div>
+                                    <div className="font-semibold text-base">{item.name}</div>
+                                    <div className="text-sm text-gray-600">
+                                      {item.paymentMethod === "cash" ? "💵 В брой" : "💳 С карта"}
+                                      {item.isLate && item.lateFee > 0 && (
+                                        <span className="ml-2 text-red-600">+ €{item.lateFee.toFixed(2)} закъснение</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="text-xl font-bold text-green-700">€{item.amount.toFixed(2)}</div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-gray-500 italic text-center py-4">Все още няма събрани приходи</div>
+                          )}
+                        </div>
+                        
+                        {/* Pending Payments List */}
+                        {revenueStats.pendingBookings.length > 0 && (
+                          <div>
+                            <h4 className="text-lg font-bold text-orange-700 mb-3 flex items-center gap-2">
+                              <span className="text-2xl">🟡</span> Очаквани (неплатени) ({revenueStats.pendingBookings.length})
+                            </h4>
+                            <div className="space-y-2 max-h-64 overflow-y-auto">
+                              {revenueStats.pendingBookings.map(item => (
+                                <div key={item.id} className="flex justify-between items-center bg-white p-3 rounded-lg border border-orange-200">
+                                  <div>
+                                    <div className="font-semibold text-base">{item.name}</div>
+                                    <div className="text-sm text-orange-700">В паркинга (неплатено)</div>
+                                  </div>
+                                  <div className="text-xl font-bold text-orange-700">€{item.amount.toFixed(2)}</div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Lost Revenue List */}
+                        {revenueStats.lostBookings.length > 0 && (
+                          <div>
+                            <h4 className="text-lg font-bold text-red-700 mb-3 flex items-center gap-2">
+                              <span className="text-2xl">🔴</span> No-show / Отпаднали ({revenueStats.lostBookings.length})
+                            </h4>
+                            <div className="space-y-2 max-h-64 overflow-y-auto">
+                              {revenueStats.lostBookings.map(item => (
+                                <div key={item.id} className="flex justify-between items-center bg-white p-3 rounded-lg border border-red-200">
+                                  <div>
+                                    <div className="font-semibold text-base">{item.name}</div>
+                                    <div className="text-sm text-red-700">❌ {item.reason}</div>
+                                  </div>
+                                  <div className="text-xl font-bold text-red-700">€{item.amount.toFixed(2)}</div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Summary row */}
+                        <div className="pt-4 border-t-2 border-gray-300">
                           <div className="flex justify-between items-center text-lg">
                             <span className="text-gray-700">Базови приходи:</span>
                             <span className="font-semibold">€{revenueStats.base.toFixed(2)}</span>
                           </div>
-                          <div className="flex justify-between items-center text-lg">
-                            <span className="text-gray-700">Такси за закъснение:</span>
-                            <span className="font-semibold text-red-600">€{revenueStats.lateFees.toFixed(2)}</span>
-                          </div>
-                          
-                          {revenueStats.breakdown.length > 0 && (
-                            <div className="mt-4 pt-4 border-t border-green-200">
-                              <h4 className="font-semibold text-lg mb-3">Разбивка по резервации:</h4>
-                              <div className="space-y-2 max-h-64 overflow-y-auto">
-                                {revenueStats.breakdown.map(item => (
-                                  <div key={item.id} className="flex justify-between items-start text-base bg-white p-3 rounded">
-                                    <div className="flex-1">
-                                      <div className="font-medium">{item.name}</div>
-                                      <div className="text-sm text-gray-600">
-                                        Цена: €{item.basePrice.toFixed(2)}
-                                        {item.isLate && item.lateFee > 0 && (
-                                          <span className="text-red-600 ml-2">+ €{item.lateFee.toFixed(2)} закъснение</span>
-                                        )}
-                                      </div>
-                                    </div>
-                                    <div className="font-bold ml-4">€{item.total.toFixed(2)}</div>
-                                  </div>
-                                ))}
-                              </div>
+                          {revenueStats.lateFees > 0 && (
+                            <div className="flex justify-between items-center text-lg mt-2">
+                              <span className="text-gray-700">Такси за закъснение:</span>
+                              <span className="font-semibold text-red-600">€{revenueStats.lateFees.toFixed(2)}</span>
                             </div>
                           )}
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </Card>
 
@@ -2586,7 +2694,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                 <h2 className="text-3xl font-semibold mb-4">Всички резервации</h2>
                 
                 {/* Filter Controls */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
                   {/* Status Filter */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -2668,6 +2776,32 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                       )}
                     </div>
                   </div>
+                  
+                  {/* Departure Date Filter - NEW */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <Calendar className="w-4 h-4 inline mr-1" />
+                      Дата на заминаване
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="date"
+                        value={departureDateFilter}
+                        onChange={(e) => setDepartureDateFilter(e.target.value)}
+                        className="flex-1 px-4 py-2 text-base border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 bg-white"
+                      />
+                      {departureDateFilter && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setDepartureDateFilter("")}
+                          className="px-3"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 </div>
                 
                 {/* Results count and clear filters */}
@@ -2675,7 +2809,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                   <div className="text-lg font-medium text-gray-700">
                     Показани: <span className="font-bold text-blue-600">{allBookings.length}</span> резервации
                   </div>
-                  {(statusFilter !== "all" || keysFilter !== "all" || invoiceFilter !== "all" || arrivalDateFilter) && (
+                  {(statusFilter !== "all" || keysFilter !== "all" || invoiceFilter !== "all" || arrivalDateFilter || departureDateFilter) && (
                     <Button
                       variant="outline"
                       onClick={() => {
@@ -2683,6 +2817,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                         setKeysFilter("all");
                         setInvoiceFilter("all");
                         setArrivalDateFilter("");
+                        setDepartureDateFilter("");
                       }}
                       className="text-base"
                     >
