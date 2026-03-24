@@ -202,7 +202,10 @@ function formatShiftDisplay(shiftRange: { start: Date; end: Date; shift: ShiftTy
 // Check if booking time falls within shift
 function isInShift(dateStr: string, timeStr: string, shiftRange: { start: Date; end: Date }) {
   const datetime = new Date(`${dateStr}T${timeStr}`);
-  return datetime >= shiftRange.start && datetime <= shiftRange.end;
+  // Use < instead of <= to avoid counting boundary times (08:00, 20:00) in both shifts
+  // A booking at exactly 08:00 should be in the DAY shift, not the ending NIGHT shift
+  // A booking at exactly 20:00 should be in the NIGHT shift, not the ending DAY shift
+  return datetime >= shiftRange.start && datetime < shiftRange.end;
 }
 
 // Check if two date ranges overlap
@@ -734,6 +737,18 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
     const interval = setInterval(() => fetchBookings(false, false), 10000); // Auto-refresh every 10 seconds with notifications
     return () => clearInterval(interval);
   }, []);
+
+  // Auto-update shift when time changes (check every minute)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const currentShift = getCurrentShift();
+      if (currentShift !== selectedShift) {
+        setSelectedShift(currentShift);
+        console.log(`Shift changed to: ${currentShift}`);
+      }
+    }, 60000); // Check every minute
+    return () => clearInterval(interval);
+  }, [selectedShift]);
 
   // Auto-calculate price when dates/times/cars change
   useEffect(() => {
@@ -2502,22 +2517,15 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
               <div className="space-y-4">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-2xl font-bold">Дневни приходи</h2>
-                  {/* Shift selector */}
-                  <div className="flex gap-2">
-                    <Button
-                      variant={selectedShift === "day" ? "default" : "outline"}
-                      onClick={() => setSelectedShift("day")}
-                      className="text-base px-4"
-                    >
-                      🌞 Дневна
-                    </Button>
-                    <Button
-                      variant={selectedShift === "night" ? "default" : "outline"}
-                      onClick={() => setSelectedShift("night")}
-                      className="text-base px-4"
-                    >
-                      🌙 Нощна
-                    </Button>
+                  {/* Shift indicator (read-only) */}
+                  <div className="px-4 py-2 bg-gray-100 border-2 border-gray-300 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">{selectedShift === "day" ? "🌞" : "🌙"}</span>
+                      <div>
+                        <div className="font-bold text-base">{SHIFT_CONFIG[selectedShift].label}</div>
+                        <div className="text-xs text-gray-600">{formatShiftDisplay(shiftRange)}</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 
@@ -3055,7 +3063,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                             
                             <div className="grid grid-cols-2 gap-2 mb-3">
                               <div className="bg-white p-3 rounded-lg shadow border-2 border-blue-200">
-                                <div className="text-gray-600 text-xs font-semibold mb-1">БЕЗ КЛЮЧОВЕ</div>
+                                <div className="text-gray-600 text-xs font-semibold mb-1">��ЕЗ КЛЮЧОВЕ</div>
                                 <div className="text-2xl font-black text-blue-600">{capacity.nonKeysCount}</div>
                                 <div className="text-xs text-gray-500">/ {BASE_CAPACITY}</div>
                               </div>
