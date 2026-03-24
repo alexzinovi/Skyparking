@@ -850,12 +850,12 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
     
     const query = searchQuery.toLowerCase().trim();
     return (
-      booking.name.toLowerCase().includes(query) ||
-      booking.phone.toLowerCase().includes(query) ||
-      booking.licensePlate.toLowerCase().includes(query) ||
+      booking.name?.toLowerCase().includes(query) ||
+      booking.phone?.toLowerCase().includes(query) ||
+      booking.licensePlate?.toLowerCase().includes(query) ||
       booking.email?.toLowerCase().includes(query) ||
-      booking.id.toLowerCase().includes(query) ||
-      booking.bookingCode?.toLowerCase().includes(query) // Add bookingCode search
+      booking.id?.toLowerCase().includes(query) ||
+      booking.bookingCode?.toLowerCase().includes(query)
     );
   };
   
@@ -2536,7 +2536,6 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                     </div>
                     <div>
                       <h3 className="font-semibold text-xl sm:text-2xl">Общо приходи</h3>
-                      <p className="text-base text-gray-600">{SHIFT_CONFIG[selectedShift].label}</p>
                     </div>
                   </div>
                   

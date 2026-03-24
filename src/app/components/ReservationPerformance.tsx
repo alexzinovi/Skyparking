@@ -260,10 +260,10 @@ export function ReservationPerformance({ bookings, users }: ReservationPerforman
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       result = result.filter(b => 
-        b.name.toLowerCase().includes(query) ||
-        b.email.toLowerCase().includes(query) ||
+        b.name?.toLowerCase().includes(query) ||
+        b.email?.toLowerCase().includes(query) ||
         b.bookingCode?.toLowerCase().includes(query) ||
-        b.id.toLowerCase().includes(query)
+        b.id?.toLowerCase().includes(query)
       );
     }
     
@@ -334,7 +334,7 @@ export function ReservationPerformance({ bookings, users }: ReservationPerforman
   };
 
   const exportByEmployee = () => {
-    const headers = ["Служител", "Създадени резервации", "Приети резервации", "Обща сума"];
+    const headers = ["Служител", "Създадени резервации", "Приети резервации", "Обща сум��"];
     const rows = employeePerformance.map(emp => [
       emp.name,
       emp.created,
@@ -404,7 +404,7 @@ export function ReservationPerformance({ bookings, users }: ReservationPerforman
             onClick={() => setSelectedPeriod("thisMonth")}
             className="text-sm"
           >
-            Този месец
+            Този ме��ец
           </Button>
           <Button
             variant={selectedPeriod === "lastMonth" ? "default" : "outline"}

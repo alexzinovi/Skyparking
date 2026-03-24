@@ -741,11 +741,11 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
     // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter(booking =>
-        booking.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        booking.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        booking.licensePlate.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        booking.phone.includes(searchTerm) ||
-        booking.bookingCode?.toLowerCase().includes(searchTerm.toLowerCase()) // Add bookingCode search
+        booking.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        booking.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        booking.licensePlate?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        booking.phone?.includes(searchTerm) ||
+        booking.bookingCode?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
