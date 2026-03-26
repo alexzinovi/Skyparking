@@ -815,22 +815,10 @@ function generateAdminNotificationEmailHTML(data: BookingEmailData): string {
             Ако имате въпроси или желаете да коригирате резервацията, моля свържете се с нас тук или на <strong>+359 886 616 991</strong>
           </p>
           <p style="margin: 0; font-size: 15px; color: #1a1a1a;">
-            📍 Нашата локация и снимка на паркинга:
+            📍 <strong>Нашата локация:</strong>
           </p>
-        </div>
-        <div style="margin-top: 15px; padding: 12px; background-color: #ffffff; border-radius: 6px; border: 1px solid #665dc0;">
-          <p style="margin: 0 0 8px 0; font-size: 13px; color: #665dc0; font-weight: bold;">Линкове за изпращане във Viber:</p>
-          <p style="margin: 5px 0; font-size: 13px;">
-            <strong>Google Maps:</strong><br/>
-            <a href="https://maps.app.goo.gl/Yt6YeQN5ECBSjVme8" style="color: #073590; word-break: break-all;">https://maps.app.goo.gl/Yt6YeQN5ECBSjVme8</a>
-          </p>
-          <p style="margin: 5px 0; font-size: 13px;">
-            <strong>Waze:</strong><br/>
-            <a href="https://ul.waze.com/ul?place=ChIJ6eb_yAqHqkARRJP7h2zo5AU&ll=42.67676540%2C23.40033890&navigate=yes" style="color: #073590; word-break: break-all;">https://ul.waze.com/ul?place=ChIJ6eb_yAqHqkARRJP7h2zo5AU&ll=42.67676540%2C23.40033890&navigate=yes</a>
-          </p>
-          <p style="margin: 5px 0; font-size: 13px;">
-            <strong>Снимка на паркинга:</strong><br/>
-            <a href="https://skyparking.bg/hero-image.jpg" style="color: #073590;">https://skyparking.bg/hero-image.jpg</a>
+          <p style="margin: 0; font-size: 15px; color: #1a1a1a;">
+            Google Maps: https://maps.app.goo.gl/Yt6YeQN5ECBSjVme8
           </p>
         </div>
       </div>

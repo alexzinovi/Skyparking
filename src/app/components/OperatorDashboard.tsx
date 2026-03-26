@@ -1852,6 +1852,22 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
     };
   }, [bookings, shiftRange]);
 
+  // Check if the current shift is within the allowed date range for revenue viewing
+  // Operators can only view revenue for shifts from yesterday, today, or tomorrow
+  const isShiftInAllowedRange = useMemo(() => {
+    const now = new Date();
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    yesterday.setHours(0, 0, 0, 0);
+    
+    const dayAfterTomorrow = new Date(now);
+    dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
+    dayAfterTomorrow.setHours(0, 0, 0, 0);
+    
+    // Check if shift start is within the allowed range
+    return shiftRange.start >= yesterday && shiftRange.start < dayAfterTomorrow;
+  }, [shiftRange]);
+
   // Render action buttons based on tab type
   const renderTabActions = (booking: Booking, showActions: string) => {
     if (showActions === "new") {
@@ -2538,6 +2554,27 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                   </div>
                 </div>
                 
+                {/* Check if shift is within allowed range */}
+                {!isShiftInAllowedRange ? (
+                  <Card className="p-8 sm:p-12">
+                    <div className="flex flex-col items-center justify-center text-center space-y-4">
+                      <div className="p-4 bg-gray-100 rounded-full">
+                        <AlertCircle className="w-16 h-16 text-gray-400" />
+                      </div>
+                      <h3 className="text-2xl font-bold text-gray-700">Приходите не са налични</h3>
+                      <p className="text-lg text-gray-600 max-w-md">
+                        Може да преглеждате приходи само за вчера, днес и утре.
+                      </p>
+                      <Button 
+                        onClick={returnToActiveShift}
+                        className="mt-4 bg-[#073590] hover:bg-[#052560]"
+                      >
+                        Върнете се към текущата смяна
+                      </Button>
+                    </div>
+                  </Card>
+                ) : (
+                <>
                 <Card className="p-4 sm:p-6">
                   <div className="flex items-center gap-3 mb-6">
                     <div className="p-3 bg-[#073590] rounded-lg">
@@ -2701,6 +2738,8 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                     <p className="text-5xl font-bold">€{revenueStats.card.toFixed(2)}</p>
                   </Card>
                 </div>
+                </>
+                )}
               </div>
             )}
 
