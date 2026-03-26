@@ -12,6 +12,7 @@ export function SettingsManager() {
   const [emailNotificationsEnabled, setEmailNotificationsEnabled] = useState(true);
   const [loading, setLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isBackfilling, setIsBackfilling] = useState(false);
 
   // Fetch current settings
   useEffect(() => {
@@ -80,6 +81,41 @@ export function SettingsManager() {
       toast.error("Неуспешно запазване на настройките");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const backfillPaidAt = async () => {
+    if (!confirm("Това ще актуализира всички платени резервации, които нямат 'paidAt' timestamp. Продължи?")) {
+      return;
+    }
+
+    setIsBackfilling(true);
+    try {
+      const token = localStorage.getItem("skyparking-token");
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/admin/backfill-paidat`,
+        {
+          method: "POST",
+          mode: "cors",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Session-Token": token || "",
+          },
+        }
+      );
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        toast.success(`✅ ${data.message}`);
+      } else {
+        toast.error(`Неуспешно: ${data.message || "Неизвестна грешка"}`);
+      }
+    } catch (error) {
+      console.error("Error backfilling paidAt:", error);
+      toast.error("Грешка при актуализиране на данните");
+    } finally {
+      setIsBackfilling(false);
     }
   };
 
@@ -169,6 +205,29 @@ export function SettingsManager() {
               {isSaving ? "Запазване..." : "Запази настройките"}
             </Button>
           </div>
+        </div>
+      </Card>
+
+      {/* Data Migration Tools */}
+      <Card className="p-8 bg-orange-50 border-2 border-orange-200">
+        <h2 className="text-2xl font-bold mb-4 text-orange-900">🛠️ Инструменти за данни</h2>
+        <p className="text-sm text-orange-700 mb-6">
+          Еднократни операции за поправка/актуализация на данни. Използвай внимателно!
+        </p>
+
+        <div className="bg-white p-6 rounded-lg border border-orange-300">
+          <h3 className="text-lg font-semibold mb-2">Попълване на paidAt timestamps</h3>
+          <p className="text-sm text-gray-600 mb-4">
+            Актуализира всички платени резервации (paymentStatus = "paid"), които нямат paidAt timestamp.
+            Това е необходимо за коректно отчитане на приходите по дата на плащане.
+          </p>
+          <Button
+            onClick={backfillPaidAt}
+            disabled={isBackfilling}
+            className="bg-orange-600 hover:bg-orange-700 text-white"
+          >
+            {isBackfilling ? "Актуализиране..." : "Актуализирай paidAt полета"}
+          </Button>
         </div>
       </Card>
     </div>

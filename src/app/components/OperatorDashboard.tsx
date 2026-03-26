@@ -1366,7 +1366,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
 
       const data = await response.json();
       if (data.success) {
-        addToUndoStack(booking, "mark-late", `Закъснява: ${booking.name}`);
+        addToUndoStack(booking, "mark-late", `Закъсняв��: ${booking.name}`);
         toast.success("Маркирано като закъсняващ");
         fetchBookings(false);
       } else {
@@ -1742,6 +1742,15 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
 
   // Calculate revenue statistics
   const revenueStats = useMemo(() => {
+    // Helper function to check if a payment (paidAt) falls within the shift
+    const isPaidInShift = (paidAt: string | undefined): boolean => {
+      if (!paidAt) return false;
+      const paidDate = new Date(paidAt);
+      const paidDateOnly = paidDate.toISOString().split('T')[0];
+      const paidTime = paidDate.toTimeString().slice(0, 5); // HH:MM format
+      return isInShift(paidDateOnly, paidTime, shiftRange);
+    };
+    
     // Expected revenue: ALL bookings (confirmed, arrived, checked-out) that arrive during this shift
     // We count revenue when customers arrive, not when they leave
     const expectedBookings = bookings.filter(b => 
@@ -1750,12 +1759,12 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
     );
     const expectedRevenue = expectedBookings.reduce((sum, b) => sum + b.totalPrice, 0);
     
-    // Actual collected: paid bookings that ARRIVED during this shift
-    // Only count revenue from customers who arrived in this shift, not those departing from previous shifts
+    // Actual collected: paid bookings where payment was MADE during this shift (by paidAt timestamp)
+    // This ensures payments collected during a shift show up in that shift's revenue
     const paidBookings = bookings.filter(b => 
       b.paymentStatus === "paid" &&
-      // Only count if they arrived during this shift
-      isInShift(b.arrivalDate, b.arrivalTime, shiftRange)
+      b.paidAt && // Must have a paidAt timestamp
+      isPaidInShift(b.paidAt)
     );
     
     // Pending payment: customers with pay-on-leave that arrived during this shift

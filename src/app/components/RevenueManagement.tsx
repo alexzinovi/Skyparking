@@ -32,6 +32,7 @@ interface Booking {
   discountAmount?: number;
   paymentMethod?: string;
   paymentStatus?: string;
+  paidAt?: string; // Timestamp when payment was received
   operatorName?: string;
   completedBy?: string;
   createdAt?: string;
@@ -146,14 +147,15 @@ export function RevenueManagement({ bookings, users }: RevenueManagementProps) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    // Collected Revenue (Past, Paid Only)
+    // Collected Revenue (Paid bookings where payment was made in the selected date range)
     const collectedBookings = bookings.filter(booking => {
-      const arrivalDate = new Date(booking.arrivalDate);
-      const isInRange = arrivalDate >= dateRange.start && arrivalDate <= dateRange.end;
-      const isPast = arrivalDate < today;
-      const isPaid = booking.paymentStatus === "paid";
+      if (booking.paymentStatus !== "paid" || !booking.paidAt) return false;
       
-      return isInRange && isPast && isPaid;
+      const paidDate = new Date(booking.paidAt);
+      paidDate.setHours(0, 0, 0, 0);
+      const isInRange = paidDate >= dateRange.start && paidDate <= dateRange.end;
+      
+      return isInRange;
     });
     
     // Forecast Revenue (Future, Confirmed Only)

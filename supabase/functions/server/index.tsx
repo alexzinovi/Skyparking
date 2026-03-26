@@ -478,6 +478,44 @@ app.post("/make-server-47a4914e/admin/setup-password", async (c) => {
   }
 });
 
+// Backfill paidAt for existing paid bookings (one-time migration utility)
+app.post("/make-server-47a4914e/admin/backfill-paidat", async (c) => {
+  try {
+    // Get all bookings
+    const allBookingsData = await kv.getByPrefix("booking:");
+    const bookings = allBookingsData || [];
+    
+    let updated = 0;
+    const now = new Date().toISOString();
+    
+    for (const booking of bookings) {
+      // Check if booking is paid but missing paidAt timestamp
+      if (booking.paymentStatus === 'paid' && !booking.paidAt) {
+        // Use checkedOutAt if available, otherwise createdAt, otherwise current time
+        const paidTimestamp = booking.checkedOutAt || booking.createdAt || now;
+        
+        const updatedBooking = {
+          ...booking,
+          paidAt: paidTimestamp,
+          updatedAt: now
+        };
+        
+        await kv.set(booking.id, updatedBooking);
+        updated++;
+      }
+    }
+    
+    return c.json({ 
+      success: true, 
+      message: `Backfilled paidAt for ${updated} bookings`,
+      updatedCount: updated 
+    });
+  } catch (error) {
+    console.log("Backfill paidAt error:", error);
+    return c.json({ success: false, message: "Backfill failed" }, 500);
+  }
+});
+
 // Create a new booking
 app.post("/make-server-47a4914e/bookings", async (c) => {
   try {
@@ -689,10 +727,14 @@ app.put("/make-server-47a4914e/bookings/:id", async (c) => {
       });
     }
     
+    // If payment status is being changed to "paid" and paidAt doesn't exist, set it now
+    const shouldSetPaidAt = updates.paymentStatus === 'paid' && !existing.paidAt;
+    
     const updated = {
       ...existing,
       ...updates,
       editHistory,
+      paidAt: shouldSetPaidAt ? new Date().toISOString() : (updates.paidAt || existing.paidAt),
       updatedAt: new Date().toISOString(),
     };
     
@@ -1208,6 +1250,13 @@ app.put("/make-server-47a4914e/bookings/:id/checkout", async (c) => {
     // Handle payment on departure if applicable
     const shouldUpdatePayment = booking.paymentMethod === 'pay-on-leave' && paymentMethod;
     
+    // Determine if we should set paidAt timestamp
+    // Set paidAt if:
+    // 1. Payment is being made now (pay-on-leave with payment method provided)
+    // 2. Payment status will be/is 'paid' but paidAt is missing (for existing paid bookings without timestamp)
+    const willBePaid = shouldUpdatePayment || booking.paymentStatus === 'paid';
+    const needsPaidTimestamp = willBePaid && !booking.paidAt;
+    
     // Calculate final price including late surcharge if applicable
     let calculatedFinalPrice = finalPrice || booking.totalPrice;
     let finalLateSurcharge = booking.lateSurcharge || 0;
@@ -1226,7 +1275,7 @@ app.put("/make-server-47a4914e/bookings/:id/checkout", async (c) => {
       checkedOutAt: new Date().toISOString(),
       paymentMethod: shouldUpdatePayment ? paymentMethod : booking.paymentMethod,
       paymentStatus: shouldUpdatePayment ? 'paid' : booking.paymentStatus,
-      paidAt: shouldUpdatePayment ? new Date().toISOString() : booking.paidAt,
+      paidAt: needsPaidTimestamp ? new Date().toISOString() : booking.paidAt,
       finalPrice: calculatedFinalPrice, // Include late surcharge in final price
       lateSurcharge: finalLateSurcharge, // Store the confirmed late surcharge
       statusHistory,
