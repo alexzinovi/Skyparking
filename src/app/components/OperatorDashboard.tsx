@@ -46,6 +46,7 @@ import { calculatePrice as calculateDynamicPrice } from "@/app/utils/pricing";
 import { ReservationCard, type ReservationData } from "./ReservationCard";
 import { DatePicker } from "./DatePicker";
 import { TimePicker } from "./TimePicker";
+import { CheckoutModal } from "./CheckoutModal";
 
 const projectId = "dbybybmjjeeocoecaewv";
 const publicAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRieWJ5Ym1qamVlb2NvZWNhZXd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODgxMzAsImV4cCI6MjA4MjA2NDEzMH0.fMZ3Yi5gZpE6kBBz-y1x0FKZcGczxSJZ9jL-Zeau340";
@@ -532,9 +533,13 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
   const [action, setAction] = useState<"arrived" | "no-show" | "checkout" | null>(null);
   const [selectedShift, setSelectedShift] = useState<ShiftType>(getCurrentShift());
   
-  // Late fee confirmation
+  // Late fee confirmation (legacy)
   const [lateFeeDialog, setLateFeeDialog] = useState(false);
   const [confirmedLateFee, setConfirmedLateFee] = useState<number>(0);
+  
+  // New checkout modal
+  const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
+  const [checkoutBooking, setCheckoutBooking] = useState<Booking | null>(null);
   
   // Revenue breakdown expansion
   const [revenueExpanded, setRevenueExpanded] = useState(false);
@@ -1247,26 +1252,38 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
     }
   };
 
+  // Calculate late fee using standard pricing
+  const calculateLateFeeWithStandardPricing = async (extraDays: number, numberOfCars: number): Promise<number> => {
+    try {
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/pricing/calculate?days=${extraDays}`,
+        {
+          headers: {
+            "Authorization": `Bearer ${publicAnonKey}`,
+          },
+        }
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.price) {
+          return data.price * numberOfCars;
+        }
+      }
+      
+      // Fallback: use calculateDynamicPrice if available
+      const pricePerCar = await calculateDynamicPrice("2024-01-01", "00:00", "2024-01-01", "23:59", 1);
+      return (pricePerCar || 0) * numberOfCars;
+    } catch (error) {
+      console.error("Error calculating late fee:", error);
+      return 0;
+    }
+  };
+
   // Handle checkout
   const handleCheckout = (booking: Booking) => {
-    setSelectedBooking(booking);
-    setAction("checkout");
-    
-    // If customer is late, show late fee confirmation first
-    if (booking.isLate && booking.lateSurcharge && booking.lateSurcharge > 0) {
-      setConfirmedLateFee(booking.lateSurcharge);
-      setLateFeeDialog(true);
-      return;
-    }
-    
-    // If payment is pending, ask for payment method
-    if (booking.paymentMethod === "pay-on-leave" || booking.paymentStatus === "pending") {
-      setPaymentDialog(true);
-      setPaymentMethod("");
-    } else {
-      // Already paid, checkout directly
-      confirmCheckout(booking);
-    }
+    setCheckoutBooking(booking);
+    setCheckoutModalOpen(true);
   };
   
   // Confirm late fee and proceed to checkout
@@ -1284,8 +1301,39 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
     }
   };
 
+  // Handle checkout confirmation from modal
+  const handleCheckoutConfirm = async (data: {
+    lateFee: number;
+    adjustmentReason?: string;
+    adjustmentNote?: string;
+  }) => {
+    if (!checkoutBooking) return;
+    
+    setCheckoutModalOpen(false);
+    
+    // If payment is pending, ask for payment method
+    if (checkoutBooking.paymentMethod === "pay-on-leave" || checkoutBooking.paymentStatus === "pending") {
+      setSelectedBooking(checkoutBooking);
+      setConfirmedLateFee(data.lateFee);
+      setAction("checkout");
+      setPaymentDialog(true);
+      setPaymentMethod("");
+      // Store adjustment details temporarily
+      (checkoutBooking as any)._adjustmentReason = data.adjustmentReason;
+      (checkoutBooking as any)._adjustmentNote = data.adjustmentNote;
+    } else {
+      // Already paid, checkout directly
+      await confirmCheckout(checkoutBooking, data.lateFee, data.adjustmentReason, data.adjustmentNote);
+    }
+  };
+
   // Confirm checkout
-  const confirmCheckout = async (booking?: Booking) => {
+  const confirmCheckout = async (
+    booking?: Booking, 
+    lateFee?: number,
+    adjustmentReason?: string,
+    adjustmentNote?: string
+  ) => {
     const targetBooking = booking || selectedBooking;
     if (!targetBooking) return;
 
@@ -1294,6 +1342,11 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
       toast.error("Моля изберете метод на плащане");
       return;
     }
+    
+    // Get adjustment details from temporary storage if available
+    const finalAdjustmentReason = adjustmentReason || (targetBooking as any)._adjustmentReason;
+    const finalAdjustmentNote = adjustmentNote || (targetBooking as any)._adjustmentNote;
+    const finalLateFee = lateFee !== undefined ? lateFee : confirmedLateFee;
 
     try {
       const token = localStorage.getItem("skyparking-token");
@@ -1309,7 +1362,9 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
           body: JSON.stringify({
             operator: currentUser.fullName,
             paymentMethod: paymentMethod || targetBooking.paymentMethod,
-            confirmedLateFee: targetBooking.isLate ? confirmedLateFee : undefined,
+            confirmedLateFee: targetBooking.isLate ? finalLateFee : undefined,
+            adjustmentReason: finalAdjustmentReason,
+            adjustmentNote: finalAdjustmentNote,
           }),
         }
       );
@@ -1320,6 +1375,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
         toast.success("Напуснал паркинга");
         setPaymentDialog(false);
         setSelectedBooking(null);
+        setCheckoutBooking(null);
         fetchBookings(false);
       } else {
         toast.error(data.message || "Грешка");
@@ -3705,6 +3761,19 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Checkout Modal */}
+      {checkoutModalOpen && checkoutBooking && (
+        <CheckoutModal
+          booking={checkoutBooking}
+          onConfirm={handleCheckoutConfirm}
+          onCancel={() => {
+            setCheckoutModalOpen(false);
+            setCheckoutBooking(null);
+          }}
+          calculateLateFee={calculateLateFeeWithStandardPricing}
+        />
+      )}
 
       {/* Floating Action Button (FAB) - Create Reservation */}
       <button

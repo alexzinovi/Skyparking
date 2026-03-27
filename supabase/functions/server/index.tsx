@@ -1187,7 +1187,7 @@ app.put("/make-server-47a4914e/bookings/:id/mark-late", async (c) => {
       }, 400);
     }
     
-    // Calculate late surcharge (5 EUR per day past original departure date)
+    // Calculate late surcharge using standard pricing (not fixed €5/day penalty)
     const now = new Date();
     const originalDeparture = new Date(booking.departureDate);
     
@@ -1196,7 +1196,12 @@ app.put("/make-server-47a4914e/bookings/:id/mark-late", async (c) => {
     originalDeparture.setHours(0, 0, 0, 0);
     
     const daysLate = Math.floor((now.getTime() - originalDeparture.getTime()) / (1000 * 60 * 60 * 24));
-    const lateSurcharge = daysLate > 0 ? daysLate * 5 : 0;
+    
+    // Calculate extra stay cost using standard pricing (same as normal reservation extension)
+    let lateSurcharge = 0;
+    if (daysLate > 0) {
+      lateSurcharge = await calculatePrice(daysLate) * (booking.numberOfCars || 1);
+    }
     
     const statusHistory = booking.statusHistory || [];
     statusHistory.push({
@@ -1231,7 +1236,7 @@ app.put("/make-server-47a4914e/bookings/:id/mark-late", async (c) => {
 app.put("/make-server-47a4914e/bookings/:id/checkout", async (c) => {
   try {
     const id = c.req.param("id");
-    const { operator, paymentMethod, finalPrice, confirmedLateFee } = await c.req.json();
+    const { operator, paymentMethod, finalPrice, confirmedLateFee, adjustmentReason, adjustmentNote } = await c.req.json();
     
     const booking = await kv.get(id);
     if (!booking) {
@@ -1278,6 +1283,8 @@ app.put("/make-server-47a4914e/bookings/:id/checkout", async (c) => {
       paidAt: needsPaidTimestamp ? new Date().toISOString() : booking.paidAt,
       finalPrice: calculatedFinalPrice, // Include late surcharge in final price
       lateSurcharge: finalLateSurcharge, // Store the confirmed late surcharge
+      adjustmentReason: adjustmentReason || undefined, // Store operator adjustment reason
+      adjustmentNote: adjustmentNote || undefined, // Store operator adjustment note
       statusHistory,
       updatedAt: new Date().toISOString(),
     };
@@ -2083,7 +2090,12 @@ app.post("/make-server-47a4914e/update-late-surcharges", async (c) => {
         originalDeparture.setHours(0, 0, 0, 0);
         
         const daysLate = Math.floor((now.getTime() - originalDeparture.getTime()) / (1000 * 60 * 60 * 24));
-        const newSurcharge = daysLate > 0 ? daysLate * 5 : 0;
+        
+        // Calculate extra stay cost using standard pricing (same as normal reservation extension)
+        let newSurcharge = 0;
+        if (daysLate > 0) {
+          newSurcharge = await calculatePrice(daysLate) * (booking.numberOfCars || 1);
+        }
         
         // Only update if surcharge changed
         if (newSurcharge !== booking.lateSurcharge) {
@@ -2107,6 +2119,72 @@ app.post("/make-server-47a4914e/update-late-surcharges", async (c) => {
   } catch (error) {
     console.log("Update late surcharges error:", error);
     return c.json({ success: false, message: "Failed to update late surcharges" }, 500);
+  }
+});
+
+// Admin: Recalculate late fees for all late bookings (with new standard pricing)
+app.post("/make-server-47a4914e/admin/recalculate-late-fees", async (c) => {
+  try {
+    // Verify admin token
+    const sessionToken = c.req.header("X-Session-Token");
+    if (!sessionToken) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+    
+    const currentUser = await users.verifySessionToken(sessionToken);
+    
+    if (!currentUser || !currentUser.role || currentUser.role !== 'admin') {
+      return c.json({ error: "Unauthorized - Admin access required" }, 403);
+    }
+
+    // Get all bookings
+    const allBookings = await kv.getByPrefix("booking:");
+    
+    let updatedCount = 0;
+    let skippedCount = 0;
+    
+    for (const booking of allBookings) {
+      // Update late bookings that are still in "arrived" status
+      if (booking.isLate && booking.status === 'arrived') {
+        // Recalculate late surcharge using standard pricing
+        const now = new Date();
+        const originalDeparture = new Date(booking.originalDepartureDate || booking.departureDate);
+        
+        // Set both to midnight for accurate day calculation
+        now.setHours(0, 0, 0, 0);
+        originalDeparture.setHours(0, 0, 0, 0);
+        
+        const daysLate = Math.floor((now.getTime() - originalDeparture.getTime()) / (1000 * 60 * 60 * 24));
+        
+        // Calculate extra stay cost using standard pricing
+        let newSurcharge = 0;
+        if (daysLate > 0) {
+          newSurcharge = await calculatePrice(daysLate) * (booking.numberOfCars || 1);
+        }
+        
+        // Update with new surcharge
+        const updated = {
+          ...booking,
+          lateSurcharge: newSurcharge,
+          updatedAt: new Date().toISOString(),
+        };
+        
+        await kv.set(booking.id, updated);
+        updatedCount++;
+      } else {
+        skippedCount++;
+      }
+    }
+    
+    return c.json({ 
+      success: true, 
+      message: `Актуализирани ${updatedCount} задължени резервации. Пропуснати: ${skippedCount}`,
+      updatedCount,
+      skippedCount
+    });
+  } catch (error) {
+    console.log("Recalculate late fees error:", error);
+    return c.json({ success: false, message: "Failed to recalculate late fees" }, 500);
   }
 });
 

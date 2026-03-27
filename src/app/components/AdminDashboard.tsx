@@ -48,6 +48,7 @@ import { calculatePrice } from "@/app/utils/pricing";
 import { ReservationCard, type ReservationData } from "./ReservationCard";
 import { DatePicker } from "./DatePicker";
 import { TimePicker } from "./TimePicker";
+import { CheckoutModal } from "./CheckoutModal";
 
 const projectId = "dbybybmjjeeocoecaewv";
 const publicAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRieWJ5Ym1qamVlb2NvZWNhZXd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODgxMzAsImV4cCI6MjA4MjA2NDEzMH0.fMZ3Yi5gZpE6kBBz-y1x0FKZcGczxSJZ9jL-Zeau340";
@@ -487,6 +488,10 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
   const [editingUser, setEditingUser] = useState<UserType | null>(null);
   const [isAddingUser, setIsAddingUser] = useState(false);
   const cleanupAttempted = useRef(false); // Track if cleanup has been attempted
+  
+  // Checkout modal state
+  const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
+  const [checkoutBooking, setCheckoutBooking] = useState<Booking | null>(null);
   
   // Calendar state
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -1162,29 +1167,75 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
     }
   };
 
-  // Checkout (arrived → checked-out)
-  const checkout = async (booking: Booking) => {
-    if (!confirm(bg.checkoutConfirm)) return;
+  // Calculate late fee using standard pricing
+  const calculateLateFeeWithStandardPricing = async (extraDays: number, numberOfCars: number): Promise<number> => {
+    try {
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/pricing/calculate?days=${extraDays}`,
+        {
+          headers: {
+            "Authorization": `Bearer ${publicAnonKey}`,
+          },
+        }
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.price) {
+          return data.price * numberOfCars;
+        }
+      }
+      
+      // Fallback: use calculatePrice if available
+      const pricePerCar = await calculatePrice("2024-01-01", "00:00", "2024-01-01", "23:59", 1);
+      return (pricePerCar || 0) * numberOfCars;
+    } catch (error) {
+      console.error("Error calculating late fee:", error);
+      return 0;
+    }
+  };
+
+  // Checkout (arrived → checked-out) - Open modal
+  const checkout = (booking: Booking) => {
+    setCheckoutBooking(booking);
+    setCheckoutModalOpen(true);
+  };
+
+  // Handle checkout confirmation from modal
+  const handleCheckoutConfirm = async (data: {
+    lateFee: number;
+    adjustmentReason?: string;
+    adjustmentNote?: string;
+  }) => {
+    if (!checkoutBooking) return;
+    
+    setCheckoutModalOpen(false);
 
     try {
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/bookings/${booking.id}/checkout`,
+        `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/bookings/${checkoutBooking.id}/checkout`,
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${publicAnonKey}`,
           },
-          body: JSON.stringify({ operator: operatorName }),
+          body: JSON.stringify({ 
+            operator: operatorName,
+            confirmedLateFee: checkoutBooking.isLate ? data.lateFee : undefined,
+            adjustmentReason: data.adjustmentReason,
+            adjustmentNote: data.adjustmentNote,
+          }),
         }
       );
 
-      const data = await response.json();
-      if (data.success) {
+      const responseData = await response.json();
+      if (responseData.success) {
         toast.success(bg.bookingCheckedOut);
+        setCheckoutBooking(null);
         fetchBookings();
       } else {
-        toast.error(data.message || bg.failedToSave);
+        toast.error(responseData.message || bg.failedToSave);
       }
     } catch (error) {
       console.error("Checkout error:", error);
@@ -3118,6 +3169,19 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Checkout Modal */}
+      {checkoutModalOpen && checkoutBooking && (
+        <CheckoutModal
+          booking={checkoutBooking}
+          onConfirm={handleCheckoutConfirm}
+          onCancel={() => {
+            setCheckoutModalOpen(false);
+            setCheckoutBooking(null);
+          }}
+          calculateLateFee={calculateLateFeeWithStandardPricing}
+        />
+      )}
 
       {/* Floating Action Button (FAB) - Create Reservation */}
       {!["users", "settings", "pricing", "discounts", "calendar", "revenue"].includes(activeTab) && (

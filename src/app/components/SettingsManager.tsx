@@ -13,6 +13,7 @@ export function SettingsManager() {
   const [loading, setLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isBackfilling, setIsBackfilling] = useState(false);
+  const [isRecalculatingLateFees, setIsRecalculatingLateFees] = useState(false);
 
   // Fetch current settings
   useEffect(() => {
@@ -116,6 +117,41 @@ export function SettingsManager() {
       toast.error("Грешка при актуализиране на данните");
     } finally {
       setIsBackfilling(false);
+    }
+  };
+
+  const recalculateLateFees = async () => {
+    if (!confirm("Това ще пресметне отново всички задължения за задължени резервации. Продължи?")) {
+      return;
+    }
+
+    setIsRecalculatingLateFees(true);
+    try {
+      const token = localStorage.getItem("skyparking-token");
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/admin/recalculate-late-fees`,
+        {
+          method: "POST",
+          mode: "cors",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Session-Token": token || "",
+          },
+        }
+      );
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        toast.success(`✅ ${data.message}`);
+      } else {
+        toast.error(`Неуспешно: ${data.message || "Неизвестна грешка"}`);
+      }
+    } catch (error) {
+      console.error("Error recalculation late fees:", error);
+      toast.error("Грешка при актуализиране на данните");
+    } finally {
+      setIsRecalculatingLateFees(false);
     }
   };
 
@@ -227,6 +263,21 @@ export function SettingsManager() {
             className="bg-orange-600 hover:bg-orange-700 text-white"
           >
             {isBackfilling ? "Актуализиране..." : "Актуализирай paidAt полета"}
+          </Button>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg border border-orange-300 mt-4">
+          <h3 className="text-lg font-semibold mb-2">Пресмятане на задължения за задължени резервации</h3>
+          <p className="text-sm text-gray-600 mb-4">
+            Пресмята отново всички задължения за резервации, които са задължени.
+            Това е необходимо за коректно отчитане на задълженията.
+          </p>
+          <Button
+            onClick={recalculateLateFees}
+            disabled={isRecalculatingLateFees}
+            className="bg-orange-600 hover:bg-orange-700 text-white"
+          >
+            {isRecalculatingLateFees ? "Пресмятане..." : "Пресметни задълженията"}
           </Button>
         </div>
       </Card>
