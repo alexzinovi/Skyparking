@@ -14,6 +14,17 @@ export function SettingsManager() {
   const [isSaving, setIsSaving] = useState(false);
   const [isBackfilling, setIsBackfilling] = useState(false);
   const [isRecalculatingLateFees, setIsRecalculatingLateFees] = useState(false);
+  const [tokenStatus, setTokenStatus] = useState<string>("");
+
+  // Check token on mount
+  useEffect(() => {
+    const token = localStorage.getItem("skyparking-token");
+    if (token) {
+      setTokenStatus(`Token exists: ${token.substring(0, 30)}...`);
+    } else {
+      setTokenStatus("⚠️ NO TOKEN FOUND - Please log out and log back in!");
+    }
+  }, []);
 
   // Fetch current settings
   useEffect(() => {
@@ -182,6 +193,20 @@ export function SettingsManager() {
 
   return (
     <div className="space-y-6">
+      {/* Debug Token Status */}
+      {tokenStatus && (
+        <Card className={`p-4 ${tokenStatus.includes("NO TOKEN") ? "bg-red-50 border-red-300" : "bg-blue-50 border-blue-300"}`}>
+          <div className="text-sm font-mono">
+            <strong>Debug Info:</strong> {tokenStatus}
+          </div>
+          {tokenStatus.includes("NO TOKEN") && (
+            <div className="text-sm text-red-700 mt-2">
+              <strong>⚠️ ACTION REQUIRED:</strong> Please log out and log back in to create a new session.
+            </div>
+          )}
+        </Card>
+      )}
+      
       <Card className="p-8">
         <h2 className="text-2xl font-bold mb-6">Настройки на системата</h2>
 
