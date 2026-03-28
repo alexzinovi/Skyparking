@@ -128,24 +128,41 @@ export function SettingsManager() {
     setIsRecalculatingLateFees(true);
     try {
       const token = localStorage.getItem("skyparking-token");
+      
+      console.log("Recalculate late fees - Token from localStorage:", token ? token.substring(0, 20) + "..." : "missing");
+      
+      if (!token) {
+        toast.error("Не сте влезли в системата. Моля, влезте отново.");
+        setIsRecalculatingLateFees(false);
+        return;
+      }
+      
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+        "X-Session-Token": token,
+      };
+      
+      console.log("Recalculate late fees - Headers:", Object.keys(headers));
+      
       const response = await fetch(
         `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/admin/recalculate-late-fees`,
         {
           method: "POST",
           mode: "cors",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Session-Token": token || "",
-          },
+          headers,
         }
       );
 
+      console.log("Recalculate response status:", response.status);
+      
       const data = await response.json();
+      
+      console.log("Recalculate response data:", data);
       
       if (response.ok) {
         toast.success(`✅ ${data.message}`);
       } else {
-        toast.error(`Неуспешно: ${data.message || "Неизвестна грешка"}`);
+        toast.error(`Неуспешно: ${data.message || data.error || "Неизвестна грешка"}`);
       }
     } catch (error) {
       console.error("Error recalculation late fees:", error);

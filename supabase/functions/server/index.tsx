@@ -2145,14 +2145,19 @@ app.post("/make-server-47a4914e/admin/recalculate-late-fees", async (c) => {
   try {
     // Verify admin token
     const sessionToken = c.req.header("X-Session-Token");
+    
+    console.log("Recalculate late fees - Session token:", sessionToken ? "exists" : "missing");
+    
     if (!sessionToken) {
-      return c.json({ error: "Unauthorized" }, 401);
+      return c.json({ success: false, message: "Missing authorization header" }, 401);
     }
     
     const currentUser = await users.verifySessionToken(sessionToken);
     
+    console.log("Recalculate late fees - Current user:", currentUser);
+    
     if (!currentUser || !currentUser.role || currentUser.role !== 'admin') {
-      return c.json({ error: "Unauthorized - Admin access required" }, 403);
+      return c.json({ success: false, message: "Unauthorized - Admin access required" }, 403);
     }
 
     // Get all bookings
