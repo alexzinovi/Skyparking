@@ -60,10 +60,22 @@ export function CheckoutModal({
       setExtraDays(Math.max(0, daysLate));
       
       if (daysLate > 0) {
-        // Use the provided calculateLateFee function to get standard pricing
-        const fee = await calculateLateFee(daysLate, booking.numberOfCars);
-        setAutoCalculatedFee(fee);
-        setAdjustedFee(fee);
+        // Calculate the TOTAL duration including late days
+        const arrival = new Date(booking.arrivalDate);
+        arrival.setHours(0, 0, 0, 0);
+        
+        const totalDays = Math.floor(
+          (now.getTime() - arrival.getTime()) / (1000 * 60 * 60 * 24)
+        );
+        
+        // Calculate what the price SHOULD be for the total duration
+        const totalPrice = await calculateLateFee(totalDays, booking.numberOfCars);
+        
+        // The late surcharge is the difference between total price and original price
+        const lateSurcharge = totalPrice - booking.totalPrice;
+        
+        setAutoCalculatedFee(Math.max(0, lateSurcharge));
+        setAdjustedFee(Math.max(0, lateSurcharge));
       } else {
         setAutoCalculatedFee(0);
         setAdjustedFee(0);
@@ -177,70 +189,69 @@ export function CheckoutModal({
           )}
 
           {/* Section 3: Operator Adjustment */}
-          {extraDays > 0 && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-5">
-              <h3 className="font-semibold text-lg text-blue-900 mb-4 flex items-center gap-2">
-                <Euro className="w-5 h-5 text-blue-600" />
-                Корекция от оператор
-              </h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Крайна такса за допълнителен престой (€)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={adjustedFee}
-                    onChange={(e) => setAdjustedFee(parseFloat(e.target.value) || 0)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#073590] focus:border-transparent text-lg font-medium"
-                  />
-                  {isAdjusted && (
-                    <p className="text-xs text-blue-600 mt-1 flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" />
-                      Коригирана от автоматичната сума (€{autoCalculatedFee.toFixed(2)})
-                    </p>
-                  )}
-                </div>
-
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-5">
+            <h3 className="font-semibold text-lg text-blue-900 mb-4 flex items-center gap-2">
+              <Euro className="w-5 h-5 text-blue-600" />
+              Корекция от оператор
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Крайна такса за допълнителен престой (€)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={adjustedFee}
+                  onChange={(e) => setAdjustedFee(parseFloat(e.target.value) || 0)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#073590] focus:border-transparent text-lg font-medium"
+                  disabled={isCalculating}
+                />
                 {isAdjusted && (
-                  <>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Причина за корекция
-                      </label>
-                      <select
-                        value={adjustmentReason}
-                        onChange={(e) => setAdjustmentReason(e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#073590] focus:border-transparent"
-                      >
-                        <option value="">Изберете причина...</option>
-                        <option value="goodwill">Отстъпка от добра воля</option>
-                        <option value="correction">Оператор корекция</option>
-                        <option value="special-case">Специален случай</option>
-                        <option value="waived">Анулирана такса</option>
-                        <option value="custom">Друга причина</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Бележка (опционално)
-                      </label>
-                      <textarea
-                        value={adjustmentNote}
-                        onChange={(e) => setAdjustmentNote(e.target.value)}
-                        placeholder="Добавете допълнителна информация за корекцията..."
-                        rows={3}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#073590] focus:border-transparent resize-none"
-                      />
-                    </div>
-                  </>
+                  <p className="text-xs text-blue-600 mt-1 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    Коригирана от автоматичната сума (€{autoCalculatedFee.toFixed(2)})
+                  </p>
                 )}
               </div>
+
+              {isAdjusted && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Причина за корекция
+                    </label>
+                    <select
+                      value={adjustmentReason}
+                      onChange={(e) => setAdjustmentReason(e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#073590] focus:border-transparent"
+                    >
+                      <option value="">Изберете причина...</option>
+                      <option value="goodwill">Отстъпка от добра воля</option>
+                      <option value="correction">Оператор корекция</option>
+                      <option value="special-case">Специален случай</option>
+                      <option value="waived">Анулирана такса</option>
+                      <option value="custom">Друга причина</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Бележка (опционално)
+                    </label>
+                    <textarea
+                      value={adjustmentNote}
+                      onChange={(e) => setAdjustmentNote(e.target.value)}
+                      placeholder="Добавете допълнителна информация за корекцията..."
+                      rows={3}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#073590] focus:border-transparent resize-none"
+                    />
+                  </div>
+                </>
+              )}
             </div>
-          )}
+          </div>
 
           {/* Section 4: Final Summary */}
           <div className="bg-gray-100 rounded-lg p-5 border-2 border-gray-300">

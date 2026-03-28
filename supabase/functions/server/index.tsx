@@ -1187,20 +1187,29 @@ app.put("/make-server-47a4914e/bookings/:id/mark-late", async (c) => {
       }, 400);
     }
     
-    // Calculate late surcharge using standard pricing (not fixed €5/day penalty)
+    // Calculate late surcharge using standard pricing as extension (not separate days)
     const now = new Date();
     const originalDeparture = new Date(booking.departureDate);
+    const arrival = new Date(booking.arrivalDate);
     
-    // Set both to midnight for accurate day calculation
+    // Set all to midnight for accurate day calculation
     now.setHours(0, 0, 0, 0);
     originalDeparture.setHours(0, 0, 0, 0);
+    arrival.setHours(0, 0, 0, 0);
     
     const daysLate = Math.floor((now.getTime() - originalDeparture.getTime()) / (1000 * 60 * 60 * 24));
     
-    // Calculate extra stay cost using standard pricing (same as normal reservation extension)
+    // Calculate late surcharge as: (total duration price) - (original price)
     let lateSurcharge = 0;
     if (daysLate > 0) {
-      lateSurcharge = await calculatePrice(daysLate) * (booking.numberOfCars || 1);
+      // Calculate total days from arrival to now
+      const totalDays = Math.floor((now.getTime() - arrival.getTime()) / (1000 * 60 * 60 * 24));
+      
+      // Calculate what the price SHOULD be for the total duration
+      const totalPrice = await calculatePrice(totalDays) * (booking.numberOfCars || 1);
+      
+      // The surcharge is the difference
+      lateSurcharge = Math.max(0, totalPrice - booking.totalPrice);
     }
     
     const statusHistory = booking.statusHistory || [];
@@ -2081,20 +2090,29 @@ app.post("/make-server-47a4914e/update-late-surcharges", async (c) => {
     
     for (const booking of allBookings) {
       if (booking.isLate && booking.status === 'arrived') {
-        // Recalculate late surcharge
+        // Recalculate late surcharge using extension-based pricing
         const now = new Date();
         const originalDeparture = new Date(booking.originalDepartureDate || booking.departureDate);
+        const arrival = new Date(booking.arrivalDate);
         
-        // Set both to midnight for accurate day calculation
+        // Set all to midnight for accurate day calculation
         now.setHours(0, 0, 0, 0);
         originalDeparture.setHours(0, 0, 0, 0);
+        arrival.setHours(0, 0, 0, 0);
         
         const daysLate = Math.floor((now.getTime() - originalDeparture.getTime()) / (1000 * 60 * 60 * 24));
         
-        // Calculate extra stay cost using standard pricing (same as normal reservation extension)
+        // Calculate late surcharge as: (total duration price) - (original price)
         let newSurcharge = 0;
         if (daysLate > 0) {
-          newSurcharge = await calculatePrice(daysLate) * (booking.numberOfCars || 1);
+          // Calculate total days from arrival to now
+          const totalDays = Math.floor((now.getTime() - arrival.getTime()) / (1000 * 60 * 60 * 24));
+          
+          // Calculate what the price SHOULD be for the total duration
+          const totalPrice = await calculatePrice(totalDays) * (booking.numberOfCars || 1);
+          
+          // The surcharge is the difference
+          newSurcharge = Math.max(0, totalPrice - booking.totalPrice);
         }
         
         // Only update if surcharge changed
@@ -2146,20 +2164,29 @@ app.post("/make-server-47a4914e/admin/recalculate-late-fees", async (c) => {
     for (const booking of allBookings) {
       // Update late bookings that are still in "arrived" status
       if (booking.isLate && booking.status === 'arrived') {
-        // Recalculate late surcharge using standard pricing
+        // Recalculate late surcharge using extension-based pricing
         const now = new Date();
         const originalDeparture = new Date(booking.originalDepartureDate || booking.departureDate);
+        const arrival = new Date(booking.arrivalDate);
         
-        // Set both to midnight for accurate day calculation
+        // Set all to midnight for accurate day calculation
         now.setHours(0, 0, 0, 0);
         originalDeparture.setHours(0, 0, 0, 0);
+        arrival.setHours(0, 0, 0, 0);
         
         const daysLate = Math.floor((now.getTime() - originalDeparture.getTime()) / (1000 * 60 * 60 * 24));
         
-        // Calculate extra stay cost using standard pricing
+        // Calculate late surcharge as: (total duration price) - (original price)
         let newSurcharge = 0;
         if (daysLate > 0) {
-          newSurcharge = await calculatePrice(daysLate) * (booking.numberOfCars || 1);
+          // Calculate total days from arrival to now
+          const totalDays = Math.floor((now.getTime() - arrival.getTime()) / (1000 * 60 * 60 * 24));
+          
+          // Calculate what the price SHOULD be for the total duration
+          const totalPrice = await calculatePrice(totalDays) * (booking.numberOfCars || 1);
+          
+          // The surcharge is the difference
+          newSurcharge = Math.max(0, totalPrice - booking.totalPrice);
         }
         
         // Update with new surcharge
