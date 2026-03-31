@@ -24,7 +24,7 @@ export function PricingPage() {
           
           <p className="text-center text-gray-600 mb-12 text-lg">
             {language === 'bg' 
-              ? 'Прозрачни цени без скрити такси започващи от 2.80€ (5.48 лева)' 
+              ? 'Прозрачни цени без скрити такси започващи от 3€ (5.87 лева)' 
               : 'Transparent pricing with no hidden fees'}
           </p>
 
@@ -41,13 +41,13 @@ export function PricingPage() {
                 </div>
                 <div className="mb-4">
                   <div className="text-4xl font-bold mb-1" style={{ color: '#f1c933' }}>
-                    21€
+                    25€
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
-                    (41.07 {language === 'bg' ? 'лв' : 'BGN'})
+                    (48.89 {language === 'bg' ? 'лв' : 'BGN'})
                   </div>
                   <div className="text-xs font-semibold mt-2" style={{ color: '#073590' }}>
-                    {language === 'bg' ? '7€ (13.69 лв) на ден' : '7€ per day'}
+                    {language === 'bg' ? '8.34€ (16.31 лв) на ден' : '8.34€ per day'}
                   </div>
                 </div>
                 <p className="text-sm text-gray-600 mb-4">
@@ -74,13 +74,13 @@ export function PricingPage() {
                 </div>
                 <div className="mb-4">
                   <div className="text-5xl font-bold mb-1" style={{ color: '#f1c933' }}>
-                    32€
+                    38€
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
-                    (62.59 {language === 'bg' ? 'лв' : 'BGN'})
+                    (74.32 {language === 'bg' ? 'лв' : 'BGN'})
                   </div>
                   <div className="text-xs font-semibold mt-2" style={{ color: '#073590' }}>
-                    {language === 'bg' ? '4.57€ (8.94 лв) на ден' : '4.57€ per day'}
+                    {language === 'bg' ? '5.43€ (10.62 лв) на ден' : '5.43€ per day'}
                   </div>
                 </div>
                 <p className="text-sm text-gray-600 mb-4">
@@ -102,13 +102,13 @@ export function PricingPage() {
                 </div>
                 <div className="mb-4">
                   <div className="text-4xl font-bold mb-1" style={{ color: '#f1c933' }}>
-                    84€*
+                    87€*
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
-                    (164.29 {language === 'bg' ? 'лв' : 'BGN'})
+                    (170.15 {language === 'bg' ? 'лв' : 'BGN'})
                   </div>
                   <div className="text-xs font-semibold mt-2" style={{ color: '#073590' }}>
-                    {language === 'bg' ? '2.80€ (5.48 лв) на ден' : '2.80€ per day'}
+                    {language === 'bg' ? '2.90€ (5.67 лв) на ден' : '2.90€ per day'}
                   </div>
                 </div>
                 <p className="text-sm text-gray-600 mb-4">
