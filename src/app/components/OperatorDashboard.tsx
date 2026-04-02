@@ -479,19 +479,9 @@ function calculateCapacityForDate(bookings: Booking[], dateStr: string) {
     // Only count confirmed and arrived reservations for projections
     if (b.status !== 'confirmed' && b.status !== 'arrived') return false;
 
-    // Confirmed bookings whose arrival date has already passed without checking in
-    // are stale (likely no-shows not yet processed) — exclude from projections
-    if (b.status === 'confirmed' && b.arrivalDate < todayStr) return false;
-
     const bookingArrival = new Date(b.arrivalDate);
-
-    // Late bookings whose departure date has already passed are still physically
-    // present — count them for all future dates until they check out
-    if (b.isLate && b.departureDate < todayStr) {
-      return bookingArrival <= targetDate;
-    }
-
     const bookingDeparture = new Date(b.departureDate);
+
     return bookingArrival <= targetDate && targetDate <= bookingDeparture;
   });
   
