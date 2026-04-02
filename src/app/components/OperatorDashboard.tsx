@@ -482,8 +482,8 @@ function calculateCapacityForDate(bookings: Booking[], dateStr: string) {
     const bookingArrival = new Date(b.arrivalDate);
     const bookingDeparture = new Date(b.departureDate);
     
-    // Booking occupies space from arrival through departure (inclusive)
-    return bookingArrival <= targetDate && targetDate <= bookingDeparture;
+    // Booking occupies space from arrival date up to (but not including) departure date
+    return bookingArrival <= targetDate && targetDate < bookingDeparture;
   });
   
   let nonKeysCount = 0;
