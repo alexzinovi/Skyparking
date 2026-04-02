@@ -1853,8 +1853,9 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
     const isPaidInShift = (paidAt: string | undefined): boolean => {
       if (!paidAt) return false;
       const paidDate = new Date(paidAt);
-      const paidDateOnly = paidDate.toISOString().split('T')[0];
-      const paidTime = paidDate.toTimeString().slice(0, 5); // HH:MM format
+      // Use local date components to match isInShift's local time interpretation
+      const paidDateOnly = `${paidDate.getFullYear()}-${String(paidDate.getMonth() + 1).padStart(2, '0')}-${String(paidDate.getDate()).padStart(2, '0')}`;
+      const paidTime = paidDate.toTimeString().slice(0, 5); // HH:MM local
       return isInShift(paidDateOnly, paidTime, shiftRange);
     };
     
