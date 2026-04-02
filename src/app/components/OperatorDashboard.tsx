@@ -510,12 +510,53 @@ function calculateCapacityForDate(bookings: Booking[], dateStr: string) {
   });
   
   const totalCount = nonKeysCount + keysCount;
+  const netCount = totalCount - leavingCount;
   const percentage = totalCount > 0 ? (totalCount / TOTAL_CAPACITY) * 100 : 0;
-  
+
+  // Calculate the time when peak occupancy occurs
+  // Base = cars already present at start of day (arrived before this date)
+  let baseCount = 0;
+  overlappingBookings.forEach(b => {
+    if (b.includeInCapacity === false) return;
+    if (b.arrivalDate < dateStr) {
+      const numCars = Number(b.numberOfCars);
+      baseCount += (numCars > 0) ? numCars : 1;
+    }
+  });
+
+  // Build timeline of arrivals (+) and departures (-) on this specific date
+  const timelineEvents: { minutes: number; delta: number }[] = [];
+  overlappingBookings.forEach(b => {
+    if (b.includeInCapacity === false) return;
+    const numCars = Number(b.numberOfCars) > 0 ? Number(b.numberOfCars) : 1;
+    if (b.arrivalDate === dateStr) {
+      const [h, m] = (b.arrivalTime || '00:00').split(':').map(Number);
+      timelineEvents.push({ minutes: h * 60 + (m || 0), delta: numCars });
+    }
+    if (b.departureDate === dateStr) {
+      const [h, m] = (b.departureTime || '23:59').split(':').map(Number);
+      timelineEvents.push({ minutes: h * 60 + (m || 0), delta: -numCars });
+    }
+  });
+  timelineEvents.sort((a, b) => a.minutes - b.minutes);
+
+  let running = baseCount;
+  let peakValue = baseCount;
+  let peakMinutes = 0;
+  for (const ev of timelineEvents) {
+    running += ev.delta;
+    if (running > peakValue) {
+      peakValue = running;
+      peakMinutes = ev.minutes;
+    }
+  }
+  const peakTime = `${String(Math.floor(peakMinutes / 60)).padStart(2, '0')}:${String(peakMinutes % 60).padStart(2, '0')}`;
+
   return {
     nonKeysCount,
     keysCount,
     totalCount,
+    netCount,
     leavingCount,
     arrivingCount,
     percentage,
@@ -524,6 +565,7 @@ function calculateCapacityForDate(bookings: Booking[], dateStr: string) {
     isHigh: percentage >= 80 && percentage < 100,
     isFull: percentage >= 100,
     isToday,
+    peakTime,
     overlappingBookings,
   };
 }
@@ -3060,8 +3102,13 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                             >
                               <div className={`${isToday ? 'text-base sm:text-lg' : 'text-sm sm:text-base'} font-bold leading-none`}>{day}</div>
                               <div className={`${isToday ? 'text-xs sm:text-sm font-bold' : 'text-[10px] sm:text-xs'} mt-0.5 font-semibold`}>
-                                {capacity.totalCount > 0 ? capacity.totalCount : '-'}
+                                {capacity.totalCount > 0 ? `↑${capacity.totalCount}` : '-'}
                               </div>
+                              {capacity.netCount > 0 && capacity.netCount !== capacity.totalCount && (
+                                <div className={`${isToday ? 'text-[9px]' : 'text-[8px]'} text-blue-600 leading-none font-semibold`}>
+                                  →{capacity.netCount}
+                                </div>
+                              )}
                               {(capacity.arrivingCount > 0 || capacity.leavingCount > 0) && (
                                 <div className={`${isToday ? 'text-[9px]' : 'text-[8px]'} text-gray-600 mt-0.5 leading-none`}>
                                   +{capacity.arrivingCount}/-{capacity.leavingCount}
@@ -3187,9 +3234,15 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                               </div>
                               
                               <div className="bg-white p-3 rounded-lg shadow border-2 border-gray-300">
-                                <div className="text-gray-600 text-xs font-semibold mb-1">ОБЩО КОЛИ</div>
+                                <div className="text-gray-600 text-xs font-semibold mb-1">↑ ПИК</div>
                                 <div className="text-2xl font-black text-gray-800">{capacity.totalCount}</div>
-                                <div className="text-xs text-gray-500">/ {TOTAL_CAPACITY}</div>
+                                <div className="text-xs text-gray-500">в {capacity.peakTime}</div>
+                              </div>
+
+                              <div className="bg-white p-3 rounded-lg shadow border-2 border-blue-200">
+                                <div className="text-gray-600 text-xs font-semibold mb-1">→ КРАЯ НА ДЕНЯ</div>
+                                <div className="text-2xl font-black text-blue-700">{capacity.netCount}</div>
+                                <div className="text-xs text-gray-500">след напусканията</div>
                               </div>
                               
                               <div className={`bg-white p-3 rounded-lg shadow border-2 ${availableSpots <= 0 ? 'border-red-400' : availableSpots < 40 ? 'border-yellow-400' : 'border-green-400'}`}>
