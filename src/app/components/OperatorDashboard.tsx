@@ -481,9 +481,8 @@ function calculateCapacityForDate(bookings: Booking[], dateStr: string) {
 
     const bookingArrival = new Date(b.arrivalDate);
 
-    // Late bookings with a past departure date are still physically present
-    // with no confirmed departure — count them for all dates from arrival onwards
-    if (b.isLate && b.departureDate < todayStr) {
+    // Late bookings have no confirmed departure — count them for all dates from arrival onwards
+    if (b.isLate) {
       return bookingArrival <= targetDate;
     }
 
