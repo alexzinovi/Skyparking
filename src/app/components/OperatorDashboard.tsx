@@ -571,6 +571,10 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
   
   // Filter for exits tab
   const [exitDate, setExitDate] = useState(getTodayDate());
+
+  // Debug list filters (calendar)
+  const [debugStatusFilter, setDebugStatusFilter] = useState<'all' | 'arrived' | 'confirmed'>('all');
+  const [debugArrivalFilter, setDebugArrivalFilter] = useState<'all' | 'past' | 'today' | 'future'>('all');
   
   // Calendar state
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -3213,10 +3217,38 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                             </div>
 
                             {/* Debug: bookings counted for this date */}
-                            <details className="mt-3">
+                            <details className="mt-3" open>
                               <summary className="text-xs text-gray-500 cursor-pointer select-none">🔍 Резервации включени в броенето ({capacity.overlappingBookings.length})</summary>
-                              <div className="mt-2 space-y-1 max-h-48 overflow-y-auto">
-                                {capacity.overlappingBookings.map(b => {
+                              <div className="mt-2 flex gap-2 flex-wrap">
+                                <select
+                                  value={debugStatusFilter}
+                                  onChange={e => setDebugStatusFilter(e.target.value as typeof debugStatusFilter)}
+                                  className="text-xs border rounded px-2 py-1 bg-white"
+                                >
+                                  <option value="all">Всички статуси</option>
+                                  <option value="arrived">Arrived</option>
+                                  <option value="confirmed">Confirmed</option>
+                                </select>
+                                <select
+                                  value={debugArrivalFilter}
+                                  onChange={e => setDebugArrivalFilter(e.target.value as typeof debugArrivalFilter)}
+                                  className="text-xs border rounded px-2 py-1 bg-white"
+                                >
+                                  <option value="all">Всички дати</option>
+                                  <option value="past">Пристигане преди днес</option>
+                                  <option value="today">Пристигане днес</option>
+                                  <option value="future">Пристигане след днес</option>
+                                </select>
+                              </div>
+                              <div className="mt-2 space-y-1 max-h-64 overflow-y-auto">
+                                {capacity.overlappingBookings.filter(b => {
+                                  const today = getTodayDate();
+                                  if (debugStatusFilter !== 'all' && b.status !== debugStatusFilter) return false;
+                                  if (debugArrivalFilter === 'past' && b.arrivalDate >= today) return false;
+                                  if (debugArrivalFilter === 'today' && b.arrivalDate !== today) return false;
+                                  if (debugArrivalFilter === 'future' && b.arrivalDate <= today) return false;
+                                  return true;
+                                }).map(b => {
                                   const excluded = b.includeInCapacity === false;
                                   return (
                                     <div key={b.id} className={`text-xs rounded p-2 border flex justify-between items-center gap-2 ${excluded ? 'bg-gray-100 border-gray-300 opacity-60' : 'bg-white border-gray-200'}`}>
