@@ -3224,6 +3224,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                                       <span className="text-gray-500 shrink-0">{b.licensePlate}</span>
                                       <span className="text-gray-400 shrink-0">{b.arrivalDate} → {b.departureDate}</span>
                                       <span className="shrink-0">{b.numberOfCars ?? 1} кола</span>
+                                      <span className={`shrink-0 text-[10px] px-1 rounded ${b.status === 'arrived' ? 'bg-green-100 text-green-700' : b.status === 'confirmed' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>{b.status}</span>
                                       {excluded && <span className="text-gray-400 shrink-0">🚫</span>}
                                       {b.isLate && <span className="text-orange-500 shrink-0">⏰</span>}
                                     </div>
