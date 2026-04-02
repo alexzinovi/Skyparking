@@ -58,7 +58,7 @@ const SHIFT_CONFIG = {
 };
 
 // Parking capacity configuration
-const BASE_CAPACITY = 180;
+const BASE_CAPACITY = 160;
 const OVERFLOW_CAPACITY = 20;
 const TOTAL_CAPACITY = BASE_CAPACITY + OVERFLOW_CAPACITY;
 
