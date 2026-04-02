@@ -44,29 +44,41 @@ export function CheckoutModal({
     const calculateExtraStay = async () => {
       setIsCalculating(true);
       
-      // Calculate extra days
+      // Calculate extra days using departure-time-aware logic:
+      // If the customer leaves before the original departure TIME on their last extra day,
+      // that day doesn't count as a full extra day.
       const now = new Date();
-      const originalDeparture = new Date(
-        booking.originalDepartureDate || booking.departureDate
+      const origDepDate = booking.originalDepartureDate || booking.departureDate;
+      const origDepTime = booking.originalDepartureTime || booking.departureTime || "20:00";
+
+      const origMidnight = new Date(origDepDate);
+      origMidnight.setHours(0, 0, 0, 0);
+      const nowMidnight = new Date(now);
+      nowMidnight.setHours(0, 0, 0, 0);
+
+      const calendarDaysDiff = Math.floor(
+        (nowMidnight.getTime() - origMidnight.getTime()) / (1000 * 60 * 60 * 24)
       );
-      
-      now.setHours(0, 0, 0, 0);
-      originalDeparture.setHours(0, 0, 0, 0);
-      
-      const daysLate = Math.floor(
-        (now.getTime() - originalDeparture.getTime()) / (1000 * 60 * 60 * 24)
-      );
-      
+
+      // If current time is before the original departure time, the last partial day doesn't count
+      const [origH, origM] = origDepTime.split(":").map(Number);
+      const currentH = now.getHours();
+      const currentM = now.getMinutes();
+      const beforeOrigTime = currentH * 60 + currentM < origH * 60 + origM;
+      const daysLate = beforeOrigTime
+        ? Math.max(0, calendarDaysDiff - 1)
+        : calendarDaysDiff;
+
       setExtraDays(Math.max(0, daysLate));
       
       if (daysLate > 0) {
-        // Calculate the TOTAL duration including late days
-        const arrival = new Date(booking.arrivalDate);
-        arrival.setHours(0, 0, 0, 0);
-        
-        const totalDays = Math.floor(
-          (now.getTime() - arrival.getTime()) / (1000 * 60 * 60 * 24)
+        // Total days = original days + extra days
+        const arrivalMidnight = new Date(booking.arrivalDate);
+        arrivalMidnight.setHours(0, 0, 0, 0);
+        const origDays = Math.floor(
+          (origMidnight.getTime() - arrivalMidnight.getTime()) / (1000 * 60 * 60 * 24)
         );
+        const totalDays = origDays + daysLate;
         
         // Calculate what the price SHOULD be for the total duration
         const totalPrice = await calculateLateFee(totalDays, booking.numberOfCars);

@@ -752,9 +752,10 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
           totalPrice: b.totalPrice
         })));
         
-        // Recalculate late surcharges for late bookings
+        // Recalculate late surcharges only for still-active late bookings (not checked-out)
+        // Checked-out bookings keep their confirmed lateSurcharge from checkout
         const bookingsWithUpdatedSurcharges = data.bookings.map((b: Booking) => {
-          if (b.isLate && b.originalDepartureDate) {
+          if (b.isLate && b.originalDepartureDate && b.status !== 'checked-out') {
             const updatedSurcharge = calculateLateSurcharge(b.originalDepartureDate);
             return { ...b, lateSurcharge: updatedSurcharge };
           }
@@ -771,6 +772,29 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
         
         setBookings(bookingsWithUpdatedSurcharges);
         setLastRefresh(new Date());
+
+        // Auto-trigger late status for arrived bookings whose departure time has passed
+        const now = new Date();
+        const overdueBookings = bookingsWithUpdatedSurcharges.filter((b: Booking) => {
+          if (b.status !== 'arrived' || b.isLate) return false;
+          const depDateTime = new Date(`${b.departureDate}T${b.departureTime}`);
+          return now > depDateTime;
+        });
+        for (const b of overdueBookings) {
+          const token = localStorage.getItem("skyparking-token");
+          fetch(
+            `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/bookings/${b.id}/mark-late`,
+            {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${publicAnonKey}`,
+                "X-Session-Token": token || "",
+              },
+              body: JSON.stringify({ operator: "system" }),
+            }
+          ).catch(err => console.error("Auto mark-late failed", err));
+        }
       } else {
         if (showLoadingSpinner) {
           toast.error("Грешка при зареждане на резервации");
