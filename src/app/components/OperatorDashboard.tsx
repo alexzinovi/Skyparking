@@ -480,10 +480,15 @@ function calculateCapacityForDate(bookings: Booking[], dateStr: string) {
     if (b.status !== 'confirmed' && b.status !== 'arrived') return false;
     
     const bookingArrival = new Date(b.arrivalDate);
-    const bookingDeparture = new Date(b.departureDate);
-    
-    // Booking occupies space from arrival date up to (but not including) departure date
-    return bookingArrival <= targetDate && targetDate < bookingDeparture;
+    // For late bookings on future dates, use the original planned departure so overdue
+    // stays don't inflate capacity projections beyond their original booking window
+    const departureDateStr = b.isLate && b.originalDepartureDate && dateStr > todayStr
+      ? b.originalDepartureDate
+      : b.departureDate;
+    const bookingDeparture = new Date(departureDateStr);
+
+    // Booking occupies space on arrival date through departure date (inclusive both ends)
+    return bookingArrival <= targetDate && targetDate <= bookingDeparture;
   });
   
   let nonKeysCount = 0;
