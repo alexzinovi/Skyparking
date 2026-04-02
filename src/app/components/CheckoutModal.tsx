@@ -34,7 +34,7 @@ export function CheckoutModal({
   calculateLateFee,
 }: CheckoutModalProps) {
   const [autoCalculatedFee, setAutoCalculatedFee] = useState<number>(0);
-  const [adjustedFee, setAdjustedFee] = useState<number>(0);
+  const [adjustedFee, setAdjustedFee] = useState<number | string>(0);
   const [adjustmentReason, setAdjustmentReason] = useState<string>("");
   const [adjustmentNote, setAdjustmentNote] = useState<string>("");
   const [extraDays, setExtraDays] = useState<number>(0);
@@ -86,8 +86,9 @@ export function CheckoutModal({
         // The late surcharge is the difference between total price and original price
         const lateSurcharge = totalPrice - booking.totalPrice;
         
-        setAutoCalculatedFee(Math.max(0, lateSurcharge));
-        setAdjustedFee(Math.max(0, lateSurcharge));
+        const fee = Math.max(0, lateSurcharge);
+        setAutoCalculatedFee(fee);
+        setAdjustedFee(fee);
       } else {
         setAutoCalculatedFee(0);
         setAdjustedFee(0);
@@ -101,7 +102,7 @@ export function CheckoutModal({
 
   const handleConfirm = () => {
     onConfirm({
-      lateFee: adjustedFee,
+      lateFee: typeof adjustedFee === 'string' ? parseFloat(adjustedFee) || 0 : adjustedFee,
       adjustmentReason: adjustmentReason || undefined,
       adjustmentNote: adjustmentNote || undefined,
     });
@@ -113,7 +114,8 @@ export function CheckoutModal({
     return `${day}/${month}/${year}`;
   };
 
-  const isAdjusted = Math.abs(adjustedFee - autoCalculatedFee) > 0.01;
+  const adjustedFeeNum = typeof adjustedFee === 'string' ? parseFloat(adjustedFee) || 0 : adjustedFee;
+  const isAdjusted = Math.abs(adjustedFeeNum - autoCalculatedFee) > 0.01;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -216,7 +218,7 @@ export function CheckoutModal({
                   step="0.01"
                   min="0"
                   value={adjustedFee}
-                  onChange={(e) => setAdjustedFee(parseFloat(e.target.value) || 0)}
+                  onChange={(e) => setAdjustedFee(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#073590] focus:border-transparent text-lg font-medium"
                   disabled={isCalculating}
                 />
@@ -277,7 +279,7 @@ export function CheckoutModal({
                 <div className="flex justify-between">
                   <span className="text-gray-700">Допълнителен престой:</span>
                   <span className="font-medium text-amber-700">
-                    €{adjustedFee.toFixed(2)}
+                    €{adjustedFeeNum.toFixed(2)}
                     {isAdjusted && <span className="text-xs ml-1">(коригирано)</span>}
                   </span>
                 </div>
@@ -286,7 +288,7 @@ export function CheckoutModal({
                 <div className="flex justify-between items-center">
                   <span className="text-gray-900 font-bold text-lg">Обща сума:</span>
                   <span className="font-bold text-2xl text-[#073590]">
-                    €{(booking.totalPrice + adjustedFee).toFixed(2)}
+                    €{(booking.totalPrice + adjustedFeeNum).toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -304,7 +306,7 @@ export function CheckoutModal({
             </Button>
             <Button
               onClick={handleConfirm}
-              disabled={isCalculating || (isAdjusted && !adjustmentReason)}
+              disabled={isCalculating || (isAdjusted && !adjustmentReason) || adjustedFee === ''}
               className="flex-1 h-12 bg-green-600 hover:bg-green-700 text-white text-base font-bold"
             >
               {isCalculating ? "Изчислява се..." : "Потвърди напускане"}

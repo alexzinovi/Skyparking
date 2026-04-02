@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
@@ -756,7 +756,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
         // Checked-out bookings keep their confirmed lateSurcharge from checkout
         const bookingsWithUpdatedSurcharges = data.bookings.map((b: Booking) => {
           if (b.isLate && b.originalDepartureDate && b.status !== 'checked-out') {
-            const updatedSurcharge = calculateLateSurcharge(b.originalDepartureDate);
+            const updatedSurcharge = calculateLateSurcharge(b.originalDepartureDate, b.originalDepartureTime);
             return { ...b, lateSurcharge: updatedSurcharge };
           }
           return b;
@@ -1328,7 +1328,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
   };
 
   // Calculate late fee using standard pricing
-  const calculateLateFeeWithStandardPricing = async (extraDays: number, numberOfCars: number): Promise<number> => {
+  const calculateLateFeeWithStandardPricing = useCallback(async (extraDays: number, numberOfCars: number): Promise<number> => {
     try {
       const response = await fetch(
         `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/pricing/calculate?days=${extraDays}`,
@@ -1353,7 +1353,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
       console.error("Error calculating late fee:", error);
       return 0;
     }
-  };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle checkout
   const handleCheckout = (booking: Booking) => {
@@ -1462,15 +1462,22 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
   };
 
   // Calculate late surcharge (5 EUR per day past original departure date)
-  const calculateLateSurcharge = (originalDepartureDate: string) => {
+  const calculateLateSurcharge = (originalDepartureDate: string, originalDepartureTime?: string) => {
     const now = new Date();
-    const departure = new Date(originalDepartureDate);
-    
-    // Set both to midnight for accurate day calculation
-    now.setHours(0, 0, 0, 0);
-    departure.setHours(0, 0, 0, 0);
-    
-    const daysLate = Math.floor((now.getTime() - departure.getTime()) / (1000 * 60 * 60 * 24));
+    const origMidnight = new Date(originalDepartureDate);
+    origMidnight.setHours(0, 0, 0, 0);
+    const nowMidnight = new Date(now);
+    nowMidnight.setHours(0, 0, 0, 0);
+
+    const calendarDaysDiff = Math.floor(
+      (nowMidnight.getTime() - origMidnight.getTime()) / (1000 * 60 * 60 * 24)
+    );
+
+    // If current time is before the original departure time, the last partial period doesn't count
+    const [origH, origM] = (originalDepartureTime || "20:00").split(":").map(Number);
+    const beforeOrigTime = now.getHours() * 60 + now.getMinutes() < origH * 60 + origM;
+    const daysLate = beforeOrigTime ? Math.max(0, calendarDaysDiff - 1) : calendarDaysDiff;
+
     return daysLate > 0 ? daysLate * 5 : 0;
   };
 
