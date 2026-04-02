@@ -3211,15 +3211,19 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                             <details className="mt-3">
                               <summary className="text-xs text-gray-500 cursor-pointer select-none">🔍 Резервации включени в броенето ({capacity.overlappingBookings.length})</summary>
                               <div className="mt-2 space-y-1 max-h-48 overflow-y-auto">
-                                {capacity.overlappingBookings.map(b => (
-                                  <div key={b.id} className="text-xs bg-white rounded p-2 border border-gray-200 flex justify-between items-center gap-2">
-                                    <span className="font-semibold truncate">{b.name}</span>
-                                    <span className="text-gray-500 shrink-0">{b.licensePlate}</span>
-                                    <span className="text-gray-400 shrink-0">{b.arrivalDate} → {b.departureDate}</span>
-                                    <span className="shrink-0">{b.numberOfCars ?? 1} кола</span>
-                                    {b.isLate && <span className="text-orange-500 shrink-0">⏰</span>}
-                                  </div>
-                                ))}
+                                {capacity.overlappingBookings.map(b => {
+                                  const excluded = b.includeInCapacity === false;
+                                  return (
+                                    <div key={b.id} className={`text-xs rounded p-2 border flex justify-between items-center gap-2 ${excluded ? 'bg-gray-100 border-gray-300 opacity-60' : 'bg-white border-gray-200'}`}>
+                                      <span className="font-semibold truncate">{b.name}</span>
+                                      <span className="text-gray-500 shrink-0">{b.licensePlate}</span>
+                                      <span className="text-gray-400 shrink-0">{b.arrivalDate} → {b.departureDate}</span>
+                                      <span className="shrink-0">{b.numberOfCars ?? 1} кола</span>
+                                      {excluded && <span className="text-gray-400 shrink-0">🚫</span>}
+                                      {b.isLate && <span className="text-orange-500 shrink-0">⏰</span>}
+                                    </div>
+                                  );
+                                })}
                               </div>
                             </details>
                           </>
