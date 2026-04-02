@@ -480,12 +480,7 @@ function calculateCapacityForDate(bookings: Booking[], dateStr: string) {
     if (b.status !== 'confirmed' && b.status !== 'arrived') return false;
     
     const bookingArrival = new Date(b.arrivalDate);
-    // For late bookings on future dates, use the original planned departure so overdue
-    // stays don't inflate capacity projections beyond their original booking window
-    const departureDateStr = b.isLate && b.originalDepartureDate && dateStr > todayStr
-      ? b.originalDepartureDate
-      : b.departureDate;
-    const bookingDeparture = new Date(departureDateStr);
+    const bookingDeparture = new Date(b.departureDate);
 
     // Booking occupies space on arrival date through departure date (inclusive both ends)
     return bookingArrival <= targetDate && targetDate <= bookingDeparture;
@@ -524,7 +519,8 @@ function calculateCapacityForDate(bookings: Booking[], dateStr: string) {
     isMedium: percentage >= 50 && percentage < 80,
     isHigh: percentage >= 80 && percentage < 100,
     isFull: percentage >= 100,
-    isToday, // Flag to show this is today's date
+    isToday,
+    overlappingBookings,
   };
 }
 
@@ -3204,13 +3200,29 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                                 <div className="text-2xl font-black text-green-600">{capacity.arrivingCount}</div>
                                 <div className="text-xs text-gray-500">коли</div>
                               </div>
-                              
+
                               <div className="bg-white p-3 rounded-lg shadow border-2 border-orange-200">
                                 <div className="text-gray-600 text-xs font-semibold mb-1">⬆️ НАПУСКАНИЯ</div>
                                 <div className="text-2xl font-black text-orange-600">{capacity.leavingCount}</div>
                                 <div className="text-xs text-gray-500">коли</div>
                               </div>
                             </div>
+
+                            {/* Debug: bookings counted for this date */}
+                            <details className="mt-3">
+                              <summary className="text-xs text-gray-500 cursor-pointer select-none">🔍 Резервации включени в броенето ({capacity.overlappingBookings.length})</summary>
+                              <div className="mt-2 space-y-1 max-h-48 overflow-y-auto">
+                                {capacity.overlappingBookings.map(b => (
+                                  <div key={b.id} className="text-xs bg-white rounded p-2 border border-gray-200 flex justify-between items-center gap-2">
+                                    <span className="font-semibold truncate">{b.name}</span>
+                                    <span className="text-gray-500 shrink-0">{b.licensePlate}</span>
+                                    <span className="text-gray-400 shrink-0">{b.arrivalDate} → {b.departureDate}</span>
+                                    <span className="shrink-0">{b.numberOfCars ?? 1} кола</span>
+                                    {b.isLate && <span className="text-orange-500 shrink-0">⏰</span>}
+                                  </div>
+                                ))}
+                              </div>
+                            </details>
                           </>
                         )}
                       </Card>
