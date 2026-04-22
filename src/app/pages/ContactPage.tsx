@@ -24,8 +24,8 @@ export function ContactPage() {
 
   // Update document title
   useEffect(() => {
-    document.title = language === 'bg' ? 'Контакти - SkyParking' : 'Contact - SkyParking';
-  }, [language]);
+    document.title = t('contactPageTitle');
+  }, [language, t]);
 
   const handleGoogleMaps = () => {
     window.open("https://maps.app.goo.gl/Yt6YeQN5ECBSjVme8", "_blank");
@@ -78,24 +78,22 @@ export function ContactPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
+
       <div className="pt-24 md:pt-32 pb-16 px-4">{/* Added md:pt-32 for desktop to clear the taller header */}
         <div className="max-w-5xl mx-auto">
           <h1 className="text-4xl font-bold text-center mb-4" style={{ color: '#073590' }}>
-            {language === 'bg' ? 'Свържете се с Нас' : 'Contact Us'}
+            {t('contactTitle')}
           </h1>
-          
+
           <p className="text-center text-gray-600 mb-12 text-lg">
-            {language === 'bg' 
-              ? 'Тук сме, за да отговорим на всичките ви въпроси' 
-              : 'We\'re here to answer all your questions'}
+            {t('contactSubtitle')}
           </p>
 
           {/* Contact Information */}
           <div className="mb-12">
             <div className="bg-white rounded-lg shadow-lg p-8">
               <h2 className="text-2xl font-bold mb-6" style={{ color: '#073590' }}>
-                {language === 'bg' ? 'Информация за Контакт' : 'Contact Information'}
+                {t('contactInfoTitle')}
               </h2>
 
               <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -105,12 +103,12 @@ export function ContactPage() {
                     <Phone className="w-6 h-6" style={{ color: '#073590' }} />
                   </div>
                   <div className="ml-4">
-                    <h3 className="font-semibold text-lg mb-1">{language === 'bg' ? 'Телефон' : 'Phone'}</h3>
+                    <h3 className="font-semibold text-lg mb-1">{t('contactPhone')}</h3>
                     <a href="tel:+359886616991" className="text-blue-600 hover:underline text-lg">
                       +359 886 616 991
                     </a>
                     <p className="text-sm text-gray-600 mt-1">
-                      {language === 'bg' ? 'На разположение сме 24/7' : 'For emergencies 24/7'}
+                      {t('contactAvailable247')}
                     </p>
                   </div>
                 </div>
@@ -121,12 +119,12 @@ export function ContactPage() {
                     <Mail className="w-6 h-6" style={{ color: '#073590' }} />
                   </div>
                   <div className="ml-4">
-                    <h3 className="font-semibold text-lg mb-1">{language === 'bg' ? 'Имейл' : 'Email'}</h3>
+                    <h3 className="font-semibold text-lg mb-1">{t('contactEmailLabel')}</h3>
                     <a href="mailto:info@skyparking.bg" className="text-blue-600 hover:underline">
                       info@skyparking.bg
                     </a>
                     <p className="text-sm text-gray-600 mt-1">
-                      {language === 'bg' ? 'Отговаряме в рамките на 2 часа' : 'We respond within 2 hours'}
+                      {t('contactResponds2h')}
                     </p>
                   </div>
                 </div>
@@ -137,14 +135,12 @@ export function ContactPage() {
                     <MapPin className="w-6 h-6" style={{ color: '#073590' }} />
                   </div>
                   <div className="ml-4">
-                    <h3 className="font-semibold text-lg mb-1">{language === 'bg' ? 'Адрес' : 'Address'}</h3>
+                    <h3 className="font-semibold text-lg mb-1">{t('contactAddressLabel')}</h3>
                     <p className="text-gray-700">
-                      {language === 'bg' 
-                        ? 'Улица Неделчо Бончев 30'
-                        : 'Ulitsa Nedelcho Bonchev 30'}
+                      {t('contactAddressValue')}
                     </p>
                     <p className="text-sm text-gray-600 mt-1">
-                      {language === 'bg' ? '5 минути от летището' : '5 minutes from airport'}
+                      {t('contact5minFromAirport')}
                     </p>
                   </div>
                 </div>
@@ -155,12 +151,12 @@ export function ContactPage() {
                     <Clock className="w-6 h-6" style={{ color: '#073590' }} />
                   </div>
                   <div className="ml-4">
-                    <h3 className="font-semibold text-lg mb-1">{language === 'bg' ? 'Работно Време' : 'Working Hours'}</h3>
+                    <h3 className="font-semibold text-lg mb-1">{t('contactWorkingHoursLabel')}</h3>
                     <p className="text-gray-700 font-semibold">
-                      {language === 'bg' ? 'Денонощно' : '24/7'}
+                      {t('contactAlwaysOpen')}
                     </p>
                     <p className="text-sm text-gray-600 mt-1">
-                      {language === 'bg' ? 'Винаги на ваше разположение' : 'Always at your service'}
+                      {t('contactAlwaysAvailable')}
                     </p>
                   </div>
                 </div>
@@ -171,7 +167,7 @@ export function ContactPage() {
           {/* Map Section */}
           <div className="bg-white rounded-lg shadow-lg p-8 mb-12">
             <h2 className="text-2xl font-bold mb-6" style={{ color: '#073590' }}>
-              {language === 'bg' ? 'Нашето Местоположение' : 'Our Location'}
+              {t('contactMapTitle')}
             </h2>
             <div className="aspect-video w-full bg-gray-200 rounded-lg overflow-hidden">
               <iframe
@@ -184,30 +180,30 @@ export function ContactPage() {
                 referrerPolicy="no-referrer-when-downgrade"
               />
             </div>
-            
-            
+
+
             {/* Navigation Buttons */}
             <div className="flex flex-col sm:flex-row justify-center gap-3 mt-6">
-              <Button 
+              <Button
                 onClick={handleGoogleMaps}
                 size="lg"
                 className="bg-[#f1c933] hover:bg-[#f1c933]/90 text-[#073590] font-semibold"
               >
-                <img 
-                  src="/google-maps-icon.png" 
-                  alt="Google Maps" 
+                <img
+                  src="/google-maps-icon.png"
+                  alt="Google Maps"
                   className="mr-2 h-5 w-5"
                 />
                 {t("googleMaps")}
               </Button>
-              <Button 
+              <Button
                 onClick={handleWaze}
                 size="lg"
                 className="bg-[#073590] hover:bg-[#073590]/90 text-white font-semibold"
               >
-                <img 
-                  src="/waze-icon.png" 
-                  alt="Waze" 
+                <img
+                  src="/waze-icon.png"
+                  alt="Waze"
                   className="mr-2 h-5 w-5"
                 />
                 {t("waze")}
@@ -219,25 +215,21 @@ export function ContactPage() {
           <div className="space-y-6">
             <div className="bg-white rounded-lg shadow-lg p-8">
               <h2 className="text-2xl font-bold mb-6" style={{ color: '#073590' }}>
-                {language === 'bg' ? 'Форма за Контакт' : 'Contact Form'}
+                {t('contactFormTitle')}
               </h2>
-              
+
               {submitStatus === 'success' && (
                 <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
                   <p className="text-green-700 font-medium">
-                    {language === 'bg' 
-                      ? '✅ Съобщението ви беше изпратено успешно! Ще се свържем с вас скоро.' 
-                      : '✅ Your message was sent successfully! We will contact you soon.'}
+                    {t('contactFormSuccess')}
                   </p>
                 </div>
               )}
-              
+
               {submitStatus === 'error' && (
                 <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
                   <p className="text-red-700 font-medium">
-                    {errorMessage || (language === 'bg' 
-                      ? '❌ Възникна грешка. Моля, опитайте отново.' 
-                      : '❌ An error occurred. Please try again.')}
+                    {errorMessage || t('contactFormError')}
                   </p>
                 </div>
               )}
@@ -245,7 +237,7 @@ export function ContactPage() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {language === 'bg' ? 'Име и Фамилия' : 'Full Name'}
+                    {t('contactFormNameLabel')}
                   </label>
                   <input
                     type="text"
@@ -261,7 +253,7 @@ export function ContactPage() {
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      {language === 'bg' ? 'Телефон' : 'Phone'}
+                      {t('contactFormPhoneLabel')}
                     </label>
                     <input
                       type="tel"
@@ -275,7 +267,7 @@ export function ContactPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      {language === 'bg' ? 'Имейл' : 'Email'}
+                      {t('contactFormEmailLabel')}
                     </label>
                     <input
                       type="email"
@@ -291,7 +283,7 @@ export function ContactPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {language === 'bg' ? 'Тема' : 'Subject'}
+                    {t('contactFormSubjectLabel')}
                   </label>
                   <input
                     type="text"
@@ -305,7 +297,7 @@ export function ContactPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {language === 'bg' ? 'Съобщение' : 'Message'}
+                    {t('contactFormMessageLabel')}
                   </label>
                   <textarea
                     name="message"
@@ -329,10 +321,10 @@ export function ContactPage() {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      {language === 'bg' ? 'Изпраща се...' : 'Sending...'}
+                      {t('contactFormSending')}
                     </>
                   ) : (
-                    language === 'bg' ? 'Изпрати' : 'Send Message'
+                    t('contactFormSend')
                   )}
                 </button>
               </form>

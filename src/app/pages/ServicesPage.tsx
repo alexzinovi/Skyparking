@@ -10,113 +10,87 @@ export function ServicesPage() {
 
   // Update document title
   useEffect(() => {
-    document.title = language === 'bg' ? 'Услуги - SkyParking' : 'Services - SkyParking';
-  }, [language]);
+    document.title = t('servicesPageTitle');
+  }, [language, t]);
 
   const services = [
     {
       icon: Shield,
-      titleBg: 'Сигурен Паркинг',
-      titleEn: 'Secure Parking',
-      descBg: 'Видеонаблюдение 24/7, охранявана територия и пълна застраховка за спокойствието ви',
-      descEn: '24/7 video surveillance, secured premises, and full insurance for your peace of mind',
+      titleKey: 'serviceSecureTitle',
+      descKey: 'serviceSecureDesc',
     },
     {
       icon: Car,
-      titleBg: 'Безплатен Трансфер',
-      titleEn: 'Free Transfer',
-      descBg: 'Бърз и удобен трансфер до Терминал 1 и 2 на Летище София - само 5 минути път',
-      descEn: 'Quick and convenient transfer to Terminal 1 and 2 of Sofia Airport - just 5 minutes away',
+      titleKey: 'serviceTransferTitle',
+      descKey: 'serviceTransferDesc',
     },
     {
       icon: Clock,
-      titleBg: 'Отворено 24/7',
-      titleEn: '24/7 Service',
-      descBg: 'Работим денонощно, без почивни дни - винаги сме на разположение за вас',
-      descEn: 'Open 24/7, no days off - we\'re always available for you',
+      titleKey: 'service247Title',
+      descKey: 'service247Desc',
     },
     {
       icon: MapPin,
-      titleBg: 'Перфектна Локация',
-      titleEn: 'Perfect Location',
-      descBg: 'На 5 минути от летището, лесен достъп и удобна близост до терминалите',
-      descEn: '5 minutes from the airport, easy access and convenient proximity to terminals',
+      titleKey: 'serviceLocationTitle',
+      descKey: 'serviceLocationDesc',
     },
     {
       icon: CreditCard,
-      titleBg: 'Гъвкаво Плащане',
-      titleEn: 'Flexible Payment',
-      descBg: 'Плащате на място - кеш или карта. Без предплащане, без скрити такси',
-      descEn: 'Pay on arrival - cash or card. No prepayment, no hidden fees',
+      titleKey: 'servicePaymentTitle',
+      descKey: 'servicePaymentDesc',
     },
     {
       icon: CheckCircle,
-      titleBg: 'Онлайн Резервация',
-      titleEn: 'Online Booking',
-      descBg: 'Лесна и бърза онлайн резервация за минути. Моментално потвърждение по имейл',
-      descEn: 'Easy and quick online booking in minutes. Instant email confirmation',
+      titleKey: 'serviceOnlineTitle',
+      descKey: 'serviceOnlineDesc',
     },
   ];
 
   const additionalBenefits = [
     {
       icon: XCircle,
-      titleBg: 'Безплатна Отмяна',
-      titleEn: 'Free Cancellation',
-      descBg: 'До 24 часа преди резервацията без допълнителни такси',
-      descEn: 'Up to 24 hours before reservation without additional fees',
+      titleKey: 'benefitCancelTitle',
+      descKey: 'benefitCancelDesc',
     },
     {
       icon: Droplets,
-      titleBg: 'Измиване на Автомобила',
-      titleEn: 'Car Wash',
-      descBg: 'Професионално измиване на автомобила при поискване',
-      descEn: 'Professional car wash service available upon request',
+      titleKey: 'benefitWashTitle',
+      descKey: 'benefitWashDesc',
     },
     {
       icon: Fuel,
-      titleBg: 'Зареждане на Гориво',
-      titleEn: 'Fuel Refill',
-      descBg: 'Услуга за зареждане на гориво при поискване',
-      descEn: 'Fuel refill service available upon request',
+      titleKey: 'benefitFuelTitle',
+      descKey: 'benefitFuelDesc',
     },
     {
       icon: BatteryCharging,
-      titleBg: 'Зареждане на Акумулатор',
-      titleEn: 'Battery Charging',
-      descBg: 'Помощ при изтощен акумулатор на вашия автомобил',
-      descEn: 'Assistance with dead battery for your vehicle',
+      titleKey: 'benefitBatteryTitle',
+      descKey: 'benefitBatteryDesc',
     },
     {
       icon: CircleDot,
-      titleBg: 'Проверка на Гумите',
-      titleEn: 'Tire Check',
-      descBg: 'Безплатна проверка на налягането и състоянието на гумите',
-      descEn: 'Free tire pressure and condition check',
+      titleKey: 'benefitTireTitle',
+      descKey: 'benefitTireDesc',
     },
     {
       icon: Key,
-      titleBg: 'Съхранение на Ключове',
-      titleEn: 'Key Storage',
-      descBg: 'Сигурно съхранение на ключовете от автомобила ви',
-      descEn: 'Secure storage of your car keys',
+      titleKey: 'benefitKeyTitle',
+      descKey: 'benefitKeyDesc',
     },
   ];
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
+
       <div className="pt-24 md:pt-32 pb-16 px-4">{/* Added md:pt-32 for desktop to clear the taller header */}
         <div className="max-w-6xl mx-auto">
           <h1 className="text-4xl font-bold text-center mb-4" style={{ color: '#073590' }}>
-            {language === 'bg' ? 'Нашите Услуги' : 'Our Services'}
+            {t('servicesTitle')}
           </h1>
-          
+
           <p className="text-center text-gray-600 mb-12 max-w-3xl mx-auto text-[16px]">
-            {language === 'bg' 
-              ? 'В SkyParking предлагаме пълен набор от услуги за удобството и сигурността на нашите клиенти' 
-              : 'At SkyParking we offer a complete set of services for the comfort and safety of our customers'}
+            {t('servicesSubtitle')}
           </p>
 
           {/* Main Services Grid */}
@@ -127,10 +101,10 @@ export function ServicesPage() {
                   <service.icon className="w-8 h-8" style={{ color: '#073590' }} />
                 </div>
                 <h3 className="text-xl font-bold mb-3" style={{ color: '#073590' }}>
-                  {language === 'bg' ? service.titleBg : service.titleEn}
+                  {t(service.titleKey)}
                 </h3>
                 <p className="text-gray-700 leading-relaxed">
-                  {language === 'bg' ? service.descBg : service.descEn}
+                  {t(service.descKey)}
                 </p>
               </div>
             ))}
@@ -139,7 +113,7 @@ export function ServicesPage() {
           {/* Additional Benefits */}
           <div className="mb-16">
             <h2 className="text-4xl font-bold text-center mb-12" style={{ color: '#073590' }}>
-              {language === 'bg' ? 'Допълнителни Удобства' : 'Additional Benefits'}
+              {t('additionalBenefitsTitle')}
             </h2>
             <div className="grid md:grid-cols-2 gap-8">
               {additionalBenefits.map((benefit, index) => (
@@ -148,10 +122,10 @@ export function ServicesPage() {
                     <benefit.icon className="w-8 h-8" style={{ color: '#073590' }} />
                   </div>
                   <h3 className="text-xl font-bold mb-3" style={{ color: '#073590' }}>
-                    {language === 'bg' ? benefit.titleBg : benefit.titleEn}
+                    {t(benefit.titleKey)}
                   </h3>
                   <p className="text-gray-700 leading-relaxed">
-                    {language === 'bg' ? benefit.descBg : benefit.descEn}
+                    {t(benefit.descKey)}
                   </p>
                 </div>
               ))}
@@ -165,12 +139,10 @@ export function ServicesPage() {
               className="px-8 py-4 rounded-lg font-semibold text-white text-lg shadow-lg hover:shadow-xl transition-shadow"
               style={{ backgroundColor: '#073590' }}
             >
-              {language === 'bg' ? 'Резервирайте Сега' : 'Book Now'}
+              {t('servicesBookNow')}
             </button>
             <p className="text-gray-600 mt-4">
-              {language === 'bg' 
-                ? 'Резервирайте онлайн за най-добрата цена'
-                : 'Book online for the best price'}
+              {t('servicesBookOnline')}
             </p>
           </div>
         </div>

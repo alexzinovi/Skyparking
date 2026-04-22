@@ -10,8 +10,8 @@ export function HowItWorksPage() {
 
   // Update document title
   useEffect(() => {
-    document.title = language === 'bg' ? 'Как Работи - SkyParking' : 'How It Works - SkyParking';
-  }, [language]);
+    document.title = t('howItWorksPageTitle');
+  }, [language, t]);
 
   const steps = [
     {
@@ -45,17 +45,15 @@ export function HowItWorksPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
+
       <div className="pt-24 md:pt-32 pb-16 px-4">
         <div className="max-w-5xl mx-auto">
           <h1 className="text-4xl font-bold text-center mb-4" style={{ color: '#073590' }}>
-            {language === 'bg' ? 'Как Работи SkyParking?' : 'How Does SkyParking Work?'}
+            {t('howItWorksTitle')}
           </h1>
-          
+
           <p className="text-center text-gray-600 mb-16 text-lg max-w-3xl mx-auto">
-            {language === 'bg' 
-              ? 'Процесът е лесен и прост - резервирайте, пристигнете и пътувайте спокойно' 
-              : 'The process is easy and simple - book, arrive and travel worry-free'}
+            {t('howItWorksSubtitle')}
           </p>
 
           {/* Steps - Detailed 3-step version */}
@@ -81,7 +79,7 @@ export function HowItWorksPage() {
                         {index === 0 ? (
                           <>
                             {t("onlineTelephoneBookingText1")}{" "}
-                            <a 
+                            <a
                               href="tel:+359886616991"
                               className="font-semibold hover:underline"
                               style={{ color: '#073590' }}
@@ -89,7 +87,7 @@ export function HowItWorksPage() {
                               +359 886 616 991
                             </a>{" "}
                             {t("onlineTelephoneBookingText2")}{" "}
-                            <a 
+                            <a
                               href="/"
                               onClick={handleScrollToBooking}
                               className="font-semibold hover:underline"
@@ -125,47 +123,39 @@ export function HowItWorksPage() {
           {/* FAQ Section */}
           <div className="bg-white rounded-xl shadow-lg p-8 mb-12">
             <h2 className="text-2xl font-bold mb-8 text-center" style={{ color: '#073590' }}>
-              {language === 'bg' ? 'Често Задавани Въпроси' : 'Frequently Asked Questions'}
+              {t('howItWorksFaqTitle')}
             </h2>
             <div className="space-y-6">
               <div>
                 <h4 className="font-semibold text-lg mb-2" style={{ color: '#073590' }}>
-                  {language === 'bg' ? 'Кога трябва да платя?' : 'When do I need to pay?'}
+                  {t('howItWorksQ1')}
                 </h4>
                 <p className="text-gray-700">
-                  {language === 'bg'
-                    ? 'Плащането се извършва на място при пристигане - можете да платите в брой или с карта. Няма нужда от предплащане.'
-                    : 'Payment is made on-site upon arrival - you can pay in cash or by card. No prepayment required.'}
+                  {t('howItWorksA1')}
                 </p>
               </div>
               <div>
                 <h4 className="font-semibold text-lg mb-2" style={{ color: '#073590' }}>
-                  {language === 'bg' ? 'Колко време отнема трансферът?' : 'How long does the transfer take?'}
+                  {t('howItWorksQ2')}
                 </h4>
                 <p className="text-gray-700">
-                  {language === 'bg'
-                    ? 'Трансферът до терминал 1 и 2 отнеме 5 минути при нормални условия. Препоръчваме Ви да пристигнете около 2 часа и половина преди Вашия полет.'
-                    : 'The transfer to the airport takes only 5 minutes. We recommend arriving 45-60 minutes before your flight.'}
+                  {t('howItWorksA2')}
                 </p>
               </div>
               <div>
                 <h4 className="font-semibold text-lg mb-2" style={{ color: '#073590' }}>
-                  {language === 'bg' ? 'Безопасен ли е моят автомобил?' : 'Is my car safe?'}
+                  {t('howItWorksQ3')}
                 </h4>
                 <p className="text-gray-700">
-                  {language === 'bg'
-                    ? 'Да! Имаме 24/7 видеонаблюдение, охранител и система за сигурност. Вашият автомобил е в сигурни ръце.'
-                    : 'Yes! We have 24/7 video surveillance, secured premises and full insurance. Your car is in safe hands.'}
+                  {t('howItWorksA3')}
                 </p>
               </div>
               <div>
                 <h4 className="font-semibold text-lg mb-2" style={{ color: '#073590' }}>
-                  {language === 'bg' ? 'Мога ли да отменя резервацията?' : 'Can I cancel my reservation?'}
+                  {t('howItWorksQ4')}
                 </h4>
                 <p className="text-gray-700">
-                  {language === 'bg'
-                    ? 'Да, може да отмените вашата резервация напълно безплатно.'
-                    : 'Yes, you can cancel for free up to 24 hours before the start date of your reservation without any fees.'}
+                  {t('howItWorksA4')}
                 </p>
               </div>
             </div>
@@ -174,19 +164,17 @@ export function HowItWorksPage() {
           {/* CTA */}
           <div className="text-center">
             <h3 className="text-2xl font-bold mb-4" style={{ color: '#073590' }}>
-              {language === 'bg' ? 'Готови да резервирате?' : 'Ready to book?'}
+              {t('howItWorksReadyTitle')}
             </h3>
             <p className="text-gray-600 mb-6 text-lg">
-              {language === 'bg'
-                ? 'Започнете вашата резервация сега и пътувайте без грижи'
-                : 'Start your booking now and travel worry-free'}
+              {t('howItWorksReadyDesc')}
             </p>
             <button
               onClick={() => navigate('/')}
               className="px-8 py-4 rounded-lg font-semibold text-white text-lg shadow-lg hover:shadow-xl transition-shadow"
               style={{ backgroundColor: '#073590' }}
             >
-              {language === 'bg' ? 'Резервирайте Сега' : 'Book Now'}
+              {t('howItWorksBookNow')}
             </button>
           </div>
         </div>
