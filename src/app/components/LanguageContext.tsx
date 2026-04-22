@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode } from "react";
 
 type Language = "bg" | "en" | "el" | "tr" | "sr" | "mk" | "ro";
 
@@ -1268,10 +1268,6 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export function LanguageProvider({ children, initialLanguage = "bg" }: { children: ReactNode; initialLanguage?: Language }) {
   const [language, setLanguage] = useState<Language>(initialLanguage);
-
-  useEffect(() => {
-    setLanguage(initialLanguage);
-  }, [initialLanguage]);
 
   const t = (key: string): string => {
     return translations[language][key as keyof typeof translations.bg] || key;
