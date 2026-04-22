@@ -1,7 +1,7 @@
 import { useLanguage } from "@/app/components/LanguageContext";
 import { Button } from "@/app/components/ui/button";
 import { useState } from "react";
-import { X, ChevronDown } from "lucide-react";
+import { X, ChevronDown, Globe } from "lucide-react";
 import { useNavigate, useLocation } from "react-router";
 import {
   DropdownMenu,
@@ -122,10 +122,11 @@ export function Header() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="bg-transparent text-white border-white/30 hover:bg-white/10 hover:border-white px-2 min-w-[2.5rem] text-[13px] gap-1"
+                    className="bg-transparent text-white border-white/30 hover:bg-white/10 hover:border-white px-2 text-[13px] gap-1.5"
                   >
+                    <Globe className="w-4 h-4 opacity-90" />
                     {LANGUAGES.find((l) => l.code === language)?.label ?? "БГ"}
-                    <ChevronDown className="w-3 h-3 opacity-70" />
+                    <ChevronDown className="w-3 h-3 opacity-60" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="min-w-[130px]">
