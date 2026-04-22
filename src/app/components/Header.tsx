@@ -1,11 +1,27 @@
 import { useLanguage } from "@/app/components/LanguageContext";
 import { Button } from "@/app/components/ui/button";
 import { useState } from "react";
-import { X } from "lucide-react";
+import { X, ChevronDown } from "lucide-react";
 import { useNavigate, useLocation } from "react-router";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/app/components/ui/dropdown-menu";
+
+const LANGUAGES = [
+  { code: "bg", label: "БГ", native: "Български", path: "/" },
+  { code: "en", label: "EN", native: "English", path: "/en" },
+  { code: "el", label: "ΕΛ", native: "Ελληνικά", path: "/el" },
+  { code: "tr", label: "TR", native: "Türkçe", path: "/tr" },
+  { code: "sr", label: "SR", native: "Srpski", path: "/sr" },
+  { code: "mk", label: "МК", native: "Македонски", path: "/mk" },
+  { code: "ro", label: "RO", native: "Română", path: "/ro" },
+] as const;
 
 export function Header() {
-  const { t, language, setLanguage } = useLanguage();
+  const { t, language } = useLanguage();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -101,14 +117,32 @@ export function Header() {
 
             {/* Right Side - Language & Call Button */}
             <div className="flex items-center gap-2 md:gap-4 relative z-20 md:-mr-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setLanguage(language === "bg" ? "en" : "bg")}
-                className="bg-transparent text-white border-white/30 hover:bg-white/10 hover:border-white px-2 min-w-[2.5rem] text-[13px]"
-              >
-                {language === "bg" ? "EN" : "БГ"}
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="bg-transparent text-white border-white/30 hover:bg-white/10 hover:border-white px-2 min-w-[2.5rem] text-[13px] gap-1"
+                  >
+                    {LANGUAGES.find((l) => l.code === language)?.label ?? "БГ"}
+                    <ChevronDown className="w-3 h-3 opacity-70" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="min-w-[130px]">
+                  {LANGUAGES.map((lang) => (
+                    <DropdownMenuItem
+                      key={lang.code}
+                      onClick={() => navigate(lang.path)}
+                      className={`cursor-pointer flex justify-between gap-3 ${
+                        lang.code === language ? "font-semibold text-blue-900 bg-blue-50" : ""
+                      }`}
+                    >
+                      <span>{lang.label}</span>
+                      <span className="text-muted-foreground text-xs">{lang.native}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
               <a
                 href="tel:+359886616991"
                 className="bg-[#f1c933] text-[#1a1a2e] px-3 py-2 md:px-4 md:py-2 rounded-full font-semibold text-sm whitespace-nowrap flex items-center gap-2"
