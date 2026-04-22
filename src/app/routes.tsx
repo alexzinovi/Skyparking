@@ -1,5 +1,6 @@
 import { createBrowserRouter, Outlet } from "react-router";
 import { HomePage } from "./pages/HomePage";
+import { LanguageLandingPage } from "./pages/LanguageLandingPage";
 import { ConfirmationPage } from "./pages/ConfirmationPage";
 import { TermsAndConditions } from "./components/TermsAndConditions";
 import { PricingPage } from "./pages/PricingPage";
@@ -27,6 +28,30 @@ export const router = createBrowserRouter([
       {
         path: "/",
         element: <HomePage />,
+      },
+      {
+        path: "/en",
+        element: <LanguageLandingPage lang="en" />,
+      },
+      {
+        path: "/el",
+        element: <LanguageLandingPage lang="el" />,
+      },
+      {
+        path: "/tr",
+        element: <LanguageLandingPage lang="tr" />,
+      },
+      {
+        path: "/sr",
+        element: <LanguageLandingPage lang="sr" />,
+      },
+      {
+        path: "/mk",
+        element: <LanguageLandingPage lang="mk" />,
+      },
+      {
+        path: "/ro",
+        element: <LanguageLandingPage lang="ro" />,
       },
       {
         path: "/reservation-confirmed",
