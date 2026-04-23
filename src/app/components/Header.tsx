@@ -122,11 +122,11 @@ export function Header() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="bg-transparent text-white border-white/30 hover:bg-white/10 hover:border-white px-2 text-[13px] gap-1.5"
+                    className="bg-transparent text-white border-white/30 hover:bg-white/10 hover:border-white px-1.5 md:px-2 text-[11px] md:text-[13px] gap-1 md:gap-1.5 h-7 md:h-8"
                   >
-                    <Globe className="w-4 h-4 opacity-90" />
+                    <Globe className="w-3 h-3 md:w-4 md:h-4 opacity-90 shrink-0" />
                     {LANGUAGES.find((l) => l.code === language)?.label ?? "БГ"}
-                    <ChevronDown className="w-3 h-3 opacity-60" />
+                    <ChevronDown className="w-2.5 h-2.5 md:w-3 md:h-3 opacity-60 shrink-0" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="min-w-[130px]">
