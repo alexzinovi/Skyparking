@@ -122,7 +122,7 @@ export function Header() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="bg-transparent text-white border-white/30 hover:bg-white/10 hover:border-white px-1.5 md:px-2 text-[11px] md:text-[13px] gap-1 md:gap-1.5 h-7 md:h-8"
+                    className="bg-transparent text-white border-white/30 hover:bg-white/10 hover:border-white px-1 md:px-2 text-[11px] md:text-[13px] gap-1 md:gap-1.5 h-7 md:h-8"
                   >
                     <Globe className="w-3 h-3 md:w-4 md:h-4 opacity-90 shrink-0" />
                     {LANGUAGES.find((l) => l.code === language)?.label ?? "БГ"}
