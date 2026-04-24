@@ -598,11 +598,408 @@ function generateConfirmationEmailHTML_EN(data: BookingEmailData): string {
   `.trim();
 }
 
+// Generate confirmation email for non-BG/EN languages using translated strings
+function generateConfirmationEmailHTML_MULTILINGUAL(data: BookingEmailData): string {
+  const lang = data.language || 'en';
+
+  const strings: Record<string, {
+    subject: string;
+    confirmed: string;
+    thankYou: string;
+    totalPrice: string;
+    freeTransfer: string;
+    reservationNumber: string;
+    arrivalDate: string;
+    arrivalTime: string;
+    departureDate: string;
+    departureTime: string;
+    nameLabel: string;
+    numberOfCars: string;
+    licensePlates: string;
+    carKeys: string;
+    invoiceFor: string;
+    paymentOnArrival: string;
+    parkingLocation: string;
+    navigateWaze: string;
+    navigateGMaps: string;
+    importantInfo: string;
+    arrive10min: string;
+    saveEmail: string;
+    contactUs: string;
+    phoneLabel: string;
+    emailLabel: string;
+    autoEmail: string;
+    originalPrice: string;
+    discount: string;
+  }> = {
+    el: {
+      subject: `Η κράτησή σας στο SkyParking ${data.bookingId}`,
+      confirmed: 'Η κράτησή σας επιβεβαιώθηκε',
+      thankYou: 'Ευχαριστούμε που επιλέξατε το SkyParking.',
+      totalPrice: 'Συνολική Τιμή',
+      freeTransfer: 'Δωρεάν Μεταφορά',
+      reservationNumber: 'Αριθμός Κράτησης',
+      arrivalDate: 'Ημερομηνία Άφιξης',
+      arrivalTime: 'Ώρα Άφιξης',
+      departureDate: 'Ημερομηνία Αναχώρησης',
+      departureTime: 'Ώρα Αναχώρησης',
+      nameLabel: 'Όνομα Κράτησης',
+      numberOfCars: 'Αριθμός Αυτοκινήτων',
+      licensePlates: 'Πινακίδες',
+      carKeys: 'Παράδοση Κλειδιών',
+      invoiceFor: 'Τιμολόγιο για',
+      paymentOnArrival: 'Πληρωμή κατά την άφιξη',
+      parkingLocation: 'Τοποθεσία Parking',
+      navigateWaze: 'Πλοήγηση με Waze',
+      navigateGMaps: 'Πλοήγηση με Google Maps',
+      importantInfo: 'Σημαντικές Πληροφορίες',
+      arrive10min: 'Παρακαλούμε φτάστε τουλάχιστον 10 λεπτά νωρίτερα.',
+      saveEmail: 'Παρακαλούμε αποθηκεύστε αυτό το email για αναφορά.',
+      contactUs: 'Εάν χρειάζεστε βοήθεια, επικοινωνήστε μαζί μας.',
+      phoneLabel: 'Τηλέφωνο',
+      emailLabel: 'Email',
+      autoEmail: 'Αυτό είναι αυτόματα δημιουργημένο email. Παρακαλούμε μην απαντάτε σε αυτό.',
+      originalPrice: 'Αρχική τιμή',
+      discount: 'Έκπτωση',
+    },
+    tr: {
+      subject: `SkyParking Rezervasyonunuz ${data.bookingId}`,
+      confirmed: 'Rezervasyonunuz onaylandı',
+      thankYou: 'SkyParking\'i seçtiğiniz için teşekkür ederiz.',
+      totalPrice: 'Toplam Ücret',
+      freeTransfer: 'Ücretsiz Transfer',
+      reservationNumber: 'Rezervasyon Numarası',
+      arrivalDate: 'Giriş Tarihi',
+      arrivalTime: 'Giriş Saati',
+      departureDate: 'Çıkış Tarihi',
+      departureTime: 'Çıkış Saati',
+      nameLabel: 'Rezervasyon Adı',
+      numberOfCars: 'Araç Sayısı',
+      licensePlates: 'Plaka',
+      carKeys: 'Anahtar Teslimi',
+      invoiceFor: 'Fatura İçin',
+      paymentOnArrival: 'Gelişte ödeme',
+      parkingLocation: 'Park Yeri Konumu',
+      navigateWaze: 'Waze ile Yol Tarifi',
+      navigateGMaps: 'Google Maps ile Yol Tarifi',
+      importantInfo: 'Önemli Bilgiler',
+      arrive10min: 'Lütfen en az 10 dakika erken gelin.',
+      saveEmail: 'Lütfen bu e-postayı referans için kaydedin.',
+      contactUs: 'Yardım için lütfen bize ulaşın.',
+      phoneLabel: 'Telefon',
+      emailLabel: 'E-posta',
+      autoEmail: 'Bu otomatik olarak oluşturulmuş bir e-postadır. Lütfen yanıtlamayın.',
+      originalPrice: 'Orijinal fiyat',
+      discount: 'İndirim',
+    },
+    sr: {
+      subject: `Vaša SkyParking rezervacija ${data.bookingId}`,
+      confirmed: 'Vaša rezervacija je potvrđena',
+      thankYou: 'Hvala što ste izabrali SkyParking.',
+      totalPrice: 'Ukupna Cena',
+      freeTransfer: 'Besplatan Transfer',
+      reservationNumber: 'Broj Rezervacije',
+      arrivalDate: 'Datum Dolaska',
+      arrivalTime: 'Vreme Dolaska',
+      departureDate: 'Datum Odlaska',
+      departureTime: 'Vreme Odlaska',
+      nameLabel: 'Ime Rezervacije',
+      numberOfCars: 'Broj Automobila',
+      licensePlates: 'Registarski Broj',
+      carKeys: 'Predaja Ključeva',
+      invoiceFor: 'Faktura Za',
+      paymentOnArrival: 'Plaćanje po dolasku',
+      parkingLocation: 'Lokacija Parkinga',
+      navigateWaze: 'Navigiraj sa Waze',
+      navigateGMaps: 'Navigiraj sa Google Maps',
+      importantInfo: 'Važne Informacije',
+      arrive10min: 'Molimo dođite najmanje 10 minuta ranije.',
+      saveEmail: 'Molimo sačuvajte ovaj email za referencu.',
+      contactUs: 'Ako vam je potrebna pomoć, kontaktirajte nas.',
+      phoneLabel: 'Telefon',
+      emailLabel: 'Email',
+      autoEmail: 'Ovo je automatski generisani email. Molimo ne odgovarajte na njega.',
+      originalPrice: 'Originalna cena',
+      discount: 'Popust',
+    },
+    mk: {
+      subject: `Вашата SkyParking резервација ${data.bookingId}`,
+      confirmed: 'Вашата резервација е потврдена',
+      thankYou: 'Благодариме што го избравте SkyParking.',
+      totalPrice: 'Вкупна Цена',
+      freeTransfer: 'Бесплатен Трансфер',
+      reservationNumber: 'Број на Резервација',
+      arrivalDate: 'Датум на Пристигање',
+      arrivalTime: 'Час на Пристигање',
+      departureDate: 'Датум на Заминување',
+      departureTime: 'Час на Заминување',
+      nameLabel: 'Ime на Резервација',
+      numberOfCars: 'Број на Автомобили',
+      licensePlates: 'Регистарски Таблички',
+      carKeys: 'Предавање на Клучеви',
+      invoiceFor: 'Фактура За',
+      paymentOnArrival: 'Плаќање при пристигање',
+      parkingLocation: 'Локација на Паркингот',
+      navigateWaze: 'Навигирај со Waze',
+      navigateGMaps: 'Навигирај со Google Maps',
+      importantInfo: 'Важни Информации',
+      arrive10min: 'Ве молиме пристигнете барем 10 минути порано.',
+      saveEmail: 'Ве молиме зачувајте го овој имејл за референца.',
+      contactUs: 'Ако ви е потребна помош, контактирајте нè.',
+      phoneLabel: 'Телефон',
+      emailLabel: 'Имејл',
+      autoEmail: 'Ова е автоматски генериран имејл. Ве молиме не одговарајте на него.',
+      originalPrice: 'Оригинална цена',
+      discount: 'Попуст',
+    },
+    ro: {
+      subject: `Rezervarea dvs. SkyParking ${data.bookingId}`,
+      confirmed: 'Rezervarea dvs. a fost confirmată',
+      thankYou: 'Vă mulțumim că ați ales SkyParking.',
+      totalPrice: 'Preț Total',
+      freeTransfer: 'Transfer Gratuit',
+      reservationNumber: 'Număr Rezervare',
+      arrivalDate: 'Data Sosirii',
+      arrivalTime: 'Ora Sosirii',
+      departureDate: 'Data Plecării',
+      departureTime: 'Ora Plecării',
+      nameLabel: 'Numele Rezervării',
+      numberOfCars: 'Număr de Mașini',
+      licensePlates: 'Număr de Înmatriculare',
+      carKeys: 'Predare Chei',
+      invoiceFor: 'Factură Pentru',
+      paymentOnArrival: 'Plata la sosire',
+      parkingLocation: 'Locația Parcării',
+      navigateWaze: 'Navigați cu Waze',
+      navigateGMaps: 'Navigați cu Google Maps',
+      importantInfo: 'Informații Importante',
+      arrive10min: 'Vă rugăm să sosiți cu cel puțin 10 minute mai devreme.',
+      saveEmail: 'Vă rugăm să salvați acest email pentru referință.',
+      contactUs: 'Dacă aveți nevoie de asistență, contactați-ne.',
+      phoneLabel: 'Telefon',
+      emailLabel: 'Email',
+      autoEmail: 'Acesta este un email generat automat. Vă rugăm să nu răspundeți la el.',
+      originalPrice: 'Preț original',
+      discount: 'Reducere',
+    },
+    uk: {
+      subject: `Ваше бронювання SkyParking ${data.bookingId}`,
+      confirmed: 'Ваше бронювання підтверджено',
+      thankYou: 'Дякуємо, що обрали SkyParking.',
+      totalPrice: 'Загальна Ціна',
+      freeTransfer: 'Безкоштовний Трансфер',
+      reservationNumber: 'Номер Бронювання',
+      arrivalDate: 'Дата Прибуття',
+      arrivalTime: 'Час Прибуття',
+      departureDate: 'Дата Відправлення',
+      departureTime: 'Час Відправлення',
+      nameLabel: 'Ім\'я Бронювання',
+      numberOfCars: 'Кількість Автомобілів',
+      licensePlates: 'Номерні Знаки',
+      carKeys: 'Передача Ключів',
+      invoiceFor: 'Рахунок-фактура для',
+      paymentOnArrival: 'Оплата при прибутті',
+      parkingLocation: 'Розташування Парковки',
+      navigateWaze: 'Навігація через Waze',
+      navigateGMaps: 'Навігація через Google Maps',
+      importantInfo: 'Важлива Інформація',
+      arrive10min: 'Будь ласка, прибудьте щонайменше за 10 хвилин.',
+      saveEmail: 'Будь ласка, збережіть цей лист для довідки.',
+      contactUs: 'Якщо вам потрібна допомога, зв\'яжіться з нами.',
+      phoneLabel: 'Телефон',
+      emailLabel: 'Електронна пошта',
+      autoEmail: 'Це автоматично згенерований лист. Будь ласка, не відповідайте на нього.',
+      originalPrice: 'Оригінальна ціна',
+      discount: 'Знижка',
+    },
+  };
+
+  const s = strings[lang] ?? strings['el']; // fallback to Greek (shouldn't happen)
+
+  const carKeysText = data.carKeys
+    ? `<tr>
+         <td style="padding: 14px 0;">
+           <span style="color: #6b7280; font-size: 14px;">🔑 ${s.carKeys}</span>
+         </td>
+         <td style="padding: 14px 0; text-align: right;">
+           <span style="color: #1f2937; font-size: 14px; font-weight: 500;">✓</span>
+         </td>
+       </tr>`
+    : '';
+
+  const invoiceText = data.needsInvoice
+    ? `<tr>
+         <td style="padding: 14px 0;">
+           <span style="color: #6b7280; font-size: 14px;">📄 ${s.invoiceFor}</span>
+         </td>
+         <td style="padding: 14px 0; text-align: right;">
+           <span style="color: #1f2937; font-size: 14px; font-weight: 500;">${data.companyName || ''}</span>
+         </td>
+       </tr>`
+    : '';
+
+  const discountText = data.discountApplied && data.basePrice
+    ? `<div style="text-align: center; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #e5e7eb;">
+         <div style="font-size: 13px; color: #059669; font-weight: 600;">
+           🎫 ${s.discount} (${data.discountCode}): ${data.discountApplied.discountType === 'percentage'
+             ? `${data.discountApplied.discountValue}%`
+             : `€${data.discountApplied.discountValue}`}
+         </div>
+         <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">
+           ${s.originalPrice}: €${data.basePrice.toFixed(2)}
+         </div>
+       </div>`
+    : '';
+
+  return `
+<!DOCTYPE html>
+<html lang="${lang}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${s.confirmed} - SkyParking</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; -webkit-font-smoothing: antialiased; }
+    @media only screen and (max-width: 600px) {
+      .mobile-padding { padding: 20px !important; }
+      .mobile-text-large { font-size: 32px !important; }
+      .nav-button-container { max-width: 100% !important; }
+      .email-header { padding: 30px 20px !important; }
+      .header-logo { max-width: 220px !important; }
+    }
+  </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f5f5f5;">
+  <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+    <div class="email-header" style="background-color: #053790; padding: 18px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1);">
+      <img class="header-logo" src="https://skyparking.bg/logo-email.png" alt="SkyParking" style="max-width: 160px; height: auto; display: inline-block;" />
+    </div>
+    <div style="padding: 32px 20px 24px; text-align: center; background-color: #ffffff;">
+      <h1 style="margin: 0 0 10px 0; font-size: 24px; font-weight: 600; color: #053790; letter-spacing: -0.3px;">${s.confirmed}</h1>
+      <p style="margin: 0; font-size: 15px; color: #6b7280; font-weight: 400; line-height: 1.5;">${s.thankYou}</p>
+    </div>
+    <div class="mobile-padding" style="padding: 0 20px 32px;">
+      <div style="background-color: #fafafa; border-radius: 12px; padding: 0; border: 1px solid #e5e7eb; overflow: hidden;">
+        <div style="background-color: #ffffff; padding: 24px 24px 20px; border-bottom: 2px solid #f1c933;">
+          <div style="text-align: center;">
+            <div style="font-size: 11px; color: #9ca3af; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px;">${s.totalPrice}</div>
+            <div class="mobile-text-large" style="font-size: 36px; font-weight: 700; color: #f1c933; letter-spacing: -1px; line-height: 1; margin-bottom: 8px;">€${data.totalPrice}</div>
+            <div style="font-size: 14px; color: #d4a929; font-weight: 500;">${s.freeTransfer}</div>
+          </div>
+        </div>
+        <div style="padding: 24px;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 14px 0; border-bottom: 1px solid #eeeeee;"><span style="color: #6b7280; font-size: 14px;">${s.reservationNumber}</span></td>
+              <td style="padding: 14px 0; text-align: right; border-bottom: 1px solid #eeeeee;"><span style="color: #053790; font-size: 14px; font-weight: 600; font-family: 'Courier New', monospace;">${data.bookingId}</span></td>
+            </tr>
+            <tr>
+              <td style="padding: 14px 0; border-bottom: 1px solid #eeeeee;"><span style="color: #6b7280; font-size: 14px;">${s.arrivalDate}</span></td>
+              <td style="padding: 14px 0; text-align: right; border-bottom: 1px solid #eeeeee;"><span style="color: #1f2937; font-size: 14px; font-weight: 500;">${formatDateDisplay(data.arrivalDate)}</span></td>
+            </tr>
+            <tr>
+              <td style="padding: 14px 0; border-bottom: 1px solid #eeeeee;"><span style="color: #6b7280; font-size: 14px;">${s.arrivalTime}</span></td>
+              <td style="padding: 14px 0; text-align: right; border-bottom: 1px solid #eeeeee;"><span style="color: #1f2937; font-size: 14px; font-weight: 500;">${data.arrivalTime}</span></td>
+            </tr>
+            <tr>
+              <td style="padding: 14px 0; border-bottom: 1px solid #eeeeee;"><span style="color: #6b7280; font-size: 14px;">${s.departureDate}</span></td>
+              <td style="padding: 14px 0; text-align: right; border-bottom: 1px solid #eeeeee;"><span style="color: #1f2937; font-size: 14px; font-weight: 500;">${formatDateDisplay(data.departureDate)}</span></td>
+            </tr>
+            <tr>
+              <td style="padding: 14px 0; border-bottom: 1px solid #eeeeee;"><span style="color: #6b7280; font-size: 14px;">${s.departureTime}</span></td>
+              <td style="padding: 14px 0; text-align: right; border-bottom: 1px solid #eeeeee;"><span style="color: #1f2937; font-size: 14px; font-weight: 500;">${data.departureTime}</span></td>
+            </tr>
+            <tr>
+              <td style="padding: 14px 0; border-bottom: 1px solid #eeeeee;"><span style="color: #6b7280; font-size: 14px;">${s.nameLabel}</span></td>
+              <td style="padding: 14px 0; text-align: right; border-bottom: 1px solid #eeeeee;"><span style="color: #1f2937; font-size: 14px; font-weight: 500;">${data.name}</span></td>
+            </tr>
+            <tr>
+              <td style="padding: 14px 0; border-bottom: 1px solid #eeeeee;"><span style="color: #6b7280; font-size: 14px;">${s.numberOfCars}</span></td>
+              <td style="padding: 14px 0; text-align: right; border-bottom: 1px solid #eeeeee;"><span style="color: #1f2937; font-size: 14px; font-weight: 500;">${data.numberOfCars}</span></td>
+            </tr>
+            <tr>
+              <td style="padding: 14px 0; border-bottom: 1px solid #eeeeee;"><span style="color: #6b7280; font-size: 14px;">${s.licensePlates}</span></td>
+              <td style="padding: 14px 0; text-align: right; border-bottom: 1px solid #eeeeee;"><span style="color: #1f2937; font-size: 14px; font-weight: 500;">${data.licensePlate}</span></td>
+            </tr>
+            ${carKeysText}
+            ${invoiceText}
+          </table>
+          ${discountText}
+          <div style="margin-top: 16px; text-align: center;">
+            <span style="font-size: 13px; color: #9ca3af; font-style: italic;">${s.paymentOnArrival}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mobile-padding" style="padding: 0 20px 28px;">
+      <div style="background-color: #fafafa; border-radius: 10px; padding: 24px 20px; border: 1px solid #e5e7eb;">
+        <div style="margin-bottom: 14px;">
+          <h2 style="margin: 0; font-size: 16px; font-weight: 600; color: #111827;">📍 ${s.parkingLocation}</h2>
+        </div>
+        <p style="margin: 0 0 20px 0; font-size: 14px; color: #4b5563; line-height: 1.6;">Ulitsa Nedelcho Bonchev 30</p>
+        <div style="text-align: center;">
+          <div class="nav-button-container" style="display: inline-block; max-width: 340px; width: 100%;">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+              <tr>
+                <td style="padding-bottom: 12px;">
+                  <a href="https://ul.waze.com/ul?place=ChIJ6eb_yAqHqkARRJP7h2zo5AU&ll=42.67676540%2C23.40033890&navigate=yes" style="display: block; text-align: center; background-color: #053790; color: #ffffff; padding: 14px 20px; text-decoration: none; border-radius: 10px; font-size: 14px; font-weight: 600; height: 48px; line-height: 20px; box-sizing: border-box;">
+                    <img src="https://skyparking.bg/waze-icon.png" alt="Waze" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;" />${s.navigateWaze}
+                  </a>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <a href="https://maps.app.goo.gl/Yt6YeQN5ECBSjVme8" style="display: block; text-align: center; background-color: #ffffff; color: #053790; padding: 14px 20px; text-decoration: none; border-radius: 10px; font-size: 14px; font-weight: 600; border: 2px solid #053790; height: 48px; line-height: 20px; box-sizing: border-box;">
+                    <img src="https://skyparking.bg/google-maps-icon.png" alt="Google Maps" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;" />${s.navigateGMaps}
+                  </a>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mobile-padding" style="padding: 0 20px 28px;">
+      <h2 style="margin: 0 0 14px 0; font-size: 16px; font-weight: 600; color: #111827;">${s.importantInfo}</h2>
+      <div style="background-color: #fffbeb; border-left: 3px solid #f59e0b; padding: 16px 18px; border-radius: 8px; margin-bottom: 20px;">
+        <ul style="margin: 0; padding-left: 18px; color: #92400e; font-size: 14px; line-height: 1.7;">
+          <li style="margin-bottom: 6px;">${s.arrive10min}</li>
+          <li style="margin-bottom: 6px;">${s.saveEmail}</li>
+          <li>${s.contactUs}</li>
+        </ul>
+      </div>
+      <div style="background-color: #f9fafb; border-radius: 8px; padding: 18px;">
+        <div style="margin-bottom: 14px;">
+          <div style="color: #6b7280; font-size: 12px; font-weight: 500; margin-bottom: 4px;">📞 ${s.phoneLabel}</div>
+          <div><a href="tel:+359886616991" style="color: #053790; font-size: 15px; font-weight: 600; text-decoration: none;">+359 886 616 991</a></div>
+        </div>
+        <div>
+          <div style="color: #6b7280; font-size: 12px; font-weight: 500; margin-bottom: 4px;">📧 ${s.emailLabel}</div>
+          <div><a href="mailto:info@skyparking.bg" style="color: #053790; font-size: 15px; font-weight: 600; text-decoration: none;">info@skyparking.bg</a></div>
+        </div>
+      </div>
+    </div>
+    <div style="background-color: #f3f4f6; padding: 24px 20px; text-align: center; border-top: 1px solid #e5e7eb;">
+      <div style="font-size: 15px; font-weight: 600; color: #053790; margin-bottom: 8px;">SkyParking</div>
+      <div style="font-size: 13px; color: #6b7280; margin-bottom: 4px;">
+        <a href="tel:+359886616991" style="color: #6b7280; text-decoration: none;">+359 886 616 991</a>
+        <span style="margin: 0 6px; color: #d1d5db;">•</span>
+        <a href="mailto:info@skyparking.bg" style="color: #6b7280; text-decoration: none;">info@skyparking.bg</a>
+      </div>
+      <div style="font-size: 12px; color: #9ca3af; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb;">${s.autoEmail}</div>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim();
+}
+
 // Send confirmation email
 export async function sendConfirmationEmail(data: BookingEmailData): Promise<{ success: boolean; error?: string }> {
   try {
     const apiKey = Deno.env.get('RESEND_API_KEY');
-    
+
     if (!apiKey) {
       console.error('RESEND_API_KEY not configured');
       return { success: false, error: 'Email service not configured' };
@@ -613,16 +1010,29 @@ export async function sendConfirmationEmail(data: BookingEmailData): Promise<{ s
 
     // Determine language (default to Bulgarian)
     const language = data.language || 'bg';
-    
-    // Generate appropriate email template
-    const emailHTML = language === 'en' 
-      ? generateConfirmationEmailHTML_EN(data) 
-      : generateConfirmationEmailHTML_BG(data);
 
-    // Subject line based on language - avoid spam trigger words
-    const subject = language === 'en'
-      ? `Your SkyParking Reservation ${data.bookingId}`
-      : `Вашата резервация за SkyParking ${data.bookingId}`;
+    // Generate appropriate email template
+    let emailHTML: string;
+    if (language === 'bg') {
+      emailHTML = generateConfirmationEmailHTML_BG(data);
+    } else if (language === 'en') {
+      emailHTML = generateConfirmationEmailHTML_EN(data);
+    } else {
+      emailHTML = generateConfirmationEmailHTML_MULTILINGUAL(data);
+    }
+
+    // Subject line based on language
+    const subjectMap: Record<string, string> = {
+      bg: `Вашата резервация за SkyParking ${data.bookingId}`,
+      en: `Your SkyParking Reservation ${data.bookingId}`,
+      el: `Η κράτησή σας στο SkyParking ${data.bookingId}`,
+      tr: `SkyParking Rezervasyonunuz ${data.bookingId}`,
+      sr: `Vaša SkyParking rezervacija ${data.bookingId}`,
+      mk: `Вашата SkyParking резервација ${data.bookingId}`,
+      ro: `Rezervarea dvs. SkyParking ${data.bookingId}`,
+      uk: `Ваше бронювання SkyParking ${data.bookingId}`,
+    };
+    const subject = subjectMap[language] ?? subjectMap['en'];
 
     // Plain text version based on language
     const textBG = `
@@ -669,7 +1079,7 @@ Email: reservations@skyparking.bg
 Web: https://www.skyparking.bg
     `.trim();
 
-    const plainText = language === 'en' ? textEN : textBG;
+    const plainText = language === 'bg' ? textBG : textEN;
 
     console.log(`Sending ${language.toUpperCase()} confirmation email to ${data.email} for booking ${data.bookingId}`);
 
