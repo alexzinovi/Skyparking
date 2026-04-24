@@ -19,7 +19,7 @@ interface BookingEmailData {
   needsInvoice?: boolean;
   companyName?: string;
   companyEIK?: string;
-  language?: 'bg' | 'en'; // Add language support
+  language?: 'bg' | 'en' | 'el' | 'tr' | 'sr' | 'mk' | 'ro' | 'uk'; // Language support
   basePrice?: number; // Price before discount
   discountCode?: string;
   discountApplied?: {
@@ -701,6 +701,181 @@ Web: https://www.skyparking.bg
 }
 
 // Generate admin notification email HTML
+function generateViberMessageHTML(data: BookingEmailData): string {
+  const lang = data.language || 'bg';
+  const carLabel = data.numberOfCars > 1;
+
+  const strings: Record<string, {
+    heading: string;
+    instruction: string;
+    greeting: string;
+    confirmed: string;
+    from: string;
+    to: string;
+    car: string;
+    cars: string;
+    price: string;
+    transfers: string;
+    questions: string;
+    location: string;
+  }> = {
+    bg: {
+      heading: '📱 Viber съобщение за клиента',
+      instruction: 'Копирайте текста по-долу и го изпратете на клиента във Viber:',
+      greeting: 'Здравейте',
+      confirmed: '✅ SkyParking потвърждава вашата резервация!',
+      from: 'От',
+      to: 'До',
+      car: 'Автомобил',
+      cars: 'Автомобили',
+      price: 'Цена',
+      transfers: 'с включени 2 трансфера',
+      questions: 'Ако имате въпроси или желаете да коригирате резервацията, моля свържете се с нас тук или на',
+      location: 'Нашата локация',
+    },
+    en: {
+      heading: '📱 Viber message for the customer',
+      instruction: 'Copy the text below and send it to the customer on Viber:',
+      greeting: 'Hello',
+      confirmed: '✅ SkyParking confirms your reservation!',
+      from: 'From',
+      to: 'To',
+      car: 'Car',
+      cars: 'Cars',
+      price: 'Price',
+      transfers: 'incl. 2 free transfers',
+      questions: 'If you have any questions or would like to modify your reservation, please contact us here or at',
+      location: 'Our location',
+    },
+    el: {
+      heading: '📱 Μήνυμα Viber για τον πελάτη',
+      instruction: 'Αντιγράψτε το παρακάτω κείμενο και στείλτε το στον πελάτη μέσω Viber:',
+      greeting: 'Γεια σας',
+      confirmed: '✅ Το SkyParking επιβεβαιώνει την κράτησή σας!',
+      from: 'Από',
+      to: 'Έως',
+      car: 'Αυτοκίνητο',
+      cars: 'Αυτοκίνητα',
+      price: 'Τιμή',
+      transfers: 'συμπεριλαμβάνονται 2 δωρεάν μεταφορές',
+      questions: 'Αν έχετε ερωτήσεις ή θέλετε να τροποποιήσετε την κράτησή σας, επικοινωνήστε μαζί μας εδώ ή στο',
+      location: 'Η τοποθεσία μας',
+    },
+    tr: {
+      heading: '📱 Müşteri için Viber mesajı',
+      instruction: 'Aşağıdaki metni kopyalayın ve Viber üzerinden müşteriye gönderin:',
+      greeting: 'Merhaba',
+      confirmed: '✅ SkyParking rezervasyonunuzu onayladı!',
+      from: 'Giriş',
+      to: 'Çıkış',
+      car: 'Araç',
+      cars: 'Araçlar',
+      price: 'Ücret',
+      transfers: '2 ücretsiz servis dahil',
+      questions: 'Sorularınız veya rezervasyon değişikliği için buradaki numaradan veya şu numaradan bize ulaşabilirsiniz:',
+      location: 'Konumumuz',
+    },
+    sr: {
+      heading: '📱 Viber poruka za klijenta',
+      instruction: 'Kopirajte tekst ispod i pošaljite ga klijentu putem Vibera:',
+      greeting: 'Zdravo',
+      confirmed: '✅ SkyParking potvrđuje vašu rezervaciju!',
+      from: 'Od',
+      to: 'Do',
+      car: 'Automobil',
+      cars: 'Automobili',
+      price: 'Cena',
+      transfers: 'uključena 2 besplatna transfera',
+      questions: 'Ako imate pitanja ili želite da izmenite rezervaciju, kontaktirajte nas ovde ili na',
+      location: 'Naša lokacija',
+    },
+    mk: {
+      heading: '📱 Viber порака за клиентот',
+      instruction: 'Копирајте го текстот подолу и пратете го на клиентот преку Viber:',
+      greeting: 'Здраво',
+      confirmed: '✅ SkyParking ја потврдува вашата резервација!',
+      from: 'Од',
+      to: 'До',
+      car: 'Автомобил',
+      cars: 'Автомобили',
+      price: 'Цена',
+      transfers: 'вклучени 2 бесплатни трансфери',
+      questions: 'Ако имате прашања или сакате да ја измените резервацијата, контактирајте нè овде или на',
+      location: 'Нашата локација',
+    },
+    ro: {
+      heading: '📱 Mesaj Viber pentru client',
+      instruction: 'Copiați textul de mai jos și trimiteți-l clientului pe Viber:',
+      greeting: 'Bună ziua',
+      confirmed: '✅ SkyParking confirmă rezervarea dvs.!',
+      from: 'De la',
+      to: 'Până la',
+      car: 'Mașină',
+      cars: 'Mașini',
+      price: 'Preț',
+      transfers: 'incl. 2 transferuri gratuite',
+      questions: 'Dacă aveți întrebări sau doriți să modificați rezervarea, contactați-ne aici sau la',
+      location: 'Locația noastră',
+    },
+    uk: {
+      heading: '📱 Viber повідомлення для клієнта',
+      instruction: 'Скопіюйте текст нижче та надішліть його клієнту через Viber:',
+      greeting: 'Доброго дня',
+      confirmed: '✅ SkyParking підтверджує ваше бронювання!',
+      from: 'Від',
+      to: 'До',
+      car: 'Автомобіль',
+      cars: 'Автомобілі',
+      price: 'Ціна',
+      transfers: 'включено 2 безкоштовні трансфери',
+      questions: 'Якщо у вас є запитання або ви хочете змінити бронювання, зв\'яжіться з нами тут або за номером',
+      location: 'Наше розташування',
+    },
+  };
+
+  const s = strings[lang] ?? strings['en'];
+
+  return `
+    <div style="background-color: #7360f2; border: 3px solid #665dc0; padding: 20px; margin: 25px 0; border-radius: 8px;">
+      <div style="display: flex; align-items: center; margin-bottom: 15px;">
+        <img src="https://skyparking.bg/viber-logo.png" alt="Viber" style="width: 32px; height: 32px; margin-right: 12px;" />
+        <h3 style="margin: 0; font-size: 20px; color: #ffffff;">${s.heading}</h3>
+      </div>
+      <p style="margin: 0 0 12px 0; font-size: 13px; color: #e0d9ff; font-style: italic;">
+        ${s.instruction}
+      </p>
+      <div style="background-color: #ffffff; padding: 20px; border-radius: 6px; font-family: Arial, sans-serif; line-height: 1.7; border: 1px solid #665dc0;">
+        <p style="margin: 0 0 16px 0; font-size: 15px; color: #1a1a1a;">
+          ${s.greeting} <strong>${data.name}</strong>,
+        </p>
+        <p style="margin: 0 0 16px 0; font-size: 15px; color: #1a1a1a;">
+          ${s.confirmed}
+        </p>
+        <p style="margin: 0 0 4px 0; font-size: 15px; color: #1a1a1a;">
+          📅 <strong>${s.from}:</strong> ${formatDateDisplay(data.arrivalDate)} – ${data.arrivalTime}
+        </p>
+        <p style="margin: 0 0 16px 0; font-size: 15px; color: #1a1a1a;">
+          📅 <strong>${s.to}:</strong> ${formatDateDisplay(data.departureDate)} – ${data.departureTime}
+        </p>
+        <p style="margin: 0 0 4px 0; font-size: 15px; color: #1a1a1a;">
+          🚗 <strong>${carLabel ? s.cars : s.car}:</strong> ${data.licensePlate}
+        </p>
+        <p style="margin: 0 0 16px 0; font-size: 15px; color: #1a1a1a;">
+          💶 <strong>${s.price}:</strong> €${data.totalPrice} (${s.transfers})
+        </p>
+        <p style="margin: 0 0 16px 0; font-size: 15px; color: #1a1a1a;">
+          ${s.questions} <strong>+359 886 616 991</strong>
+        </p>
+        <p style="margin: 0; font-size: 15px; color: #1a1a1a;">
+          📍 <strong>${s.location}:</strong>
+        </p>
+        <p style="margin: 0; font-size: 15px; color: #1a1a1a;">
+          Google Maps: https://maps.app.goo.gl/Yt6YeQN5ECBSjVme8
+        </p>
+      </div>
+    </div>`;
+}
+
 function generateAdminNotificationEmailHTML(data: BookingEmailData): string {
   const carKeysText = data.carKeys 
     ? `<p style=\"margin: 10px 0; font-size: 16px; color: #7c3aed;\"><strong>🔑 С предаване на ключове</strong></p>`
@@ -784,44 +959,7 @@ function generateAdminNotificationEmailHTML(data: BookingEmailData): string {
       </div>
 
       <!-- Viber Message Template -->
-      <div style="background-color: #7360f2; border: 3px solid #665dc0; padding: 20px; margin: 25px 0; border-radius: 8px;">
-        <div style="display: flex; align-items: center; margin-bottom: 15px;">
-          <img src="https://skyparking.bg/viber-logo.png" alt="Viber" style="width: 32px; height: 32px; margin-right: 12px;" />
-          <h3 style="margin: 0; font-size: 20px; color: #ffffff;">📱 Viber съобщение за клиента</h3>
-        </div>
-        <p style="margin: 0 0 12px 0; font-size: 13px; color: #e0d9ff; font-style: italic;">
-          Копирайте текста по-долу и го изпратете на клиента във Viber:
-        </p>
-        <div style="background-color: #ffffff; padding: 20px; border-radius: 6px; font-family: Arial, sans-serif; line-height: 1.7; border: 1px solid #665dc0;">
-          <p style="margin: 0 0 16px 0; font-size: 15px; color: #1a1a1a;">
-            Здравейте <strong>${data.name}</strong>,
-          </p>
-          <p style="margin: 0 0 16px 0; font-size: 15px; color: #1a1a1a;">
-            ✅ SkyParking потвърждава вашата резервация!
-          </p>
-          <p style="margin: 0 0 4px 0; font-size: 15px; color: #1a1a1a;">
-            📅 <strong>От:</strong> ${formatDateDisplay(data.arrivalDate)} в ${data.arrivalTime}
-          </p>
-          <p style="margin: 0 0 16px 0; font-size: 15px; color: #1a1a1a;">
-            📅 <strong>До:</strong> ${formatDateDisplay(data.departureDate)} в ${data.departureTime}
-          </p>
-          <p style="margin: 0 0 4px 0; font-size: 15px; color: #1a1a1a;">
-            🚗 <strong>${data.numberOfCars > 1 ? 'Автомобили' : 'Автомобил'}:</strong> ${data.licensePlate}
-          </p>
-          <p style="margin: 0 0 16px 0; font-size: 15px; color: #1a1a1a;">
-            💶 <strong>Цена:</strong> €${data.totalPrice} (с включени 2 трансфера)
-          </p>
-          <p style="margin: 0 0 16px 0; font-size: 15px; color: #1a1a1a;">
-            Ако имате въпроси или желаете да коригирате резервацията, моля свържете се с нас тук или на <strong>+359 886 616 991</strong>
-          </p>
-          <p style="margin: 0; font-size: 15px; color: #1a1a1a;">
-            📍 <strong>Нашата локация:</strong>
-          </p>
-          <p style="margin: 0; font-size: 15px; color: #1a1a1a;">
-            Google Maps: https://maps.app.goo.gl/Yt6YeQN5ECBSjVme8
-          </p>
-        </div>
-      </div>
+      ${generateViberMessageHTML(data)}
 
       <!-- Action Button -->
       <div style="text-align: center; margin: 30px 0;">
