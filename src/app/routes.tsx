@@ -54,6 +54,10 @@ export const router = createBrowserRouter([
         element: <LanguageLandingPage lang="ro" />,
       },
       {
+        path: "/uk",
+        element: <LanguageLandingPage lang="uk" />,
+      },
+      {
         path: "/reservation-confirmed",
         element: <ConfirmationPage />,
       },

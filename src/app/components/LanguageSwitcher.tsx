@@ -17,6 +17,7 @@ const LANGUAGES = [
   { code: "sr", label: "SR", native: "Srpski", path: "/sr" },
   { code: "mk", label: "МК", native: "Македонски", path: "/mk" },
   { code: "ro", label: "RO", native: "Română", path: "/ro" },
+  { code: "uk", label: "УК", native: "Українська", path: "/uk" },
 ] as const;
 
 export function LanguageSwitcher() {
