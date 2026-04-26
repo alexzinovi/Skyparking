@@ -100,7 +100,7 @@ export const getByPrefix = async (prefix: string): Promise<any[]> => {
     results.push(...data.map((d) => d.value));
 
     if (data.length < PAGE_SIZE) break; // last page
-    from += PAGE_SIZE;
+    from += data.length; // advance by actual rows returned, not PAGE_SIZE
   }
 
   return results;
