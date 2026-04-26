@@ -614,6 +614,10 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
   // Filter for exits tab
   const [exitDate, setExitDate] = useState(getTodayDate());
 
+  // Pagination for "all" tab
+  const [allTabPage, setAllTabPage] = useState(1);
+  const ALL_TAB_PAGE_SIZE = 50;
+
   // Debug list filters (calendar)
   const [debugStatusFilter, setDebugStatusFilter] = useState<'all' | 'arrived' | 'confirmed'>('all');
   const [debugArrivalFilter, setDebugArrivalFilter] = useState<'all' | 'past' | 'today' | 'future'>('all');
@@ -754,13 +758,56 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
         
         // Recalculate late surcharges only for still-active late bookings (not checked-out)
         // Checked-out bookings keep their confirmed lateSurcharge from checkout
-        const bookingsWithUpdatedSurcharges = data.bookings.map((b: Booking) => {
-          if (b.isLate && b.originalDepartureDate && b.status !== 'checked-out') {
-            const updatedSurcharge = calculateLateSurcharge(b.originalDepartureDate, b.originalDepartureTime);
-            return { ...b, lateSurcharge: updatedSurcharge };
-          }
-          return b;
-        });
+        const now = new Date();
+        const bookingsWithUpdatedSurcharges = await Promise.all(
+          data.bookings.map(async (b: Booking) => {
+            if (b.isLate && (b.originalDepartureDate || b.departureDate) && b.status !== 'checked-out') {
+              const origDepDate = b.originalDepartureDate || b.departureDate;
+              const arrivalTime = b.arrivalTime || "11:00";
+              const [arrH, arrM] = arrivalTime.split(":").map(Number);
+              const thresholdOnDepDay = new Date(origDepDate);
+              thresholdOnDepDay.setHours(arrH, arrM, 0, 0);
+
+              let daysLate = 0;
+              if (now >= thresholdOnDepDay) {
+                const msSinceThreshold = now.getTime() - thresholdOnDepDay.getTime();
+                daysLate = Math.floor(msSinceThreshold / (1000 * 60 * 60 * 24)) + 1;
+              }
+
+              if (daysLate <= 0) return { ...b, lateSurcharge: 0 };
+
+              // Total days = original booking days + extra days
+              const arrivalMidnight = new Date(b.arrivalDate);
+              arrivalMidnight.setHours(0, 0, 0, 0);
+              const origDepMidnight = new Date(origDepDate);
+              origDepMidnight.setHours(0, 0, 0, 0);
+              const origDays = Math.floor(
+                (origDepMidnight.getTime() - arrivalMidnight.getTime()) / (1000 * 60 * 60 * 24)
+              );
+              const totalDays = origDays + daysLate;
+
+              let lateSurcharge = daysLate * 5 * (b.numberOfCars || 1); // fallback
+              try {
+                const priceRes = await fetch(
+                  `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/pricing/calculate?days=${totalDays}`,
+                  { headers: { "Authorization": `Bearer ${publicAnonKey}` } }
+                );
+                if (priceRes.ok) {
+                  const priceData = await priceRes.json();
+                  if (priceData.success && priceData.price) {
+                    const totalPrice = priceData.price * (b.numberOfCars || 1);
+                    lateSurcharge = Math.max(0, totalPrice - b.totalPrice);
+                  }
+                }
+              } catch (e) {
+                console.error("Error calculating late surcharge for", b.id, e);
+              }
+
+              return { ...b, lateSurcharge };
+            }
+            return b;
+          })
+        );
         
         // Check if data has changed (only for background refreshes)
         if (!showLoadingSpinner && !silent && bookings.length > 0) {
@@ -774,11 +821,10 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
         setLastRefresh(new Date());
 
         // Auto-trigger late status for arrived bookings whose departure time has passed
-        const now = new Date();
         const overdueBookings = bookingsWithUpdatedSurcharges.filter((b: Booking) => {
           if (b.status !== 'arrived' || b.isLate) return false;
           const depDateTime = new Date(`${b.departureDate}T${b.departureTime}`);
-          return now > depDateTime;
+          return new Date() > depDateTime;
         });
         for (const b of overdueBookings) {
           const token = localStorage.getItem("skyparking-token");
@@ -1084,6 +1130,11 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
       return bTime - aTime; // Newest first
     });
   }, [bookings, searchQuery, statusFilter, keysFilter, invoiceFilter, arrivalDateFilter, departureDateFilter]);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setAllTabPage(1);
+  }, [searchQuery, statusFilter, keysFilter, invoiceFilter, arrivalDateFilter, departureDateFilter]);
 
   // Render action buttons for operator
   const renderOperatorActions = (booking: Booking) => {
@@ -1459,26 +1510,6 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
       console.error("Checkout error:", error);
       toast.error("Грешка");
     }
-  };
-
-  // Calculate late surcharge (5 EUR per day past original departure date)
-  const calculateLateSurcharge = (originalDepartureDate: string, originalDepartureTime?: string) => {
-    const now = new Date();
-    const origMidnight = new Date(originalDepartureDate);
-    origMidnight.setHours(0, 0, 0, 0);
-    const nowMidnight = new Date(now);
-    nowMidnight.setHours(0, 0, 0, 0);
-
-    const calendarDaysDiff = Math.floor(
-      (nowMidnight.getTime() - origMidnight.getTime()) / (1000 * 60 * 60 * 24)
-    );
-
-    // If current time is before the original departure time, the last partial period doesn't count
-    const [origH, origM] = (originalDepartureTime || "20:00").split(":").map(Number);
-    const beforeOrigTime = now.getHours() * 60 + now.getMinutes() < origH * 60 + origM;
-    const daysLate = beforeOrigTime ? Math.max(0, calendarDaysDiff - 1) : calendarDaysDiff;
-
-    return daysLate > 0 ? daysLate * 5 : 0;
   };
 
   // Mark as late
@@ -1918,13 +1949,28 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
     
     // Calculate base revenue (excluding late fees)
     const baseRevenue = paidBookings.reduce((sum, b) => sum + b.totalPrice, 0);
-    
-    // Calculate late fees separately
-    const lateFees = paidBookings
-      .filter(b => b.isLate && b.lateSurcharge)
-      .reduce((sum, b) => sum + (b.lateSurcharge || 0), 0);
-    
-    const actualRevenue = paidBookings.reduce((sum, b) => sum + (b.finalPrice || b.totalPrice), 0);
+
+    // Late fees are attributed to the shift when checkout happened (checkedOutAt),
+    // not when the booking was originally paid (paidAt).
+    // Exclude bookings already counted in paidBookings to avoid double-counting.
+    const lateFeeBookings = bookings.filter(b =>
+      b.isLate &&
+      (b.lateSurcharge || 0) > 0 &&
+      b.status === 'checked-out' &&
+      !isPaidInShift(b.paidAt) &&        // not already in paidBookings
+      isPaidInShift(b.checkedOutAt)       // checked out during this shift
+    );
+    const lateFees =
+      // Late fees from bookings paid in this shift (paidAt matches)
+      paidBookings
+        .filter(b => b.isLate && b.lateSurcharge)
+        .reduce((sum, b) => sum + (b.lateSurcharge || 0), 0) +
+      // Late fees from bookings checked out this shift but paid in a previous shift
+      lateFeeBookings.reduce((sum, b) => sum + (b.lateSurcharge || 0), 0);
+
+    const actualRevenue =
+      paidBookings.reduce((sum, b) => sum + (b.finalPrice || b.totalPrice), 0) +
+      lateFeeBookings.reduce((sum, b) => sum + (b.lateSurcharge || 0), 0);
     
     // By payment method
     const cashRevenue = paidBookings
@@ -3002,6 +3048,11 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                 <div className="flex items-center justify-between mb-4">
                   <div className="text-lg font-medium text-gray-700">
                     Показани: <span className="font-bold text-blue-600">{allBookings.length}</span> резервации
+                    {allBookings.length > ALL_TAB_PAGE_SIZE && (
+                      <span className="ml-2 text-sm text-gray-500">
+                        (страница {allTabPage} от {Math.ceil(allBookings.length / ALL_TAB_PAGE_SIZE)})
+                      </span>
+                    )}
                   </div>
                   {(statusFilter !== "all" || keysFilter !== "all" || invoiceFilter !== "all" || arrivalDateFilter || departureDateFilter) && (
                     <Button
@@ -3020,25 +3071,48 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                     </Button>
                   )}
                 </div>
-                
+
                 {allBookings.length === 0 ? (
                   <Card className="p-16 text-center text-gray-500 text-xl">
-                    {searchQuery ? `Няма резултати за "${searchQuery}"` : 
-                     (statusFilter !== "all" || keysFilter !== "all" || invoiceFilter !== "all" || arrivalDateFilter) ? 
-                     "Няма резервации, които отговарят на избраните филтри" : 
+                    {searchQuery ? `Няма резултати за "${searchQuery}"` :
+                     (statusFilter !== "all" || keysFilter !== "all" || invoiceFilter !== "all" || arrivalDateFilter) ?
+                     "Няма резервации, които отговарят на избраните филтри" :
                      "Няма резервации"}
                   </Card>
                 ) : (
-                  allBookings.map(booking => (
-                    <ReservationCard
-                      key={booking.id}
-                      reservation={booking as ReservationData}
-                      showActions={true}
-                      actions={renderOperatorActions(booking)}
-                      showTimestamps={false}
-                      showEditHistory={false}
-                    />
-                  ))
+                  <>
+                    {allBookings.slice((allTabPage - 1) * ALL_TAB_PAGE_SIZE, allTabPage * ALL_TAB_PAGE_SIZE).map(booking => (
+                      <ReservationCard
+                        key={booking.id}
+                        reservation={booking as ReservationData}
+                        showActions={true}
+                        actions={renderOperatorActions(booking)}
+                        showTimestamps={false}
+                        showEditHistory={false}
+                      />
+                    ))}
+                    {allBookings.length > ALL_TAB_PAGE_SIZE && (
+                      <div className="flex items-center justify-center gap-3 mt-6">
+                        <Button
+                          variant="outline"
+                          onClick={() => setAllTabPage(p => Math.max(1, p - 1))}
+                          disabled={allTabPage === 1}
+                        >
+                          ← Предишна
+                        </Button>
+                        <span className="text-gray-600">
+                          {allTabPage} / {Math.ceil(allBookings.length / ALL_TAB_PAGE_SIZE)}
+                        </span>
+                        <Button
+                          variant="outline"
+                          onClick={() => setAllTabPage(p => Math.min(Math.ceil(allBookings.length / ALL_TAB_PAGE_SIZE), p + 1))}
+                          disabled={allTabPage === Math.ceil(allBookings.length / ALL_TAB_PAGE_SIZE)}
+                        >
+                          Следваща →
+                        </Button>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )}
