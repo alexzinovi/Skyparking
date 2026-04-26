@@ -553,8 +553,8 @@ app.post("/make-server-47a4914e/bookings", async (c) => {
     console.log("Received booking data:", booking);
     console.log("needsInvoice value:", booking.needsInvoice);
     
-    // Generate internal ID for database key
-    const bookingId = `booking:${Date.now()}:${Math.random().toString(36).substring(7)}`;
+    // Generate internal ID for database key (UUID to avoid collisions)
+    const bookingId = `booking:${crypto.randomUUID()}`;
     
     // Generate user-friendly booking code
     const bookingCode = generateBookingCode();
