@@ -88,6 +88,7 @@ export const getByPrefix = async (prefix: string): Promise<any[]> => {
       .from("kv_store_47a4914e")
       .select("key, value")
       .like("key", prefix + "%")
+      .order("key")
       .range(from, from + PAGE_SIZE - 1);
 
     if (error) {
