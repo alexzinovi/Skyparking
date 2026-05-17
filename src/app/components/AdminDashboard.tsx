@@ -2695,7 +2695,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
-                  onClick={() => setFormData({ ...formData, vehicleSize: 'standard' })}
+                  onClick={() => setFormData(prev => ({ ...prev, vehicleSize: 'standard' }))}
                   className={`flex flex-col items-start p-3 rounded-lg border-2 transition-all text-left ${
                     (!formData.vehicleSize || formData.vehicleSize === 'standard')
                       ? 'border-blue-600 bg-blue-50'
@@ -2707,7 +2707,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                 </button>
                 <button
                   type="button"
-                  onClick={() => setFormData({ ...formData, vehicleSize: 'oversized' })}
+                  onClick={() => setFormData(prev => ({ ...prev, vehicleSize: 'oversized' }))}
                   className={`flex flex-col items-start p-3 rounded-lg border-2 transition-all text-left ${
                     formData.vehicleSize === 'oversized'
                       ? 'border-amber-500 bg-amber-50'

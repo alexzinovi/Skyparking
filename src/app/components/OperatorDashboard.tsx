@@ -3864,7 +3864,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
-                  onClick={() => setBookingForm({...bookingForm, vehicleSize: 'standard'})}
+                  onClick={() => setBookingForm(prev => ({...prev, vehicleSize: 'standard'}))}
                   className={`flex flex-col items-start p-3 rounded-lg border-2 transition-all text-left ${
                     bookingForm.vehicleSize === 'standard'
                       ? 'border-blue-600 bg-blue-50'
@@ -3876,7 +3876,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                 </button>
                 <button
                   type="button"
-                  onClick={() => setBookingForm({...bookingForm, vehicleSize: 'oversized'})}
+                  onClick={() => setBookingForm(prev => ({...prev, vehicleSize: 'oversized'}))}
                   className={`flex flex-col items-start p-3 rounded-lg border-2 transition-all text-left ${
                     bookingForm.vehicleSize === 'oversized'
                       ? 'border-amber-500 bg-amber-50'
