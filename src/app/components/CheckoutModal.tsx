@@ -44,30 +44,22 @@ export function CheckoutModal({
     const calculateExtraStay = async () => {
       setIsCalculating(true);
       
-      // Calculate extra days using departure-time-aware logic:
-      // If the customer leaves before the original departure TIME on their last extra day,
-      // that day doesn't count as a full extra day.
+      // Calculate extra days using arrival-time-aware logic:
+      // An extra day starts when the current time passes the arrival time on the original
+      // departure date, and each subsequent same time the following days.
       const now = new Date();
       const origDepDate = booking.originalDepartureDate || booking.departureDate;
-      const origDepTime = booking.originalDepartureTime || booking.departureTime || "20:00";
+      const [arrH, arrM] = booking.arrivalTime.split(":").map(Number);
 
-      const origMidnight = new Date(origDepDate);
-      origMidnight.setHours(0, 0, 0, 0);
-      const nowMidnight = new Date(now);
-      nowMidnight.setHours(0, 0, 0, 0);
+      // The threshold for the first extra day is the original departure date at arrival time
+      const thresholdOnDepDay = new Date(origDepDate);
+      thresholdOnDepDay.setHours(arrH, arrM, 0, 0);
 
-      const calendarDaysDiff = Math.floor(
-        (nowMidnight.getTime() - origMidnight.getTime()) / (1000 * 60 * 60 * 24)
-      );
-
-      // If current time is before the original departure time, the last partial day doesn't count
-      const [origH, origM] = origDepTime.split(":").map(Number);
-      const currentH = now.getHours();
-      const currentM = now.getMinutes();
-      const beforeOrigTime = currentH * 60 + currentM < origH * 60 + origM;
-      const daysLate = beforeOrigTime
-        ? Math.max(0, calendarDaysDiff - 1)
-        : calendarDaysDiff;
+      let daysLate = 0;
+      if (now >= thresholdOnDepDay) {
+        const msSinceThreshold = now.getTime() - thresholdOnDepDay.getTime();
+        daysLate = Math.floor(msSinceThreshold / (1000 * 60 * 60 * 24)) + 1;
+      }
 
       setExtraDays(Math.max(0, daysLate));
       
@@ -75,8 +67,10 @@ export function CheckoutModal({
         // Total days = original days + extra days
         const arrivalMidnight = new Date(booking.arrivalDate);
         arrivalMidnight.setHours(0, 0, 0, 0);
+        const origDepMidnight = new Date(origDepDate);
+        origDepMidnight.setHours(0, 0, 0, 0);
         const origDays = Math.floor(
-          (origMidnight.getTime() - arrivalMidnight.getTime()) / (1000 * 60 * 60 * 24)
+          (origDepMidnight.getTime() - arrivalMidnight.getTime()) / (1000 * 60 * 60 * 24)
         );
         const totalDays = origDays + daysLate;
         

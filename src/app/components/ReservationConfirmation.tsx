@@ -25,6 +25,7 @@ interface ReservationConfirmationProps {
     licensePlate5?: string;
     passengers: number;
     totalPrice: number;
+    vehicleSize?: 'standard' | 'oversized';
   };
   onBackToHome: () => void;
 }
@@ -232,6 +233,11 @@ export function ReservationConfirmation({ booking, onBackToHome }: ReservationCo
                 <p className="text-sm mt-3" style={{ color: '#4b5563' }}>
                   {booking.numberOfCars} {booking.numberOfCars === 1 ? (language === 'bg' ? 'автомобил' : 'car') : (language === 'bg' ? 'автомобила' : 'cars')} • {booking.passengers} {booking.passengers === 1 ? (language === 'bg' ? 'пътник' : 'passenger') : (language === 'bg' ? 'пътника' : 'passengers')}
                 </p>
+                {booking.vehicleSize === 'oversized' && (
+                  <span className="inline-block mt-2 px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
+                    🚐 {t('vehicleSizeOversizedBadge')}
+                  </span>
+                )}
               </div>
             </div>
 

@@ -28,11 +28,23 @@ export function ConfirmationPage() {
   // Track conversion when page loads with valid booking (fire only once)
   useEffect(() => {
     if (booking && typeof window.gtag === 'function' && !conversionFired.current) {
-      // Fire the conversion event with the new conversion label
+      // Pass hashed customer data for Enhanced Conversions
+      const nameParts = (booking.name || '').trim().split(' ');
+      window.gtag('set', 'user_data', {
+        email: booking.email || '',
+        phone_number: booking.phone || '',
+        address: {
+          first_name: nameParts[0] || '',
+          last_name: nameParts.slice(1).join(' ') || '',
+        },
+      });
+
+      // Fire the conversion event with actual booking value
       window.gtag('event', 'conversion', {
         'send_to': 'AW-17964080992/qwSRCLGqyvwbEOC--PVC',
-        'value': 1.0,
-        'currency': 'EUR'
+        'value': booking.totalPrice,
+        'currency': 'EUR',
+        'transaction_id': booking.confirmationNumber || booking.bookingCode || '',
       });
       conversionFired.current = true;
       console.log('Google Ads conversion event fired for booking:', booking.confirmationNumber);
