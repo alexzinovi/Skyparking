@@ -27,7 +27,7 @@ export const router = createBrowserRouter([
     children: [
       {
         path: "/",
-        element: <HomePage />,
+        element: <LanguageLandingPage lang="bg" />,
       },
       {
         path: "/en",

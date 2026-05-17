@@ -2,7 +2,7 @@ import { useLayoutEffect } from "react";
 import { useLanguage } from "../components/LanguageContext";
 import { HomePage } from "./HomePage";
 
-type SupportedLang = "en" | "el" | "tr" | "sr" | "mk" | "ro";
+type SupportedLang = "bg" | "en" | "el" | "tr" | "sr" | "mk" | "ro" | "uk";
 
 export function LanguageLandingPage({ lang }: { lang: SupportedLang }) {
   const { setLanguage } = useLanguage();
