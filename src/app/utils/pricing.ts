@@ -278,24 +278,25 @@ export async function calculatePrice(
   const departureDateOnly = new Date(departureDate);
   const midnightsCrossed = Math.floor((departureDateOnly.getTime() - arrivalDateOnly.getTime()) / (1000 * 60 * 60 * 24));
 
-  // Extract hours and minutes for time comparison
-  const arrivalHour = arrivalDateTime.getHours();
-  const arrivalMinute = arrivalDateTime.getMinutes();
-  const departureHour = departureDateTime.getHours();
-  const departureMinute = departureDateTime.getMinutes();
-  
-  // Convert to minutes for easier comparison
-  const arrivalTimeInMinutes = arrivalHour * 60 + arrivalMinute;
-  const departureTimeInMinutes = departureHour * 60 + departureMinute;
+  // 3am cutoff: departure calendar day counts as an extra day only if past 3:00am
+  const CUTOFF_MINUTES = 3 * 60; // 3:00am
+  const departureTimeInMinutes = departureDateTime.getHours() * 60 + departureDateTime.getMinutes();
 
-  // If departure time is after arrival time, add 1 day
-  let diffDays = midnightsCrossed;
-  if (departureTimeInMinutes > arrivalTimeInMinutes) {
-    diffDays += 1;
+  let diffDays: number;
+  if (midnightsCrossed === 0) {
+    // Same calendar day: always 1 day
+    diffDays = 1;
+  } else {
+    // Multi-day: arrival day + all fully-crossed days.
+    // The departure calendar day counts only if the customer leaves after 3am.
+    diffDays = departureTimeInMinutes > CUTOFF_MINUTES
+      ? midnightsCrossed + 1
+      : midnightsCrossed;
   }
+  diffDays = Math.max(1, diffDays);
 
   console.log(`🧮 Calculating price: ${arrivalDate} ${arrivalTime} → ${departureDate} ${departureTime}`);
-  console.log(`   Midnights crossed: ${midnightsCrossed}, Departure time ${departureTimeInMinutes > arrivalTimeInMinutes ? '>' : '≤'} arrival time → ${diffDays} days for ${numberOfCars} car(s)`);
+  console.log(`   Midnights crossed: ${midnightsCrossed}, Departure at ${departureTimeInMinutes}min (cutoff 180min) → ${diffDays} days for ${numberOfCars} car(s)`);
   
   const pricePerCar = await calculatePriceForDays(diffDays);
   const multiplier = vehicleSize === 'oversized' ? OVERSIZED_MULTIPLIER : 1;
