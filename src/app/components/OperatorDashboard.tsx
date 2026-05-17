@@ -1572,21 +1572,23 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
 
   // Calculate price using dynamic pricing
   const calculatePrice = async (
-    arrivalDate: string, 
+    arrivalDate: string,
     arrivalTime: string,
     departureDate: string,
     departureTime: string,
-    numberOfCars: number = 1
+    numberOfCars: number = 1,
+    vehicleSize: 'standard' | 'oversized' = 'standard'
   ): Promise<number> => {
     if (!arrivalDate || !departureDate || !arrivalTime || !departureTime) return 0;
-    
+
     try {
       const price = await calculateDynamicPrice(
         arrivalDate,
         arrivalTime,
         departureDate,
         departureTime,
-        numberOfCars
+        numberOfCars,
+        vehicleSize
       );
       return price || 0;
     } catch (error) {
