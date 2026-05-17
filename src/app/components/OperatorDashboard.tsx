@@ -3883,10 +3883,11 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                       : 'border-gray-200 bg-white hover:border-gray-300'
                   }`}
                 >
-                  <span className="font-semibold text-sm text-gray-900">Извънгабаритен +50%</span>
+                  <span className="font-semibold text-sm text-gray-900">Извънгабаритен *</span>
                   <span className="text-xs text-gray-500 mt-0.5">Кемпер, микробус, голям ван</span>
                 </button>
               </div>
+              <p className="text-xs text-gray-500 leading-relaxed">* Извънгабаритни са МПС с дължина над 5.3 м. Добавка +50%.</p>
             </div>
 
             {/* Options */}
