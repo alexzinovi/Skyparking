@@ -380,7 +380,7 @@ const translations = {
     vehicleSizeOversizedHelper: "Кемпер, микробус или голям ван",
     vehicleSizeOversizedBadge: "Извънгабаритен",
     vehicleSizeSurcharge: "Добавка за извънгабаритно превозно средство",
-    vehicleSizeOversizedNote: "* Извънгабаритни се считат превозни средства с дължина над 5.3 м (кемпери, микробуси, минивени и подобни). Добавка +50% към стандартната цена.",
+    vehicleSizeOversizedNote: "* Извънгабаритни се считат превозни средства с дължина над 5.3 м (кемпери, микробуси, минивени и подобни).",
   },
   en: {
     // Hero Section
@@ -753,7 +753,7 @@ const translations = {
     vehicleSizeOversizedHelper: "Camper, minibus or large van",
     vehicleSizeOversizedBadge: "Oversized",
     vehicleSizeSurcharge: "Oversized vehicle surcharge",
-    vehicleSizeOversizedNote: "* Oversized vehicles are those longer than 5.3 m (campers, minibuses, minivans and similar). A +50% surcharge applies to the standard price.",
+    vehicleSizeOversizedNote: "* Oversized vehicles are those longer than 5.3 m (campers, minibuses, minivans and similar).",
   },
   el: {
     // Hero Section
@@ -1126,7 +1126,7 @@ const translations = {
     vehicleSizeOversizedHelper: "Τροχόσπιτο, μίνι-λεωφορείο ή μεγάλη βαν",
     vehicleSizeOversizedBadge: "Υπερμέγεθες",
     vehicleSizeSurcharge: "Επιπλέον χρέωση για υπερμέγεθες όχημα",
-    vehicleSizeOversizedNote: "* Υπερμέγεθη θεωρούνται τα οχήματα με μήκος άνω των 5,3 μ. (τροχόσπιτα, μίνι-λεωφορεία, μίνιβαν κ.λπ.). Επιπλέον χρέωση +50% επί της κανονικής τιμής.",
+    vehicleSizeOversizedNote: "* Υπερμέγεθη θεωρούνται τα οχήματα με μήκος άνω των 5,3 μ. (τροχόσπιτα, μίνι-λεωφορεία, μίνιβαν κ.λπ.).",
   },
   tr: {
     // Hero Section
@@ -1499,7 +1499,7 @@ const translations = {
     vehicleSizeOversizedHelper: "Karavan, minibüs veya büyük van",
     vehicleSizeOversizedBadge: "Büyük Boyut",
     vehicleSizeSurcharge: "Büyük araç ek ücreti",
-    vehicleSizeOversizedNote: "* 5,3 m'den uzun araçlar büyük boyutlu sayılır (karavan, minibüs, minivan vb.). Standart fiyata +%50 ek ücret uygulanır.",
+    vehicleSizeOversizedNote: "* 5,3 m'den uzun araçlar büyük boyutlu sayılır (karavan, minibüs, minivan vb.).",
   },
   sr: {
     // Hero Section
@@ -1872,7 +1872,7 @@ const translations = {
     vehicleSizeOversizedHelper: "Kamper, minibus ili veliki kombi",
     vehicleSizeOversizedBadge: "Velikogabaritno",
     vehicleSizeSurcharge: "Doplata za velikogabaritno vozilo",
-    vehicleSizeOversizedNote: "* Velikogabaritnim se smatraju vozila duža od 5,3 m (kamperi, minibusi, miniveni i slično). Doplata +50% na standardnu cenu.",
+    vehicleSizeOversizedNote: "* Velikogabaritnim se smatraju vozila duža od 5,3 m (kamperi, minibusi, miniveni i slično).",
   },
   mk: {
     // Hero Section
@@ -2245,7 +2245,7 @@ const translations = {
     vehicleSizeOversizedHelper: "Камп-приколка, минибус или голем комби",
     vehicleSizeOversizedBadge: "Вонгабаритно",
     vehicleSizeSurcharge: "Доплата за вонгабаритно возило",
-    vehicleSizeOversizedNote: "* Вонгабаритни се сметаат возила подолги од 5,3 м (камп-приколки, минибуси, минивени и сл.). Доплата +50% на стандардната цена.",
+    vehicleSizeOversizedNote: "* Вонгабаритни се сметаат возила подолги од 5,3 м (камп-приколки, минибуси, минивени и сл.).",
   },
   ro: {
     // Hero Section
@@ -2618,7 +2618,7 @@ const translations = {
     vehicleSizeOversizedHelper: "Rulotă, microbuz sau dubă mare",
     vehicleSizeOversizedBadge: "Supradimensionat",
     vehicleSizeSurcharge: "Suprataxă vehicul supradimensionat",
-    vehicleSizeOversizedNote: "* Vehiculele cu lungimea mai mare de 5,3 m sunt considerate supradimensionate (rulote, microbuze, minivan-uri etc.). Se aplică o suprataxă de +50% la prețul standard.",
+    vehicleSizeOversizedNote: "* Vehiculele cu lungimea mai mare de 5,3 m sunt considerate supradimensionate (rulote, microbuze, minivan-uri etc.).",
   },
   uk: {
     // Hero Section
@@ -2991,7 +2991,7 @@ const translations = {
     vehicleSizeOversizedHelper: "Кемпер, мікроавтобус або великий мінівен",
     vehicleSizeOversizedBadge: "Негабаритний",
     vehicleSizeSurcharge: "Доплата за негабаритний транспортний засіб",
-    vehicleSizeOversizedNote: "* Негабаритними вважаються транспортні засоби довжиною понад 5,3 м (кемпери, мікроавтобуси, мінівени тощо). Доплата +50% до стандартної ціни.",
+    vehicleSizeOversizedNote: "* Негабаритними вважаються транспортні засоби довжиною понад 5,3 м (кемпери, мікроавтобуси, мінівени тощо).",
   },
 };
 

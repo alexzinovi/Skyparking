@@ -3887,7 +3887,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                   <span className="text-xs text-gray-500 mt-0.5">Кемпер, микробус, голям ван</span>
                 </button>
               </div>
-              <p className="text-xs text-gray-500 leading-relaxed">* Извънгабаритни са МПС с дължина над 5.3 м. Добавка +50%.</p>
+              <p className="text-xs text-gray-500 leading-relaxed">* Извънгабаритни са МПС с дължина над 5.3 м.</p>
             </div>
 
             {/* Options */}
