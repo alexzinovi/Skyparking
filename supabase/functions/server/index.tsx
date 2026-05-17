@@ -18,6 +18,9 @@ const MAX_SPOTS = 180;
 const KEYS_OVERFLOW_SPOTS = 20;
 const MAX_TOTAL_SPOTS = MAX_SPOTS + KEYS_OVERFLOW_SPOTS; // 200
 
+// Pricing multipliers
+const OVERSIZED_MULTIPLIER = 1.5;
+
 // Default pricing configuration
 const DEFAULT_PRICING = {
   dailyPrices: {
@@ -610,6 +613,7 @@ app.post("/make-server-47a4914e/bookings", async (c) => {
           basePrice: bookingData.basePrice,
           discountCode: bookingData.discountCode,
           discountApplied: bookingData.discountApplied,
+          vehicleSize: bookingData.vehicleSize,
         });
         
         if (adminEmailResult.success) {
@@ -983,6 +987,7 @@ app.put("/make-server-47a4914e/bookings/:id/accept", async (c) => {
         basePrice: updated.basePrice,
         discountCode: updated.discountCode,
         discountApplied: updated.discountApplied,
+        vehicleSize: updated.vehicleSize,
       });
       
       if (customerEmailResult.success) {

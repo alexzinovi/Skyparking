@@ -3,6 +3,8 @@ export interface PricingConfig {
   longTermRate?: number;
 }
 
+export const OVERSIZED_MULTIPLIER = 1.5;
+
 const projectId = "dbybybmjjeeocoecaewv";
 const publicAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRieWJ5Ym1qamVlb2NvZWNhZXd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODgxMzAsImV4cCI6MjA4MjA2NDEzMH0.fMZ3Yi5gZpE6kBBz-y1x0FKZcGczxSJZ9jL-Zeau340";
 
@@ -261,7 +263,8 @@ export async function calculatePrice(
   arrivalTime: string,
   departureDate: string,
   departureTime: string,
-  numberOfCars: number = 1
+  numberOfCars: number = 1,
+  vehicleSize: 'standard' | 'oversized' = 'standard'
 ): Promise<number | null> {
   if (!arrivalDate || !departureDate || !arrivalTime || !departureTime) return null;
 
@@ -295,9 +298,10 @@ export async function calculatePrice(
   console.log(`   Midnights crossed: ${midnightsCrossed}, Departure time ${departureTimeInMinutes > arrivalTimeInMinutes ? '>' : '≤'} arrival time → ${diffDays} days for ${numberOfCars} car(s)`);
   
   const pricePerCar = await calculatePriceForDays(diffDays);
-  console.log(`💰 Price per car: €${pricePerCar}, Total: €${pricePerCar * numberOfCars}`);
-  
-  return pricePerCar * numberOfCars;
+  const multiplier = vehicleSize === 'oversized' ? OVERSIZED_MULTIPLIER : 1;
+  console.log(`💰 Price per car: €${pricePerCar}, multiplier: ${multiplier}, Total: €${pricePerCar * numberOfCars * multiplier}`);
+
+  return pricePerCar * numberOfCars * multiplier;
 }
 
 // Preload pricing config (call this on app initialization)

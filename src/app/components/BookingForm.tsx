@@ -44,6 +44,7 @@ interface BookingFormData {
   city?: string;
   address?: string;
   agreeToTerms: boolean;
+  vehicleSize: 'standard' | 'oversized';
 }
 
 export function BookingForm() {
@@ -52,6 +53,7 @@ export function BookingForm() {
   const [totalPrice, setTotalPrice] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [numberOfCars, setNumberOfCars] = useState(1);
+  const [vehicleSize, setVehicleSize] = useState<'standard' | 'oversized'>('standard');
   const [needsInvoice, setNeedsInvoice] = useState(false);
   const [isVAT, setIsVAT] = useState(false);
   const [autoVatNumber, setAutoVatNumber] = useState("");
@@ -119,7 +121,7 @@ export function BookingForm() {
   // Auto-calculate price when dates change (with debouncing for better performance)
   useEffect(() => {
     const timeoutId = setTimeout(async () => {
-      const price = await calculatePrice(arrivalDate, arrivalTime, departureDate, departureTime, numberOfCars);
+      const price = await calculatePrice(arrivalDate, arrivalTime, departureDate, departureTime, numberOfCars, vehicleSize);
       setBasePrice(price); // Store base price for discount calculation
       
       // If there's an applied discount, recalculate the discounted price
@@ -141,7 +143,7 @@ export function BookingForm() {
 
     return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [arrivalDate, arrivalTime, departureDate, departureTime, numberOfCars]);
+  }, [arrivalDate, arrivalTime, departureDate, departureTime, numberOfCars, vehicleSize]);
 
   // Auto-populate VAT number when VAT is checked and tax number exists
   useEffect(() => {
@@ -260,6 +262,7 @@ export function BookingForm() {
         basePrice, // Store base price before discount
         numberOfCars,
         needsInvoice,
+        vehicleSize,
         discountCode: appliedDiscount ? discountCode : null,
         discountApplied: appliedDiscount,
         language, // Add the current language to the booking
@@ -326,6 +329,37 @@ export function BookingForm() {
                   ]}
                   icon={<Car className="h-4 w-4" />}
                 />
+              </div>
+
+              {/* Vehicle Size Selection */}
+              <div className="space-y-3">
+                <Label className="text-base font-semibold text-gray-900">{t("vehicleSizeLabel")}</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setVehicleSize('standard')}
+                    className={`flex flex-col items-start p-4 rounded-lg border-2 transition-all text-left ${
+                      vehicleSize === 'standard'
+                        ? 'border-blue-600 bg-blue-50'
+                        : 'border-gray-200 bg-white hover:border-gray-300'
+                    }`}
+                  >
+                    <span className="font-semibold text-gray-900">{t("vehicleSizeStandard")}</span>
+                    <span className="text-sm text-gray-500 mt-1">{t("vehicleSizeStandardHelper")}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setVehicleSize('oversized')}
+                    className={`flex flex-col items-start p-4 rounded-lg border-2 transition-all text-left ${
+                      vehicleSize === 'oversized'
+                        ? 'border-blue-600 bg-blue-50'
+                        : 'border-gray-200 bg-white hover:border-gray-300'
+                    }`}
+                  >
+                    <span className="font-semibold text-gray-900">{t("vehicleSizeOversized")}</span>
+                    <span className="text-sm text-gray-500 mt-1">{t("vehicleSizeOversizedHelper")}</span>
+                  </button>
+                </div>
               </div>
 
               {/* Divider */}

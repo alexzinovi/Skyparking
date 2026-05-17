@@ -118,6 +118,7 @@ interface Booking {
     editor: string;
     changes: string;
   }>;
+  vehicleSize?: 'standard' | 'oversized';
 }
 
 type TabType = "new" | "confirmed" | "arriving" | "leaving" | "exits" | "summary" | "revenue" | "all" | "calendar";
@@ -603,6 +604,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
   
   // Additional filters for "all" tab
   const [keysFilter, setKeysFilter] = useState<string>("all"); // "all", "with-keys", "without-keys"
+  const [sizeFilter, setSizeFilter] = useState<string>("all"); // "all", "oversized"
   const [invoiceFilter, setInvoiceFilter] = useState<string>("all"); // "all", "with-invoice", "without-invoice"
   const [arrivalDateFilter, setArrivalDateFilter] = useState<string>(""); // Date string for filtering by arrival date
   const [departureDateFilter, setDepartureDateFilter] = useState<string>(""); // Date string for filtering by departure date
@@ -654,6 +656,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
     keyNumber: "",
     includeInCapacity: true,
     needsInvoice: false,
+    vehicleSize: 'standard' as 'standard' | 'oversized',
     notes: "",
     // Invoice fields
     companyName: "",
@@ -886,7 +889,8 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
           bookingForm.arrivalTime,
           bookingForm.departureDate,
           bookingForm.departureTime,
-          bookingForm.numberOfCars
+          bookingForm.numberOfCars,
+          bookingForm.vehicleSize
         );
         setCalculatedPrice(price);
         // Always update the price field when dates change
@@ -894,7 +898,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
       }
     };
     updatePrice();
-  }, [bookingForm.arrivalDate, bookingForm.arrivalTime, bookingForm.departureDate, bookingForm.departureTime, bookingForm.numberOfCars]);
+  }, [bookingForm.arrivalDate, bookingForm.arrivalTime, bookingForm.departureDate, bookingForm.departureTime, bookingForm.numberOfCars, bookingForm.vehicleSize]);
 
   // Add action to undo stack
   const addToUndoStack = (booking: Booking, action: string, description: string) => {
@@ -1105,7 +1109,12 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
     } else if (keysFilter === "without-keys") {
       filtered = filtered.filter(b => !b.carKeys);
     }
-    
+
+    // Apply vehicle size filter
+    if (sizeFilter === "oversized") {
+      filtered = filtered.filter(b => b.vehicleSize === 'oversized');
+    }
+
     // Apply invoice filter
     if (invoiceFilter === "with-invoice") {
       filtered = filtered.filter(b => b.needsInvoice === true);
@@ -1129,12 +1138,12 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
       const bTime = new Date(`${b.arrivalDate}T${b.arrivalTime}`).getTime();
       return bTime - aTime; // Newest first
     });
-  }, [bookings, searchQuery, statusFilter, keysFilter, invoiceFilter, arrivalDateFilter, departureDateFilter]);
+  }, [bookings, searchQuery, statusFilter, keysFilter, sizeFilter, invoiceFilter, arrivalDateFilter, departureDateFilter]);
 
   // Reset pagination when filters change
   useEffect(() => {
     setAllTabPage(1);
-  }, [searchQuery, statusFilter, keysFilter, invoiceFilter, arrivalDateFilter, departureDateFilter]);
+  }, [searchQuery, statusFilter, keysFilter, sizeFilter, invoiceFilter, arrivalDateFilter, departureDateFilter]);
 
   // Render action buttons for operator
   const renderOperatorActions = (booking: Booking) => {
@@ -1188,6 +1197,15 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
       badges.push(<Badge key="late" className="bg-orange-600 text-base py-1 px-3">⏰ Закъсняла</Badge>);
     }
     
+    // Oversized vehicle badge
+    if (booking.vehicleSize === 'oversized') {
+      badges.push(
+        <Badge key="oversized" className="bg-amber-100 text-amber-800 text-base py-1 px-3">
+          🚐 Извънгабаритен
+        </Badge>
+      );
+    }
+
     // Car keys badge
     if (booking.carKeys) {
       badges.push(
@@ -1629,6 +1647,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
       keyNumber: booking.keyNumber || "",
       includeInCapacity: booking.includeInCapacity !== false,
       needsInvoice: booking.needsInvoice || false,
+      vehicleSize: booking.vehicleSize || 'standard',
       notes: "",
       // Invoice fields
       companyName: booking.companyName || "",
@@ -2974,6 +2993,21 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                     </select>
                   </div>
                   
+                  {/* Vehicle Size Filter */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      🚐 Размер на МПС
+                    </label>
+                    <select
+                      value={sizeFilter}
+                      onChange={(e) => setSizeFilter(e.target.value)}
+                      className="w-full px-4 py-2 text-base border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 bg-white"
+                    >
+                      <option value="all">Всички</option>
+                      <option value="oversized">🚐 Извънгабаритни</option>
+                    </select>
+                  </div>
+
                   {/* Invoice Filter */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -3054,12 +3088,13 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                       </span>
                     )}
                   </div>
-                  {(statusFilter !== "all" || keysFilter !== "all" || invoiceFilter !== "all" || arrivalDateFilter || departureDateFilter) && (
+                  {(statusFilter !== "all" || keysFilter !== "all" || sizeFilter !== "all" || invoiceFilter !== "all" || arrivalDateFilter || departureDateFilter) && (
                     <Button
                       variant="outline"
                       onClick={() => {
                         setStatusFilter("all");
                         setKeysFilter("all");
+                        setSizeFilter("all");
                         setInvoiceFilter("all");
                         setArrivalDateFilter("");
                         setDepartureDateFilter("");
@@ -3075,7 +3110,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                 {allBookings.length === 0 ? (
                   <Card className="p-16 text-center text-gray-500 text-xl">
                     {searchQuery ? `Няма резултати за "${searchQuery}"` :
-                     (statusFilter !== "all" || keysFilter !== "all" || invoiceFilter !== "all" || arrivalDateFilter) ?
+                     (statusFilter !== "all" || keysFilter !== "all" || sizeFilter !== "all" || invoiceFilter !== "all" || arrivalDateFilter) ?
                      "Няма резервации, които отговарят на избраните филтри" :
                      "Няма резервации"}
                   </Card>
@@ -3820,6 +3855,37 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                   placeholder="2"
                   className="h-14 text-base"
                 />
+              </div>
+            </div>
+
+            {/* Vehicle Size */}
+            <div className="space-y-3">
+              <Label className="text-base font-semibold">🚐 Размер на превозното средство</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setBookingForm({...bookingForm, vehicleSize: 'standard'})}
+                  className={`flex flex-col items-start p-3 rounded-lg border-2 transition-all text-left ${
+                    bookingForm.vehicleSize === 'standard'
+                      ? 'border-blue-600 bg-blue-50'
+                      : 'border-gray-200 bg-white hover:border-gray-300'
+                  }`}
+                >
+                  <span className="font-semibold text-sm text-gray-900">Стандартен</span>
+                  <span className="text-xs text-gray-500 mt-0.5">Обикновен автомобил, SUV</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBookingForm({...bookingForm, vehicleSize: 'oversized'})}
+                  className={`flex flex-col items-start p-3 rounded-lg border-2 transition-all text-left ${
+                    bookingForm.vehicleSize === 'oversized'
+                      ? 'border-amber-500 bg-amber-50'
+                      : 'border-gray-200 bg-white hover:border-gray-300'
+                  }`}
+                >
+                  <span className="font-semibold text-sm text-gray-900">Извънгабаритен +50%</span>
+                  <span className="text-xs text-gray-500 mt-0.5">Кемпер, микробус, голям ван</span>
+                </button>
               </div>
             </div>
 

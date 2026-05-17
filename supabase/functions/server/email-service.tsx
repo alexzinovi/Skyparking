@@ -26,6 +26,7 @@ interface BookingEmailData {
     discountType: 'percentage' | 'fixed';
     discountValue: number;
   };
+  vehicleSize?: 'standard' | 'oversized';
 }
 
 // Format date from YYYY-MM-DD to DD/MM/YYYY
@@ -68,17 +69,36 @@ function generateConfirmationEmailHTML_BG(data: BookingEmailData): string {
        </tr>` : ''}`
     : '';
 
-  const discountText = data.discountApplied && data.basePrice 
+  const discountText = data.discountApplied && data.basePrice
     ? `<div style="text-align: center; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #e5e7eb;">
          <div style="font-size: 13px; color: #059669; font-weight: 600;">
-           🎫 Отстъпка (${data.discountCode}): ${data.discountApplied.discountType === 'percentage' 
-             ? `${data.discountApplied.discountValue}%` 
+           🎫 Отстъпка (${data.discountCode}): ${data.discountApplied.discountType === 'percentage'
+             ? `${data.discountApplied.discountValue}%`
              : `€${data.discountApplied.discountValue}`}
          </div>
          <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">
            Първоначална цена: €${data.basePrice.toFixed(2)}
          </div>
        </div>`
+    : '';
+
+  const vehicleSizeText = data.vehicleSize === 'oversized'
+    ? `<tr>
+         <td style="padding: 14px 0; border-bottom: 1px solid #eeeeee;">
+           <span style="color: #6b7280; font-size: 14px;">🚐 Размер на МПС</span>
+         </td>
+         <td style="padding: 14px 0; text-align: right; border-bottom: 1px solid #eeeeee;">
+           <span style="color: #1f2937; font-size: 14px; font-weight: 500;">Извънгабаритен</span>
+         </td>
+       </tr>
+       <tr>
+         <td style="padding: 14px 0;">
+           <span style="color: #6b7280; font-size: 14px;">Добавка за извънгабаритно МПС</span>
+         </td>
+         <td style="padding: 14px 0; text-align: right;">
+           <span style="color: #d97706; font-size: 14px; font-weight: 600;">+50%</span>
+         </td>
+       </tr>`
     : '';
 
   return `
@@ -210,10 +230,11 @@ function generateConfirmationEmailHTML_BG(data: BookingEmailData): string {
             </tr>
             ${carKeysText}
             ${invoiceText}
+            ${vehicleSizeText}
           </table>
-          
+
           ${discountText}
-          
+
           <!-- Payment Note -->
           <div style="margin-top: 16px; text-align: center;">
             <span style="font-size: 13px; color: #9ca3af; font-style: italic;">Плащане на място</span>
@@ -349,17 +370,36 @@ function generateConfirmationEmailHTML_EN(data: BookingEmailData): string {
        </tr>` : ''}`
     : '';
 
-  const discountText = data.discountApplied && data.basePrice 
+  const discountText = data.discountApplied && data.basePrice
     ? `<div style="text-align: center; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #e5e7eb;">
          <div style="font-size: 13px; color: #059669; font-weight: 600;">
-           🎫 Discount (${data.discountCode}): ${data.discountApplied.discountType === 'percentage' 
-             ? `${data.discountApplied.discountValue}%` 
+           🎫 Discount (${data.discountCode}): ${data.discountApplied.discountType === 'percentage'
+             ? `${data.discountApplied.discountValue}%`
              : `€${data.discountApplied.discountValue}`}
          </div>
          <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">
            Original price: €${data.basePrice.toFixed(2)}
          </div>
        </div>`
+    : '';
+
+  const vehicleSizeText = data.vehicleSize === 'oversized'
+    ? `<tr>
+         <td style="padding: 14px 0; border-bottom: 1px solid #eeeeee;">
+           <span style="color: #6b7280; font-size: 14px;">🚐 Vehicle Size</span>
+         </td>
+         <td style="padding: 14px 0; text-align: right; border-bottom: 1px solid #eeeeee;">
+           <span style="color: #1f2937; font-size: 14px; font-weight: 500;">Oversized</span>
+         </td>
+       </tr>
+       <tr>
+         <td style="padding: 14px 0;">
+           <span style="color: #6b7280; font-size: 14px;">Oversized vehicle surcharge</span>
+         </td>
+         <td style="padding: 14px 0; text-align: right;">
+           <span style="color: #d97706; font-size: 14px; font-weight: 600;">+50%</span>
+         </td>
+       </tr>`
     : '';
 
   return `
@@ -491,10 +531,11 @@ function generateConfirmationEmailHTML_EN(data: BookingEmailData): string {
             </tr>
             ${carKeysText}
             ${invoiceText}
+            ${vehicleSizeText}
           </table>
-          
+
           ${discountText}
-          
+
           <!-- Payment Note -->
           <div style="margin-top: 16px; text-align: center;">
             <span style="font-size: 13px; color: #9ca3af; font-style: italic;">Payment on arrival</span>
@@ -631,6 +672,9 @@ function generateConfirmationEmailHTML_MULTILINGUAL(data: BookingEmailData): str
     autoEmail: string;
     originalPrice: string;
     discount: string;
+    vehicleSizeLabel: string;
+    oversizedLabel: string;
+    oversizedSurcharge: string;
   }> = {
     el: {
       subject: `Η κράτησή σας στο SkyParking ${data.bookingId}`,
@@ -661,6 +705,9 @@ function generateConfirmationEmailHTML_MULTILINGUAL(data: BookingEmailData): str
       autoEmail: 'Αυτό είναι αυτόματα δημιουργημένο email. Παρακαλούμε μην απαντάτε σε αυτό.',
       originalPrice: 'Αρχική τιμή',
       discount: 'Έκπτωση',
+      vehicleSizeLabel: 'Μέγεθος οχήματος',
+      oversizedLabel: 'Υπερμέγεθες',
+      oversizedSurcharge: 'Επιπλέον χρέωση για υπερμέγεθες όχημα',
     },
     tr: {
       subject: `SkyParking Rezervasyonunuz ${data.bookingId}`,
@@ -691,6 +738,9 @@ function generateConfirmationEmailHTML_MULTILINGUAL(data: BookingEmailData): str
       autoEmail: 'Bu otomatik olarak oluşturulmuş bir e-postadır. Lütfen yanıtlamayın.',
       originalPrice: 'Orijinal fiyat',
       discount: 'İndirim',
+      vehicleSizeLabel: 'Araç Boyutu',
+      oversizedLabel: 'Büyük Boyut',
+      oversizedSurcharge: 'Büyük araç ek ücreti',
     },
     sr: {
       subject: `Vaša SkyParking rezervacija ${data.bookingId}`,
@@ -721,6 +771,9 @@ function generateConfirmationEmailHTML_MULTILINGUAL(data: BookingEmailData): str
       autoEmail: 'Ovo je automatski generisani email. Molimo ne odgovarajte na njega.',
       originalPrice: 'Originalna cena',
       discount: 'Popust',
+      vehicleSizeLabel: 'Veličina vozila',
+      oversizedLabel: 'Velikogabaritno',
+      oversizedSurcharge: 'Doplata za velikogabaritno vozilo',
     },
     mk: {
       subject: `Вашата SkyParking резервација ${data.bookingId}`,
@@ -751,6 +804,9 @@ function generateConfirmationEmailHTML_MULTILINGUAL(data: BookingEmailData): str
       autoEmail: 'Ова е автоматски генериран имејл. Ве молиме не одговарајте на него.',
       originalPrice: 'Оригинална цена',
       discount: 'Попуст',
+      vehicleSizeLabel: 'Големина на возилото',
+      oversizedLabel: 'Вонгабаритно',
+      oversizedSurcharge: 'Доплата за вонгабаритно возило',
     },
     ro: {
       subject: `Rezervarea dvs. SkyParking ${data.bookingId}`,
@@ -781,6 +837,9 @@ function generateConfirmationEmailHTML_MULTILINGUAL(data: BookingEmailData): str
       autoEmail: 'Acesta este un email generat automat. Vă rugăm să nu răspundeți la el.',
       originalPrice: 'Preț original',
       discount: 'Reducere',
+      vehicleSizeLabel: 'Dimensiunea vehiculului',
+      oversizedLabel: 'Supradimensionat',
+      oversizedSurcharge: 'Suprataxă vehicul supradimensionat',
     },
     uk: {
       subject: `Ваше бронювання SkyParking ${data.bookingId}`,
@@ -811,6 +870,9 @@ function generateConfirmationEmailHTML_MULTILINGUAL(data: BookingEmailData): str
       autoEmail: 'Це автоматично згенерований лист. Будь ласка, не відповідайте на нього.',
       originalPrice: 'Оригінальна ціна',
       discount: 'Знижка',
+      vehicleSizeLabel: 'Розмір транспортного засобу',
+      oversizedLabel: 'Негабаритний',
+      oversizedSurcharge: 'Доплата за негабаритний транспортний засіб',
     },
   };
 
@@ -849,6 +911,25 @@ function generateConfirmationEmailHTML_MULTILINGUAL(data: BookingEmailData): str
            ${s.originalPrice}: €${data.basePrice.toFixed(2)}
          </div>
        </div>`
+    : '';
+
+  const vehicleSizeText = data.vehicleSize === 'oversized'
+    ? `<tr>
+         <td style="padding: 14px 0; border-bottom: 1px solid #eeeeee;">
+           <span style="color: #6b7280; font-size: 14px;">🚐 ${s.vehicleSizeLabel}</span>
+         </td>
+         <td style="padding: 14px 0; text-align: right; border-bottom: 1px solid #eeeeee;">
+           <span style="color: #1f2937; font-size: 14px; font-weight: 500;">${s.oversizedLabel}</span>
+         </td>
+       </tr>
+       <tr>
+         <td style="padding: 14px 0;">
+           <span style="color: #6b7280; font-size: 14px;">${s.oversizedSurcharge}</span>
+         </td>
+         <td style="padding: 14px 0; text-align: right;">
+           <span style="color: #d97706; font-size: 14px; font-weight: 600;">+50%</span>
+         </td>
+       </tr>`
     : '';
 
   return `
@@ -924,6 +1005,7 @@ function generateConfirmationEmailHTML_MULTILINGUAL(data: BookingEmailData): str
             </tr>
             ${carKeysText}
             ${invoiceText}
+            ${vehicleSizeText}
           </table>
           ${discountText}
           <div style="margin-top: 16px; text-align: center;">
@@ -1128,6 +1210,7 @@ function generateViberMessageHTML(data: BookingEmailData): string {
     transfers: string;
     questions: string;
     location: string;
+    oversizedVehicle: string;
   }> = {
     bg: {
       heading: '📱 Viber съобщение за клиента',
@@ -1142,6 +1225,7 @@ function generateViberMessageHTML(data: BookingEmailData): string {
       transfers: 'с включени 2 трансфера',
       questions: 'Ако имате въпроси или желаете да коригирате резервацията, моля свържете се с нас тук или на',
       location: 'Нашата локация',
+      oversizedVehicle: '🚐 Извънгабаритно превозно средство',
     },
     en: {
       heading: '📱 Viber message for the customer',
@@ -1156,6 +1240,7 @@ function generateViberMessageHTML(data: BookingEmailData): string {
       transfers: 'incl. 2 free transfers',
       questions: 'If you have any questions or would like to modify your reservation, please contact us here or at',
       location: 'Our location',
+      oversizedVehicle: '🚐 Oversized vehicle',
     },
     el: {
       heading: '📱 Μήνυμα Viber για τον πελάτη',
@@ -1170,6 +1255,7 @@ function generateViberMessageHTML(data: BookingEmailData): string {
       transfers: 'συμπεριλαμβάνονται 2 δωρεάν μεταφορές',
       questions: 'Αν έχετε ερωτήσεις ή θέλετε να τροποποιήσετε την κράτησή σας, επικοινωνήστε μαζί μας εδώ ή στο',
       location: 'Η τοποθεσία μας',
+      oversizedVehicle: '🚐 Υπερμέγεθες όχημα',
     },
     tr: {
       heading: '📱 Müşteri için Viber mesajı',
@@ -1184,6 +1270,7 @@ function generateViberMessageHTML(data: BookingEmailData): string {
       transfers: '2 ücretsiz servis dahil',
       questions: 'Sorularınız veya rezervasyon değişikliği için buradaki numaradan veya şu numaradan bize ulaşabilirsiniz:',
       location: 'Konumumuz',
+      oversizedVehicle: '🚐 Büyük boyutlu araç',
     },
     sr: {
       heading: '📱 Viber poruka za klijenta',
@@ -1198,6 +1285,7 @@ function generateViberMessageHTML(data: BookingEmailData): string {
       transfers: 'uključena 2 besplatna transfera',
       questions: 'Ako imate pitanja ili želite da izmenite rezervaciju, kontaktirajte nas ovde ili na',
       location: 'Naša lokacija',
+      oversizedVehicle: '🚐 Velikogabaritno vozilo',
     },
     mk: {
       heading: '📱 Viber порака за клиентот',
@@ -1212,6 +1300,7 @@ function generateViberMessageHTML(data: BookingEmailData): string {
       transfers: 'вклучени 2 бесплатни трансфери',
       questions: 'Ако имате прашања или сакате да ја измените резервацијата, контактирајте нè овде или на',
       location: 'Нашата локација',
+      oversizedVehicle: '🚐 Вонгабаритно возило',
     },
     ro: {
       heading: '📱 Mesaj Viber pentru client',
@@ -1226,6 +1315,7 @@ function generateViberMessageHTML(data: BookingEmailData): string {
       transfers: 'incl. 2 transferuri gratuite',
       questions: 'Dacă aveți întrebări sau doriți să modificați rezervarea, contactați-ne aici sau la',
       location: 'Locația noastră',
+      oversizedVehicle: '🚐 Vehicul supradimensionat',
     },
     uk: {
       heading: '📱 Viber повідомлення для клієнта',
@@ -1240,6 +1330,7 @@ function generateViberMessageHTML(data: BookingEmailData): string {
       transfers: 'включено 2 безкоштовні трансфери',
       questions: 'Якщо у вас є запитання або ви хочете змінити бронювання, зв\'яжіться з нами тут або за номером',
       location: 'Наше розташування',
+      oversizedVehicle: '🚐 Негабаритний транспортний засіб',
     },
   };
 
@@ -1270,6 +1361,9 @@ function generateViberMessageHTML(data: BookingEmailData): string {
         <p style="margin: 0 0 4px 0; font-size: 15px; color: #1a1a1a;">
           🚗 <strong>${carLabel ? s.cars : s.car}:</strong> ${data.licensePlate}
         </p>
+        ${data.vehicleSize === 'oversized' ? `<p style="margin: 0 0 4px 0; font-size: 15px; color: #1a1a1a;">
+          ${s.oversizedVehicle}
+        </p>` : ''}
         <p style="margin: 0 0 16px 0; font-size: 15px; color: #1a1a1a;">
           💶 <strong>${s.price}:</strong> €${data.totalPrice} (${s.transfers})
         </p>

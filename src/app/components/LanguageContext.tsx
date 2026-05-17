@@ -371,6 +371,15 @@ const translations = {
     // Booking Page
     bookingPageTitle: "Резервация - SkyParking Летище София",
     bookingPageDesc: "Резервирайте вашето място в SkyParking. Без предплащане - плащате при пристигане. Безплатен трансфер до летището.",
+
+    // Vehicle Size
+    vehicleSizeLabel: "Размер на превозното средство",
+    vehicleSizeStandard: "Стандартен",
+    vehicleSizeStandardHelper: "Обикновен автомобил, SUV или ван",
+    vehicleSizeOversized: "Извънгабаритен +50%",
+    vehicleSizeOversizedHelper: "Кемпер, микробус или голям ван",
+    vehicleSizeOversizedBadge: "Извънгабаритен",
+    vehicleSizeSurcharge: "Добавка за извънгабаритно превозно средство",
   },
   en: {
     // Hero Section
@@ -734,6 +743,15 @@ const translations = {
     // Booking Page
     bookingPageTitle: "Reservation - SkyParking Sofia Airport",
     bookingPageDesc: "Reserve your spot at SkyParking. No prepayment - pay on arrival. Free transfer to the airport.",
+
+    // Vehicle Size
+    vehicleSizeLabel: "Vehicle Size",
+    vehicleSizeStandard: "Standard",
+    vehicleSizeStandardHelper: "Regular car, SUV or van",
+    vehicleSizeOversized: "Oversized +50%",
+    vehicleSizeOversizedHelper: "Camper, minibus or large van",
+    vehicleSizeOversizedBadge: "Oversized",
+    vehicleSizeSurcharge: "Oversized vehicle surcharge",
   },
   el: {
     // Hero Section
@@ -1097,6 +1115,15 @@ const translations = {
     // Booking Page
     bookingPageTitle: "Κράτηση - SkyParking Αεροδρόμιο Σόφιας",
     bookingPageDesc: "Κλείστε τη θέση σας στο SkyParking. Χωρίς προκαταβολή - πληρώνετε κατά την άφιξη. Δωρεάν μεταφορά στο αεροδρόμιο.",
+
+    // Vehicle Size
+    vehicleSizeLabel: "Μέγεθος οχήματος",
+    vehicleSizeStandard: "Κανονικό",
+    vehicleSizeStandardHelper: "Κανονικό αυτοκίνητο, SUV ή βαν",
+    vehicleSizeOversized: "Υπερμέγεθες +50%",
+    vehicleSizeOversizedHelper: "Τροχόσπιτο, μίνι-λεωφορείο ή μεγάλη βαν",
+    vehicleSizeOversizedBadge: "Υπερμέγεθες",
+    vehicleSizeSurcharge: "Επιπλέον χρέωση για υπερμέγεθες όχημα",
   },
   tr: {
     // Hero Section
@@ -1460,6 +1487,15 @@ const translations = {
     // Booking Page
     bookingPageTitle: "Rezervasyon - SkyParking Sofya Havalimanı",
     bookingPageDesc: "SkyParking'de yerinizi rezerve edin. Ön ödeme yok - varışta ödeyin. Havalimanına ücretsiz transfer.",
+
+    // Vehicle Size
+    vehicleSizeLabel: "Araç Boyutu",
+    vehicleSizeStandard: "Standart",
+    vehicleSizeStandardHelper: "Normal araba, SUV veya van",
+    vehicleSizeOversized: "Büyük Boyut +%50",
+    vehicleSizeOversizedHelper: "Karavan, minibüs veya büyük van",
+    vehicleSizeOversizedBadge: "Büyük Boyut",
+    vehicleSizeSurcharge: "Büyük araç ek ücreti",
   },
   sr: {
     // Hero Section
@@ -1823,6 +1859,15 @@ const translations = {
     // Booking Page
     bookingPageTitle: "Rezervacija - SkyParking Aerodrom Sofija",
     bookingPageDesc: "Rezervišite vaše mesto u SkyParking. Bez avansa - plaćate pri dolasku. Besplatan transfer do aerodroma.",
+
+    // Vehicle Size
+    vehicleSizeLabel: "Veličina vozila",
+    vehicleSizeStandard: "Standardno",
+    vehicleSizeStandardHelper: "Običan automobil, SUV ili kombi",
+    vehicleSizeOversized: "Velikogabaritno +50%",
+    vehicleSizeOversizedHelper: "Kamper, minibus ili veliki kombi",
+    vehicleSizeOversizedBadge: "Velikogabaritno",
+    vehicleSizeSurcharge: "Doplata za velikogabaritno vozilo",
   },
   mk: {
     // Hero Section
@@ -2186,6 +2231,15 @@ const translations = {
     // Booking Page
     bookingPageTitle: "Резервација - SkyParking Аеродром Софија",
     bookingPageDesc: "Резервирајте го вашето место во SkyParking. Без аванс - плаќате при пристигање. Бесплатен трансфер до аеродромот.",
+
+    // Vehicle Size
+    vehicleSizeLabel: "Големина на возилото",
+    vehicleSizeStandard: "Стандардно",
+    vehicleSizeStandardHelper: "Обичен автомобил, SUV или комби",
+    vehicleSizeOversized: "Вонгабаритно +50%",
+    vehicleSizeOversizedHelper: "Камп-приколка, минибус или голем комби",
+    vehicleSizeOversizedBadge: "Вонгабаритно",
+    vehicleSizeSurcharge: "Доплата за вонгабаритно возило",
   },
   ro: {
     // Hero Section
@@ -2549,6 +2603,15 @@ const translations = {
     // Booking Page
     bookingPageTitle: "Rezervare - SkyParking Aeroportul Sofia",
     bookingPageDesc: "Rezervați-vă locul la SkyParking. Fără plată în avans - plătiți la sosire. Transfer gratuit la aeroport.",
+
+    // Vehicle Size
+    vehicleSizeLabel: "Dimensiunea vehiculului",
+    vehicleSizeStandard: "Standard",
+    vehicleSizeStandardHelper: "Mașină obișnuită, SUV sau dubă",
+    vehicleSizeOversized: "Supradimensionat +50%",
+    vehicleSizeOversizedHelper: "Rulotă, microbuz sau dubă mare",
+    vehicleSizeOversizedBadge: "Supradimensionat",
+    vehicleSizeSurcharge: "Suprataxă vehicul supradimensionat",
   },
   uk: {
     // Hero Section
@@ -2912,6 +2975,15 @@ const translations = {
     // Booking Page
     bookingPageTitle: "Бронювання - SkyParking Аеропорт Софія",
     bookingPageDesc: "Заброньте місце в SkyParking. Без передоплати — оплата при прибутті. Безкоштовний трансфер до аеропорту.",
+
+    // Vehicle Size
+    vehicleSizeLabel: "Розмір транспортного засобу",
+    vehicleSizeStandard: "Стандартний",
+    vehicleSizeStandardHelper: "Звичайний автомобіль, позашляховик або мінівен",
+    vehicleSizeOversized: "Негабаритний +50%",
+    vehicleSizeOversizedHelper: "Кемпер, мікроавтобус або великий мінівен",
+    vehicleSizeOversizedBadge: "Негабаритний",
+    vehicleSizeSurcharge: "Доплата за негабаритний транспортний засіб",
   },
 };
 
