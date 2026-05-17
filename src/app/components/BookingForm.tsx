@@ -478,7 +478,14 @@ export function BookingForm() {
                         {language === 'bg' ? 'Продължителност' : 'Duration'}
                       </p>
                       <p className="text-4xl font-bold text-gray-800">
-                        {Math.ceil((new Date(`${departureDate}T${departureTime}`).getTime() - new Date(`${arrivalDate}T${arrivalTime}`).getTime()) / (1000 * 60 * 60 * 24))} {t("days")}
+                        {(() => {
+                          const arr = new Date(`${arrivalDate}T${arrivalTime}`);
+                          const dep = new Date(`${departureDate}T${departureTime}`);
+                          const midnightsCrossed = Math.floor((new Date(departureDate).getTime() - new Date(arrivalDate).getTime()) / (1000 * 60 * 60 * 24));
+                          const depMinutes = dep.getHours() * 60 + dep.getMinutes();
+                          if (midnightsCrossed === 0) return 1;
+                          return Math.max(1, depMinutes > 180 ? midnightsCrossed + 1 : midnightsCrossed);
+                        })()} {t("days")}
                       </p>
                     </div>
                   </div>
