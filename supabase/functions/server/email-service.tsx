@@ -1381,12 +1381,16 @@ function generateViberMessageHTML(data: BookingEmailData): string {
 }
 
 function generateAdminNotificationEmailHTML(data: BookingEmailData): string {
-  const carKeysText = data.carKeys 
+  const carKeysText = data.carKeys
     ? `<p style=\"margin: 10px 0; font-size: 16px; color: #7c3aed;\"><strong>🔑 С предаване на ключове</strong></p>`
     : '';
 
-  const invoiceText = data.needsInvoice 
+  const invoiceText = data.needsInvoice
     ? `<p style=\"margin: 10px 0; font-size: 16px;\"><strong>📄 Фактура за:</strong> ${data.companyName || 'фирма'}</p>`
+    : '';
+
+  const vehicleSizeText = data.vehicleSize === 'oversized'
+    ? `<p style=\"margin: 10px 0; font-size: 16px; color: #d97706;\"><strong>🚐 Извънгабаритно МПС</strong> (+50%)</p>`
     : '';
 
   const discountText = data.discountApplied && data.basePrice
@@ -1458,6 +1462,7 @@ function generateAdminNotificationEmailHTML(data: BookingEmailData): string {
         <p style="margin: 10px 0; font-size: 16px;"><strong>Рег. номер:</strong> ${data.licensePlate}</p>
         <p style="margin: 10px 0; font-size: 16px;"><strong>Брой коли:</strong> ${data.numberOfCars}</p>
         <p style="margin: 10px 0; font-size: 16px;"><strong>Пътници:</strong> ${data.passengers}</p>
+        ${vehicleSizeText}
         ${carKeysText}
         ${invoiceText}
       </div>

@@ -56,6 +56,7 @@ export interface ReservationData {
   carKeysNotes?: string;
   keyNumber?: string;
   includeInCapacity?: boolean;
+  vehicleSize?: 'standard' | 'oversized';
   needsInvoice?: boolean;
   invoiceUrl?: string;
   companyName?: string;
@@ -155,6 +156,13 @@ export function ReservationCard({
         <div className="flex flex-wrap items-center gap-2 justify-end">
           {getStatusBadge()}
           
+          {/* Oversized Vehicle Badge */}
+          {reservation.vehicleSize === 'oversized' && (
+            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300 text-xs py-0.5 px-2 flex-shrink-0">
+              🚐 Извънгабаритен
+            </Badge>
+          )}
+
           {/* Car Keys Badge */}
           {reservation.carKeys && (
             <Badge 

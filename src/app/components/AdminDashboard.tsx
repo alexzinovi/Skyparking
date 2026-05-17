@@ -388,6 +388,7 @@ interface Booking {
   }>;
   createdBy?: string; // Employee name or "Клиент (онлайн)" for who created the booking
   acceptedBy?: string; // Employee name for who confirmed/accepted the booking
+  vehicleSize?: 'standard' | 'oversized';
 }
 
 interface CapacityDay {
@@ -695,7 +696,8 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
           formData.arrivalTime,
           formData.departureDate,
           formData.departureTime,
-          numberOfCars
+          numberOfCars,
+          formData.vehicleSize
         );
         if (price !== null && price !== formData.totalPrice) {
           setFormData(prev => ({ ...prev, totalPrice: price }));
@@ -703,7 +705,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
       }
     }
     updatePrice();
-  }, [formData.arrivalDate, formData.arrivalTime, formData.departureDate, formData.departureTime, formData.numberOfCars]);
+  }, [formData.arrivalDate, formData.arrivalTime, formData.departureDate, formData.departureTime, formData.numberOfCars, formData.vehicleSize]);
 
   // Filter bookings by tab and search
   useEffect(() => {
@@ -2684,6 +2686,37 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                   placeholder="2"
                   className="h-14 text-base"
                 />
+              </div>
+            </div>
+
+            {/* Vehicle Size */}
+            <div className="mb-5 space-y-3">
+              <Label className="text-base font-semibold">🚐 Размер на превозното средство</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, vehicleSize: 'standard' })}
+                  className={`flex flex-col items-start p-3 rounded-lg border-2 transition-all text-left ${
+                    (!formData.vehicleSize || formData.vehicleSize === 'standard')
+                      ? 'border-blue-600 bg-blue-50'
+                      : 'border-gray-200 bg-white hover:border-gray-300'
+                  }`}
+                >
+                  <span className="font-semibold text-sm text-gray-900">Стандартен</span>
+                  <span className="text-xs text-gray-500 mt-0.5">Обикновен автомобил, SUV</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, vehicleSize: 'oversized' })}
+                  className={`flex flex-col items-start p-3 rounded-lg border-2 transition-all text-left ${
+                    formData.vehicleSize === 'oversized'
+                      ? 'border-amber-500 bg-amber-50'
+                      : 'border-gray-200 bg-white hover:border-gray-300'
+                  }`}
+                >
+                  <span className="font-semibold text-sm text-gray-900">Извънгабаритен +50%</span>
+                  <span className="text-xs text-gray-500 mt-0.5">Кемпер, микробус, голям ван</span>
+                </button>
               </div>
             </div>
 
