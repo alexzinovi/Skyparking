@@ -653,7 +653,7 @@ app.post("/make-server-47a4914e/bookings", async (c) => {
         });
         
         if (adminEmailResult.success) {
-          console.log(`✅ Admin notification email sent successfully to reservations@skyparking.bg`);
+          console.log(`✅ Admin notification email sent successfully to info@skyparking.bg`);
         } else {
           console.error(`❌ Failed to send admin notification email: ${adminEmailResult.error}`);
         }

@@ -309,8 +309,8 @@ function generateConfirmationEmailHTML_BG(data: BookingEmailData): string {
             📧 Имейл
           </div>
           <div>
-            <a href="mailto:reservations@skyparking.bg" style="color: #053790; font-size: 15px; font-weight: 600; text-decoration: none;">
-              reservations@skyparking.bg
+            <a href="mailto:info@skyparking.bg" style="color: #053790; font-size: 15px; font-weight: 600; text-decoration: none;">
+              info@skyparking.bg
             </a>
           </div>
         </div>
@@ -325,7 +325,7 @@ function generateConfirmationEmailHTML_BG(data: BookingEmailData): string {
       <div style="font-size: 13px; color: #6b7280; margin-bottom: 4px;">
         <a href="tel:+359886616991" style="color: #6b7280; text-decoration: none;">+359 886 616 991</a>
         <span style="margin: 0 6px; color: #d1d5db;">•</span>
-        <a href="mailto:reservations@skyparking.bg" style="color: #6b7280; text-decoration: none;">reservations@skyparking.bg</a>
+        <a href="mailto:info@skyparking.bg" style="color: #6b7280; text-decoration: none;">info@skyparking.bg</a>
       </div>
       <div style="font-size: 12px; color: #9ca3af; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb;">
         Това е автоматично генериран имейл. Моля, не отговаряйте на него.
@@ -610,8 +610,8 @@ function generateConfirmationEmailHTML_EN(data: BookingEmailData): string {
             📧 Email
           </div>
           <div>
-            <a href="mailto:reservations@skyparking.bg" style="color: #053790; font-size: 15px; font-weight: 600; text-decoration: none;">
-              reservations@skyparking.bg
+            <a href="mailto:info@skyparking.bg" style="color: #053790; font-size: 15px; font-weight: 600; text-decoration: none;">
+              info@skyparking.bg
             </a>
           </div>
         </div>
@@ -626,7 +626,7 @@ function generateConfirmationEmailHTML_EN(data: BookingEmailData): string {
       <div style="font-size: 13px; color: #6b7280; margin-bottom: 4px;">
         <a href="tel:+359886616991" style="color: #6b7280; text-decoration: none;">+359 886 616 991</a>
         <span style="margin: 0 6px; color: #d1d5db;">•</span>
-        <a href="mailto:reservations@skyparking.bg" style="color: #6b7280; text-decoration: none;">reservations@skyparking.bg</a>
+        <a href="mailto:info@skyparking.bg" style="color: #6b7280; text-decoration: none;">info@skyparking.bg</a>
       </div>
       <div style="font-size: 12px; color: #9ca3af; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb;">
         This is an automatically generated email. Please do not reply to it.
@@ -1058,7 +1058,7 @@ function generateConfirmationEmailHTML_MULTILINGUAL(data: BookingEmailData): str
         </div>
         <div>
           <div style="color: #6b7280; font-size: 12px; font-weight: 500; margin-bottom: 4px;">📧 ${s.emailLabel}</div>
-          <div><a href="mailto:reservations@skyparking.bg" style="color: #053790; font-size: 15px; font-weight: 600; text-decoration: none;">reservations@skyparking.bg</a></div>
+          <div><a href="mailto:info@skyparking.bg" style="color: #053790; font-size: 15px; font-weight: 600; text-decoration: none;">info@skyparking.bg</a></div>
         </div>
       </div>
     </div>
@@ -1067,7 +1067,7 @@ function generateConfirmationEmailHTML_MULTILINGUAL(data: BookingEmailData): str
       <div style="font-size: 13px; color: #6b7280; margin-bottom: 4px;">
         <a href="tel:+359886616991" style="color: #6b7280; text-decoration: none;">+359 886 616 991</a>
         <span style="margin: 0 6px; color: #d1d5db;">•</span>
-        <a href="mailto:reservations@skyparking.bg" style="color: #6b7280; text-decoration: none;">reservations@skyparking.bg</a>
+        <a href="mailto:info@skyparking.bg" style="color: #6b7280; text-decoration: none;">info@skyparking.bg</a>
       </div>
       <div style="font-size: 12px; color: #9ca3af; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb;">${s.autoEmail}</div>
     </div>
@@ -1087,8 +1087,8 @@ export async function sendConfirmationEmail(data: BookingEmailData): Promise<{ s
       return { success: false, error: 'Email service not configured' };
     }
 
-    // Use reservations@skyparking.bg as the FROM email
-    const fromEmail = 'SkyParking <reservations@skyparking.bg>';
+    // Use info@skyparking.bg as the FROM email
+    const fromEmail = 'SkyParking <info@skyparking.bg>';
 
     // Determine language (default to Bulgarian)
     const language = data.language || 'bg';
@@ -1135,7 +1135,7 @@ export async function sendConfirmationEmail(data: BookingEmailData): Promise<{ s
 Благодарим Ви, че избрахте SkyParking!
 
 За въпроси: ${data.phone}
-Email: reservations@skyparking.bg
+Email: info@skyparking.bg
 Уеб: https://www.skyparking.bg
     `.trim();
 
@@ -1157,19 +1157,19 @@ Payment on arrival.
 Thank you for choosing SkyParking!
 
 For questions: ${data.phone}
-Email: reservations@skyparking.bg
+Email: info@skyparking.bg
 Web: https://www.skyparking.bg
     `.trim();
 
     const plainTextByLang: Record<string, string> = {
       bg: textBG,
       en: textEN,
-      el: `Γεια σας ${data.name},\n\nΗ κράτησή σας στο πάρκινγκ κοντά στο αεροδρόμιο Σόφιας επιβεβαιώθηκε.\n\nΑριθμός κράτησης: ${data.bookingId}\nΆφιξη: ${formatDateDisplay(data.arrivalDate)} στις ${data.arrivalTime}\nΑναχώρηση: ${formatDateDisplay(data.departureDate)} στις ${data.departureTime}\nΠινακίδα: ${data.licensePlate}\nΤιμή: €${data.totalPrice}\n\nΠληρωμή κατά την άφιξη.\n\nΕυχαριστούμε που επιλέξατε το SkyParking!\nEmail: reservations@skyparking.bg`,
-      tr: `Merhaba ${data.name},\n\nSofya Havalimanı yakınındaki otopark rezervasyonunuz onaylandı.\n\nRezervason No: ${data.bookingId}\nGiriş: ${formatDateDisplay(data.arrivalDate)} saat ${data.arrivalTime}\nÇıkış: ${formatDateDisplay(data.departureDate)} saat ${data.departureTime}\nPlaka: ${data.licensePlate}\nÜcret: €${data.totalPrice}\n\nGelişte ödeme.\n\nSkyParking'i seçtiğiniz için teşekkür ederiz!\nEmail: reservations@skyparking.bg`,
-      sr: `Zdravo ${data.name},\n\nVaša rezervacija parkinga kod Aerodroma Sofija je potvrđena.\n\nBroj rezervacije: ${data.bookingId}\nDolazak: ${formatDateDisplay(data.arrivalDate)} u ${data.arrivalTime}\nOdlazak: ${formatDateDisplay(data.departureDate)} u ${data.departureTime}\nRegistarski broj: ${data.licensePlate}\nCena: €${data.totalPrice}\n\nPlaćanje po dolasku.\n\nHvala što ste izabrali SkyParking!\nEmail: reservations@skyparking.bg`,
-      mk: `Здраво ${data.name},\n\nВашата резервација за паркинг кај Аеродромот во Софија е потврдена.\n\nБрој на резервација: ${data.bookingId}\nПристигнување: ${formatDateDisplay(data.arrivalDate)} во ${data.arrivalTime}\nЗаминување: ${formatDateDisplay(data.departureDate)} во ${data.departureTime}\nРегистарски број: ${data.licensePlate}\nЦена: €${data.totalPrice}\n\nПлаќање при пристигнување.\n\nБлагодариме што го избравте SkyParking!\nEmail: reservations@skyparking.bg`,
-      ro: `Bună ziua ${data.name},\n\nRezervarea dvs. la parcarea de lângă Aeroportul Sofia a fost confirmată.\n\nNumăr rezervare: ${data.bookingId}\nSosire: ${formatDateDisplay(data.arrivalDate)} la ${data.arrivalTime}\nPlecare: ${formatDateDisplay(data.departureDate)} la ${data.departureTime}\nNr. înmatriculare: ${data.licensePlate}\nPreț: €${data.totalPrice}\n\nPlată la sosire.\n\nVă mulțumim că ați ales SkyParking!\nEmail: reservations@skyparking.bg`,
-      uk: `Доброго дня ${data.name},\n\nВаше бронювання паркінгу біля аеропорту Софії підтверджено.\n\nНомер бронювання: ${data.bookingId}\nПрибуття: ${formatDateDisplay(data.arrivalDate)} о ${data.arrivalTime}\nВід'їзд: ${formatDateDisplay(data.departureDate)} о ${data.departureTime}\nНомерний знак: ${data.licensePlate}\nЦіна: €${data.totalPrice}\n\nОплата при прибутті.\n\nДякуємо, що обрали SkyParking!\nEmail: reservations@skyparking.bg`,
+      el: `Γεια σας ${data.name},\n\nΗ κράτησή σας στο πάρκινγκ κοντά στο αεροδρόμιο Σόφιας επιβεβαιώθηκε.\n\nΑριθμός κράτησης: ${data.bookingId}\nΆφιξη: ${formatDateDisplay(data.arrivalDate)} στις ${data.arrivalTime}\nΑναχώρηση: ${formatDateDisplay(data.departureDate)} στις ${data.departureTime}\nΠινακίδα: ${data.licensePlate}\nΤιμή: €${data.totalPrice}\n\nΠληρωμή κατά την άφιξη.\n\nΕυχαριστούμε που επιλέξατε το SkyParking!\nEmail: info@skyparking.bg`,
+      tr: `Merhaba ${data.name},\n\nSofya Havalimanı yakınındaki otopark rezervasyonunuz onaylandı.\n\nRezervason No: ${data.bookingId}\nGiriş: ${formatDateDisplay(data.arrivalDate)} saat ${data.arrivalTime}\nÇıkış: ${formatDateDisplay(data.departureDate)} saat ${data.departureTime}\nPlaka: ${data.licensePlate}\nÜcret: €${data.totalPrice}\n\nGelişte ödeme.\n\nSkyParking'i seçtiğiniz için teşekkür ederiz!\nEmail: info@skyparking.bg`,
+      sr: `Zdravo ${data.name},\n\nVaša rezervacija parkinga kod Aerodroma Sofija je potvrđena.\n\nBroj rezervacije: ${data.bookingId}\nDolazak: ${formatDateDisplay(data.arrivalDate)} u ${data.arrivalTime}\nOdlazak: ${formatDateDisplay(data.departureDate)} u ${data.departureTime}\nRegistarski broj: ${data.licensePlate}\nCena: €${data.totalPrice}\n\nPlaćanje po dolasku.\n\nHvala što ste izabrali SkyParking!\nEmail: info@skyparking.bg`,
+      mk: `Здраво ${data.name},\n\nВашата резервација за паркинг кај Аеродромот во Софија е потврдена.\n\nБрој на резервација: ${data.bookingId}\nПристигнување: ${formatDateDisplay(data.arrivalDate)} во ${data.arrivalTime}\nЗаминување: ${formatDateDisplay(data.departureDate)} во ${data.departureTime}\nРегистарски број: ${data.licensePlate}\nЦена: €${data.totalPrice}\n\nПлаќање при пристигнување.\n\nБлагодариме што го избравте SkyParking!\nEmail: info@skyparking.bg`,
+      ro: `Bună ziua ${data.name},\n\nRezervarea dvs. la parcarea de lângă Aeroportul Sofia a fost confirmată.\n\nNumăr rezervare: ${data.bookingId}\nSosire: ${formatDateDisplay(data.arrivalDate)} la ${data.arrivalTime}\nPlecare: ${formatDateDisplay(data.departureDate)} la ${data.departureTime}\nNr. înmatriculare: ${data.licensePlate}\nPreț: €${data.totalPrice}\n\nPlată la sosire.\n\nVă mulțumim că ați ales SkyParking!\nEmail: info@skyparking.bg`,
+      uk: `Доброго дня ${data.name},\n\nВаше бронювання паркінгу біля аеропорту Софії підтверджено.\n\nНомер бронювання: ${data.bookingId}\nПрибуття: ${formatDateDisplay(data.arrivalDate)} о ${data.arrivalTime}\nВід'їзд: ${formatDateDisplay(data.departureDate)} о ${data.departureTime}\nНомерний знак: ${data.licensePlate}\nЦіна: €${data.totalPrice}\n\nОплата при прибутті.\n\nДякуємо, що обрали SkyParking!\nEmail: info@skyparking.bg`,
     };
     const plainText = plainTextByLang[language] ?? textEN;
 
@@ -1182,11 +1182,11 @@ Web: https://www.skyparking.bg
       html: emailHTML,
       text: plainText,
       // Add reply-to header for better deliverability
-      reply_to: 'reservations@skyparking.bg',
+      reply_to: 'info@skyparking.bg',
       // Add headers to improve deliverability
       headers: {
         'X-Entity-Ref-ID': data.bookingId,
-        'List-Unsubscribe': '<mailto:reservations@skyparking.bg?subject=unsubscribe>',
+        'List-Unsubscribe': '<mailto:info@skyparking.bg?subject=unsubscribe>',
       }
     });
 
@@ -1511,8 +1511,8 @@ export async function sendAdminNotificationEmail(data: BookingEmailData): Promis
       return { success: false, error: 'Email service not configured' };
     }
 
-    const fromEmail = 'SkyParking <reservations@skyparking.bg>';
-    const adminEmail = 'reservations@skyparking.bg';
+    const fromEmail = 'SkyParking <info@skyparking.bg>';
+    const adminEmail = 'info@skyparking.bg';
     
     const emailHTML = generateAdminNotificationEmailHTML(data);
 
@@ -1582,8 +1582,8 @@ export async function sendContactInquiryEmail(data: ContactInquiryData): Promise
       return { success: false, error: 'Email service not configured' };
     }
 
-    const fromEmail = 'SkyParking <reservations@skyparking.bg>';
-    const toEmail = 'reservations@skyparking.bg';
+    const fromEmail = 'SkyParking <info@skyparking.bg>';
+    const toEmail = 'info@skyparking.bg';
     
     const emailHTML = `
 <!DOCTYPE html>

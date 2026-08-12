@@ -229,7 +229,7 @@ export function SettingsManager() {
                   Известия за нови резервации
                 </Label>
                 <p className="text-sm text-gray-600 mt-1">
-                  Изпрати имейл до reservations@skyparking.bg при всяка нова резервация
+                  Изпрати имейл до info@skyparking.bg при всяка нова резервация
                 </p>
                 <p className="text-xs text-gray-500 mt-2">
                   💡 Изключи това при тестване, за да не изчерпваш лимита си за имейли

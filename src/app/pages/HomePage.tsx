@@ -133,7 +133,7 @@ export function HomePage() {
       "image": "https://skyparking.bg/og-image.jpg",
       "url": "https://skyparking.bg/",
       "telephone": "+359886616991",
-      "email": "reservations@skyparking.bg",
+      "email": "info@skyparking.bg",
       "address": {
         "@type": "PostalAddress",
         "streetAddress": "Ulitsa Nedelcho Bonchev 30",
@@ -227,7 +227,7 @@ export function HomePage() {
             <span className="hidden sm:inline">•</span>
             <span>📞 <a href="tel:+359886616991" className="hover:underline">+359 886 616 991</a></span>
             <span className="hidden sm:inline">•</span>
-            <span>✉️ <a href="mailto:reservations@skyparking.bg" className="hover:underline">reservations@skyparking.bg</a></span>
+            <span>✉️ <a href="mailto:info@skyparking.bg" className="hover:underline">info@skyparking.bg</a></span>
           </div>
           
           {/* Social Media and Messaging Buttons */}
