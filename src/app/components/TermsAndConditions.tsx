@@ -75,7 +75,7 @@ export function TermsAndConditions() {
                   "А-Парк 98" ЕООД е дружество, регистрирано в Република България, със седалище и адрес на управление: БЪЛГАРИЯ, гр. София (1330), р-н Красна поляна, жк. Разсадника, блок 28, вход А, етаж 1, апартамент 1, вписано в Търговския регистър с ЕИК 208627398.
                 </p>
                 <p className="text-justify">
-                  Данни за кореспонденция: БЪЛГАРИЯ, гр. София (1330), р-н Красна поляна, жк. Разсадника, блок 28, вход А, етаж 1, апартамент 1 и електронна поща: info@skyparking.bg
+                  Данни за кореспонденция: БЪЛГАРИЯ, гр. София (1330), р-н Красна поляна, жк. Разсадника, блок 28, вход А, етаж 1, апартамент 1 и електронна поща: reservations@skyparking.bg
                 </p>
               </section>
 
@@ -359,7 +359,7 @@ export function TermsAndConditions() {
                   "A-Park 98" Ltd. is a company registered in the Republic of Bulgaria, with headquarters and management address: BULGARIA, Sofia (1330), Krasna Polyana district, Razsadnika residential complex, Block 28, Entrance A, Floor 1, Apartment 1, registered in the Commercial Register with UIC 208627398.
                 </p>
                 <p className="text-justify">
-                  Correspondence details: BULGARIA, Sofia (1330), Krasna Polyana district, Razsadnika residential complex, Block 28, Entrance A, Floor 1, Apartment 1 and email: info@skyparking.bg
+                  Correspondence details: BULGARIA, Sofia (1330), Krasna Polyana district, Razsadnika residential complex, Block 28, Entrance A, Floor 1, Apartment 1 and email: reservations@skyparking.bg
                 </p>
               </section>
 

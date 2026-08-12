@@ -120,8 +120,8 @@ export function ContactPage() {
                   </div>
                   <div className="ml-4">
                     <h3 className="font-semibold text-lg mb-1">{t('contactEmailLabel')}</h3>
-                    <a href="mailto:info@skyparking.bg" className="text-blue-600 hover:underline">
-                      info@skyparking.bg
+                    <a href="mailto:reservations@skyparking.bg" className="text-blue-600 hover:underline">
+                      reservations@skyparking.bg
                     </a>
                     <p className="text-sm text-gray-600 mt-1">
                       {t('contactResponds2h')}

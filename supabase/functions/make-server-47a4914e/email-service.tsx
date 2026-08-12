@@ -309,8 +309,8 @@ function generateConfirmationEmailHTML_BG(data: BookingEmailData): string {
             📧 Имейл
           </div>
           <div>
-            <a href="mailto:info@skyparking.bg" style="color: #053790; font-size: 15px; font-weight: 600; text-decoration: none;">
-              info@skyparking.bg
+            <a href="mailto:reservations@skyparking.bg" style="color: #053790; font-size: 15px; font-weight: 600; text-decoration: none;">
+              reservations@skyparking.bg
             </a>
           </div>
         </div>
@@ -325,7 +325,7 @@ function generateConfirmationEmailHTML_BG(data: BookingEmailData): string {
       <div style="font-size: 13px; color: #6b7280; margin-bottom: 4px;">
         <a href="tel:+359886616991" style="color: #6b7280; text-decoration: none;">+359 886 616 991</a>
         <span style="margin: 0 6px; color: #d1d5db;">•</span>
-        <a href="mailto:info@skyparking.bg" style="color: #6b7280; text-decoration: none;">info@skyparking.bg</a>
+        <a href="mailto:reservations@skyparking.bg" style="color: #6b7280; text-decoration: none;">reservations@skyparking.bg</a>
       </div>
       <div style="font-size: 12px; color: #9ca3af; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb;">
         Това е автоматично генериран имейл. Моля, не отговаряйте на него.
@@ -610,8 +610,8 @@ function generateConfirmationEmailHTML_EN(data: BookingEmailData): string {
             📧 Email
           </div>
           <div>
-            <a href="mailto:info@skyparking.bg" style="color: #053790; font-size: 15px; font-weight: 600; text-decoration: none;">
-              info@skyparking.bg
+            <a href="mailto:reservations@skyparking.bg" style="color: #053790; font-size: 15px; font-weight: 600; text-decoration: none;">
+              reservations@skyparking.bg
             </a>
           </div>
         </div>
@@ -626,7 +626,7 @@ function generateConfirmationEmailHTML_EN(data: BookingEmailData): string {
       <div style="font-size: 13px; color: #6b7280; margin-bottom: 4px;">
         <a href="tel:+359886616991" style="color: #6b7280; text-decoration: none;">+359 886 616 991</a>
         <span style="margin: 0 6px; color: #d1d5db;">•</span>
-        <a href="mailto:info@skyparking.bg" style="color: #6b7280; text-decoration: none;">info@skyparking.bg</a>
+        <a href="mailto:reservations@skyparking.bg" style="color: #6b7280; text-decoration: none;">reservations@skyparking.bg</a>
       </div>
       <div style="font-size: 12px; color: #9ca3af; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb;">
         This is an automatically generated email. Please do not reply to it.
@@ -1058,7 +1058,7 @@ function generateConfirmationEmailHTML_MULTILINGUAL(data: BookingEmailData): str
         </div>
         <div>
           <div style="color: #6b7280; font-size: 12px; font-weight: 500; margin-bottom: 4px;">📧 ${s.emailLabel}</div>
-          <div><a href="mailto:info@skyparking.bg" style="color: #053790; font-size: 15px; font-weight: 600; text-decoration: none;">info@skyparking.bg</a></div>
+          <div><a href="mailto:reservations@skyparking.bg" style="color: #053790; font-size: 15px; font-weight: 600; text-decoration: none;">reservations@skyparking.bg</a></div>
         </div>
       </div>
     </div>
@@ -1067,7 +1067,7 @@ function generateConfirmationEmailHTML_MULTILINGUAL(data: BookingEmailData): str
       <div style="font-size: 13px; color: #6b7280; margin-bottom: 4px;">
         <a href="tel:+359886616991" style="color: #6b7280; text-decoration: none;">+359 886 616 991</a>
         <span style="margin: 0 6px; color: #d1d5db;">•</span>
-        <a href="mailto:info@skyparking.bg" style="color: #6b7280; text-decoration: none;">info@skyparking.bg</a>
+        <a href="mailto:reservations@skyparking.bg" style="color: #6b7280; text-decoration: none;">reservations@skyparking.bg</a>
       </div>
       <div style="font-size: 12px; color: #9ca3af; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb;">${s.autoEmail}</div>
     </div>
@@ -1583,7 +1583,7 @@ export async function sendContactInquiryEmail(data: ContactInquiryData): Promise
     }
 
     const fromEmail = 'SkyParking <reservations@skyparking.bg>';
-    const toEmail = 'info@skyparking.bg';
+    const toEmail = 'reservations@skyparking.bg';
     
     const emailHTML = `
 <!DOCTYPE html>
