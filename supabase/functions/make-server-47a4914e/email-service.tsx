@@ -1512,7 +1512,7 @@ export async function sendAdminNotificationEmail(data: BookingEmailData): Promis
     }
 
     const fromEmail = 'SkyParking <info@skyparking.bg>';
-    const adminEmail = 'info@skyparking.bg';
+    const adminEmail = 'reservations@skyparking.bg';
     
     const emailHTML = generateAdminNotificationEmailHTML(data);
 
