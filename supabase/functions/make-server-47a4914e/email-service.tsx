@@ -1511,7 +1511,7 @@ export async function sendAdminNotificationEmail(data: BookingEmailData): Promis
       return { success: false, error: 'Email service not configured' };
     }
 
-    const fromEmail = 'SkyParking <info@skyparking.bg>';
+    const fromEmail = 'SkyParking <reservations@skyparking.bg>';
     const adminEmail = 'reservations@skyparking.bg';
     
     const emailHTML = generateAdminNotificationEmailHTML(data);
