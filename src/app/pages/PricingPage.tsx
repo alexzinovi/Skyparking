@@ -41,9 +41,6 @@ export function PricingPage() {
                   <div className="text-4xl font-bold mb-1" style={{ color: '#f1c933' }}>
                     25€
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    (48.89 {t('pricingCurrencyBGN')})
-                  </div>
                   <div className="text-xs font-semibold mt-2" style={{ color: '#073590' }}>
                     {t('pricingWeekendPerDay')}
                   </div>
@@ -72,9 +69,6 @@ export function PricingPage() {
                   <div className="text-5xl font-bold mb-1" style={{ color: '#f1c933' }}>
                     38€
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    (74.32 {t('pricingCurrencyBGN')})
-                  </div>
                   <div className="text-xs font-semibold mt-2" style={{ color: '#073590' }}>
                     {t('pricingWeeklyPerDay')}
                   </div>
@@ -97,9 +91,6 @@ export function PricingPage() {
                 <div className="mb-4">
                   <div className="text-4xl font-bold mb-1" style={{ color: '#f1c933' }}>
                     87€*
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    (170.15 {t('pricingCurrencyBGN')})
                   </div>
                   <div className="text-xs font-semibold mt-2" style={{ color: '#073590' }}>
                     {t('pricingMonthlyPerDay')}

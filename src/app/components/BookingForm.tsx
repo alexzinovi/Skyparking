@@ -13,7 +13,6 @@ import { ErrorBoundary } from "./ErrorBoundary";
 import { DatePicker } from "./DatePicker";
 import { TimePicker } from "./TimePicker";
 import { NumberPicker } from "./NumberPicker";
-import { eurToBgn } from "../utils/currency";
 
 const projectId = "dbybybmjjeeocoecaewv";
 const publicAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRieWJ5Ym1qamVlb2NvZWNhZXd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODgxMzAsImV4cCI6MjA4MjA2NDEzMH0.fMZ3Yi5gZpE6kBBz-y1x0FKZcGczxSJZ9jL-Zeau340";
@@ -457,12 +456,6 @@ export function BookingForm() {
                             <span className="text-xl text-gray-500">(€{(totalPrice / numberOfCars).toFixed(2)} {t("perCar")})</span>
                           )}
                         </div>
-                        <div className="text-2xl font-semibold text-gray-700">
-                          {eurToBgn(totalPrice).toFixed(2)} лв
-                          {numberOfCars > 1 && (
-                            <span className="text-lg text-gray-500 ml-2">({eurToBgn(totalPrice / numberOfCars).toFixed(2)} лв {t("perCar")})</span>
-                          )}
-                        </div>
                       </div>
                       <p className="text-sm text-gray-600 mt-3">
                         {language === 'bg' ? 'Крайна цена за престоя с включени трансфери' : 'Final price for the stay with transfers included'}
@@ -785,7 +778,7 @@ export function BookingForm() {
                           </p>
                           {basePrice && totalPrice && basePrice !== totalPrice && (
                             <p className="text-xs text-green-700 mt-1">
-                              {language === 'bg' ? 'Спестени' : 'Saved'}: <span className="font-bold">€{(basePrice - totalPrice).toFixed(2)} ({eurToBgn(basePrice - totalPrice).toFixed(2)} лв)</span>
+                              {language === 'bg' ? 'Спестени' : 'Saved'}: <span className="font-bold">€{(basePrice - totalPrice).toFixed(2)}</span>
                             </p>
                           )}
                         </div>
