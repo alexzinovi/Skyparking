@@ -3332,43 +3332,25 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                   </div>
                 </Card>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-2 gap-4">
                   {/* Cash */}
-                  <Card className="p-8">
-                    <div className="flex items-center gap-4 mb-6">
-                      <Banknote className="w-10 h-10 text-green-600" />
-                      <h3 className="font-semibold text-2xl">В брой</h3>
+                  <Card className="p-6">
+                    <div className="flex items-center gap-3 mb-3">
+                      <Banknote className="w-7 h-7 text-green-600" />
+                      <h3 className="font-semibold text-xl">В брой</h3>
                     </div>
-                    <p className="text-5xl font-bold">€{revenueStats.cash.toFixed(2)}</p>
-                    {revenueStats.collectedBookings.filter(b => b.paymentMethod === "cash").length > 0 && (
-                      <div className="mt-4 pt-4 border-t border-gray-100 space-y-1">
-                        {revenueStats.collectedBookings.filter(b => b.paymentMethod === "cash").map(b => (
-                          <div key={b.id} className="flex justify-between text-sm text-gray-600">
-                            <span className="truncate mr-2">{b.name}{(b.type as any) === 'late_only' ? ' (закъснение)' : ''}</span>
-                            <span className="font-medium text-gray-800 whitespace-nowrap">€{b.amount.toFixed(2)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    <p className="text-4xl font-bold">€{revenueStats.cash.toFixed(2)}</p>
+                    <p className="text-sm text-gray-500 mt-1">{revenueStats.collectedBookings.filter(b => b.paymentMethod === "cash").length} плащания</p>
                   </Card>
 
                   {/* Card */}
-                  <Card className="p-8">
-                    <div className="flex items-center gap-4 mb-6">
-                      <CreditCard className="w-10 h-10 text-blue-600" />
-                      <h3 className="font-semibold text-2xl">С карта</h3>
+                  <Card className="p-6">
+                    <div className="flex items-center gap-3 mb-3">
+                      <CreditCard className="w-7 h-7 text-blue-600" />
+                      <h3 className="font-semibold text-xl">С карта</h3>
                     </div>
-                    <p className="text-5xl font-bold">€{revenueStats.card.toFixed(2)}</p>
-                    {revenueStats.collectedBookings.filter(b => b.paymentMethod === "card").length > 0 && (
-                      <div className="mt-4 pt-4 border-t border-gray-100 space-y-1">
-                        {revenueStats.collectedBookings.filter(b => b.paymentMethod === "card").map(b => (
-                          <div key={b.id} className="flex justify-between text-sm text-gray-600">
-                            <span className="truncate mr-2">{b.name}{(b.type as any) === 'late_only' ? ' (закъснение)' : ''}</span>
-                            <span className="font-medium text-gray-800 whitespace-nowrap">€{b.amount.toFixed(2)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    <p className="text-4xl font-bold">€{revenueStats.card.toFixed(2)}</p>
+                    <p className="text-sm text-gray-500 mt-1">{revenueStats.collectedBookings.filter(b => b.paymentMethod === "card").length} плащания</p>
                   </Card>
                 </div>
                 </>
