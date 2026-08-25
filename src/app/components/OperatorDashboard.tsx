@@ -1690,6 +1690,200 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
     setTimeout(() => win.print(), 400);
   };
 
+  // Print shift financial summary
+  const printShiftSummary = () => {
+    const shiftLabel = shiftRange.shift === "day" ? "Дневна смяна" : "Нощна смяна";
+    const dateStr = `${String(shiftRange.start.getDate()).padStart(2,'0')}/${String(shiftRange.start.getMonth()+1).padStart(2,'0')}/${shiftRange.start.getFullYear()}`;
+    const shiftTime = `${String(shiftRange.start.getHours()).padStart(2,'0')}:00 – ${String(shiftRange.end.getHours()).padStart(2,'0')}:00`;
+    const printedAt = new Date().toLocaleTimeString('bg-BG', { hour: '2-digit', minute: '2-digit' });
+
+    const stats = revenueStats;
+
+    // Transaction rows
+    const txRows = stats.collectedBookings.length > 0
+      ? stats.collectedBookings.map(b => `
+        <tr>
+          <td>${b.name}</td>
+          <td class="center">${b.paymentMethod === 'cash' ? 'В брой' : 'С карта'}</td>
+          <td class="right">${(b.type as any) === 'late_only' ? '⏰ закъснение' : b.isLate && b.lateFee > 0 ? `базова + €${b.lateFee.toFixed(2)} закъснение` : 'базова'}</td>
+          <td class="right bold">€${b.amount.toFixed(2)}</td>
+        </tr>`).join('')
+      : `<tr><td colspan="4" class="center" style="color:#888;padding:16px">Няма събрани приходи за тази смяна</td></tr>`;
+
+    // Pending rows
+    const pendingRows = stats.pendingBookings.length > 0
+      ? stats.pendingBookings.map(b => `
+        <tr style="background:#fff7ed">
+          <td>${b.name}</td>
+          <td class="center" colspan="2" style="color:#b45309">Плаща при тръгване (неплатено)</td>
+          <td class="right bold" style="color:#b45309">€${b.amount.toFixed(2)}</td>
+        </tr>`).join('')
+      : '';
+
+    // Expenses rows — 8 blank handwrite lines
+    const expenseRows = Array.from({ length: 8 }, (_, i) => `
+      <tr class="expense-row">
+        <td colspan="3" style="border-bottom:1px solid #ccc">&nbsp;</td>
+        <td class="right" style="border-bottom:1px solid #ccc">&nbsp;</td>
+      </tr>`).join('');
+
+    const html = `<!DOCTYPE html>
+<html lang="bg">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=960">
+<title>Финансов отчет – ${dateStr} ${shiftLabel}</title>
+<style>
+  @page { margin: 12mm; size: A4 portrait; }
+  * { box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; font-size: 13px; color: #000; margin: 0; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; border-bottom: 3px solid #073590; padding-bottom: 8px; }
+  .header-left h1 { font-size: 20px; margin: 0 0 2px 0; color: #073590; }
+  .header-left p { margin: 0; font-size: 12px; color: #555; }
+  .header-right { text-align: right; font-size: 12px; color: #555; }
+  .header-right .shift-badge { font-size: 15px; font-weight: bold; color: #073590; }
+
+  .summary-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .summary-box { border: 2px solid #ddd; border-radius: 6px; padding: 8px 12px; }
+  .summary-box.green { border-color: #16a34a; background: #f0fdf4; }
+  .summary-box.cash  { border-color: #15803d; background: #f0fdf4; }
+  .summary-box.card  { border-color: #1d4ed8; background: #eff6ff; }
+  .summary-box label { font-size: 11px; color: #555; display: block; margin-bottom: 2px; }
+  .summary-box .amount { font-size: 22px; font-weight: 900; }
+  .summary-box.green .amount { color: #15803d; }
+  .summary-box.cash  .amount { color: #15803d; }
+  .summary-box.card  .amount { color: #1d4ed8; }
+  .summary-box .sub { font-size: 11px; color: #666; }
+
+  section { margin-bottom: 14px; }
+  h2 { font-size: 13px; font-weight: bold; margin: 0 0 6px 0; padding: 4px 8px; border-radius: 4px; }
+  h2.collected { background: #dcfce7; color: #166534; }
+  h2.expenses  { background: #fef3c7; color: #92400e; }
+  h2.net       { background: #dbeafe; color: #1e3a8a; }
+
+  table { width: 100%; border-collapse: collapse; }
+  th { background: #073590; color: #fff; padding: 6px 8px; font-size: 12px; text-align: left; }
+  td { padding: 6px 8px; font-size: 12px; border-bottom: 1px solid #e5e7eb; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  .center { text-align: center; }
+  .right   { text-align: right; }
+  .bold    { font-weight: bold; }
+  .expense-row td { height: 28px; }
+
+  .net-row { display: flex; justify-content: space-between; align-items: center; border: 2px solid #1d4ed8; border-radius: 6px; padding: 10px 14px; }
+  .net-row .label { font-size: 14px; font-weight: bold; color: #1e3a8a; }
+  .net-row .value { font-size: 26px; font-weight: 900; color: #1e3a8a; }
+
+  .signature-row { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 20px; }
+  .signature-box { border-top: 1px solid #333; padding-top: 4px; font-size: 11px; color: #555; }
+
+  @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>SkyParking – Финансов отчет</h1>
+    <p>${shiftLabel} &nbsp;|&nbsp; ${dateStr} &nbsp;|&nbsp; ${shiftTime}</p>
+  </div>
+  <div class="header-right">
+    <div class="shift-badge">${shiftRange.shift === "day" ? "🌞 Дневна" : "🌙 Нощна"}</div>
+    <div>Отпечатано: ${printedAt}</div>
+    <div>Оператор: _______________________</div>
+  </div>
+</div>
+
+<!-- Revenue summary -->
+<div class="summary-grid">
+  <div class="summary-box green">
+    <label>✅ Общо събрани</label>
+    <div class="amount">€${stats.actual.toFixed(2)}</div>
+    <div class="sub">${stats.collectedBookings.length} транзакции</div>
+  </div>
+  <div class="summary-box cash">
+    <label>💵 В брой</label>
+    <div class="amount">€${stats.cash.toFixed(2)}</div>
+    <div class="sub">${stats.collectedBookings.filter((b: any) => b.paymentMethod === 'cash').length} плащания</div>
+  </div>
+  <div class="summary-box card">
+    <label>💳 С карта</label>
+    <div class="amount">€${stats.card.toFixed(2)}</div>
+    <div class="sub">${stats.collectedBookings.filter((b: any) => b.paymentMethod === 'card').length} плащания</div>
+  </div>
+</div>
+
+<!-- Collected transactions -->
+<section>
+  <h2 class="collected">Събрани приходи</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Клиент</th>
+        <th class="center">Метод</th>
+        <th class="right">Тип</th>
+        <th class="right">Сума</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${txRows}
+      ${pendingRows}
+    </tbody>
+    <tfoot>
+      <tr style="background:#f0fdf4">
+        <td colspan="3" class="right bold">Общо:</td>
+        <td class="right bold">€${stats.actual.toFixed(2)}</td>
+      </tr>
+    </tfoot>
+  </table>
+</section>
+
+<!-- Daily expenses — handwritten -->
+<section>
+  <h2 class="expenses">Разходи за смяната (попълни на ръка)</h2>
+  <table>
+    <thead>
+      <tr>
+        <th colspan="3">Описание</th>
+        <th class="right">Сума (€)</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${expenseRows}
+      <tr style="background:#fef9c3">
+        <td colspan="3" class="right bold">Общо разходи:</td>
+        <td class="right bold">&nbsp;</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- Net result -->
+<section>
+  <h2 class="net">Нетен резултат</h2>
+  <div class="net-row">
+    <div class="label">Приходи − Разходи =</div>
+    <div class="value">€ ___________</div>
+  </div>
+</section>
+
+<!-- Signatures -->
+<div class="signature-row">
+  <div class="signature-box">Предал смяната: _________________________</div>
+  <div class="signature-box">Приел смяната: __________________________</div>
+</div>
+
+</body>
+</html>`;
+
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => win.print(), 400);
+  };
+
   // Confirm late fee and proceed to checkout
   const confirmLateFeeAndCheckout = () => {
     setLateFeeDialog(false);
@@ -3110,15 +3304,25 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
             {/* Revenue */}
             {activeTab === "revenue" && (
               <div className="space-y-4">
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                   <h2 className="text-2xl font-bold">Дневни приходи</h2>
-                  {/* Shift indicator (read-only) */}
-                  <div className="px-4 py-2 bg-gray-100 border-2 border-gray-300 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl">{selectedShift === "day" ? "🌞" : "🌙"}</span>
-                      <div>
-                        <div className="font-bold text-base">{SHIFT_CONFIG[selectedShift].label}</div>
-                        <div className="text-xs text-gray-600">{formatShiftDisplay(shiftRange)}</div>
+                  <div className="flex items-center gap-2">
+                    {/* Print button */}
+                    <Button
+                      onClick={printShiftSummary}
+                      variant="outline"
+                      className="border-[#073590] text-[#073590] font-bold"
+                    >
+                      🖨️ Отчет
+                    </Button>
+                    {/* Shift indicator (read-only) */}
+                    <div className="px-4 py-2 bg-gray-100 border-2 border-gray-300 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl">{selectedShift === "day" ? "🌞" : "🌙"}</span>
+                        <div>
+                          <div className="font-bold text-base">{SHIFT_CONFIG[selectedShift].label}</div>
+                          <div className="text-xs text-gray-600">{formatShiftDisplay(shiftRange)}</div>
+                        </div>
                       </div>
                     </div>
                   </div>
