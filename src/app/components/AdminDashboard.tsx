@@ -394,6 +394,8 @@ interface Booking {
   createdBy?: string; // Employee name or "Клиент (онлайн)" for who created the booking
   acceptedBy?: string; // Employee name for who confirmed/accepted the booking
   vehicleSize?: 'standard' | 'oversized';
+  isLate?: boolean;
+  lateSurcharge?: number;
 }
 
 interface CapacityDay {
@@ -409,7 +411,7 @@ interface CapacityDay {
   wouldFit: boolean;
 }
 
-type TabType = "new" | "confirmed" | "arrived" | "completed" | "cancelled" | "no-show" | "archive" | "all" | "users" | "pricing" | "discounts" | "settings" | "calendar" | "revenue" | "reservations" | "workload";
+type TabType = "new" | "confirmed" | "arrived" | "completed" | "cancelled" | "no-show" | "archive" | "all" | "users" | "pricing" | "discounts" | "settings" | "calendar" | "revenue" | "reservations" | "workload" | "shift-revenue";
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -465,6 +467,49 @@ function formatLicensePlate(input: string): string {
   return input.replace(/\s+/g, '').toUpperCase();
 }
 
+// ============= ADMIN SHIFT REVENUE UTILITIES =============
+
+type AdminShiftType = 'day' | 'night';
+
+const ADMIN_SHIFT_CONFIG = {
+  day: { start: 8, end: 20, label: "Дневна Смяна" },
+  night: { start: 20, end: 8, label: "Нощна Смяна" }
+};
+
+function getAdminShiftRange(shift: AdminShiftType, baseDate: Date): { start: Date; end: Date; shift: AdminShiftType } {
+  if (shift === 'day') {
+    const start = new Date(baseDate);
+    start.setHours(ADMIN_SHIFT_CONFIG.day.start, 0, 0, 0);
+    const end = new Date(baseDate);
+    end.setHours(ADMIN_SHIFT_CONFIG.day.end, 0, 0, 0);
+    return { start, end, shift: 'day' };
+  } else {
+    const start = new Date(baseDate);
+    start.setHours(ADMIN_SHIFT_CONFIG.night.start, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+    end.setHours(ADMIN_SHIFT_CONFIG.night.end, 0, 0, 0);
+    return { start, end, shift: 'night' };
+  }
+}
+
+function isInAdminShift(dateStr: string, timeStr: string, shiftRange: { start: Date; end: Date }): boolean {
+  const datetime = new Date(`${dateStr}T${timeStr}`);
+  return datetime >= shiftRange.start && datetime < shiftRange.end;
+}
+
+function formatAdminShiftDisplay(shiftRange: { start: Date; end: Date; shift: AdminShiftType }): string {
+  const fmt = (d: Date) => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+  const startStr = fmt(shiftRange.start);
+  const endStr = fmt(shiftRange.end);
+  const startTime = `${shiftRange.start.getHours()}:00`;
+  const endTime = `${shiftRange.end.getHours()}:00`;
+  if (startStr === endStr) return `${startStr} ${startTime}–${endTime}`;
+  return `${startStr} ${startTime} – ${endStr} ${endTime}`;
+}
+
+// ============= END ADMIN SHIFT REVENUE UTILITIES =============
+
 export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDashboardProps) {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
@@ -480,6 +525,14 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
   const [activeTab, setActiveTab] = useState<TabType>("new");
   const [workloadExpandedDay, setWorkloadExpandedDay] = useState<string>("");
   const operatorName = currentUser.fullName; // Use logged-in user's name
+
+  // Admin shift revenue state
+  const [adminRevShift, setAdminRevShift] = useState<AdminShiftType>(() => {
+    const h = new Date().getHours();
+    return h >= 8 && h < 20 ? 'day' : 'night';
+  });
+  const [adminRevDate, setAdminRevDate] = useState<Date>(new Date());
+  const [adminRevExpanded, setAdminRevExpanded] = useState(false);
 
   // Capacity warning modal state
   const [capacityWarning, setCapacityWarning] = useState<{
@@ -795,6 +848,74 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
 
     setFilteredBookings(filtered);
   }, [debouncedSearchTerm, bookings, activeTab, departureDateFilter]);
+
+  // ============= ADMIN SHIFT REVENUE MEMOS =============
+
+  const adminShiftRange = useMemo(() => getAdminShiftRange(adminRevShift, adminRevDate), [adminRevShift, adminRevDate]);
+
+  const adminShiftRevenue = useMemo(() => {
+    const isPaidInShift = (paidAt: string | undefined): boolean => {
+      if (!paidAt) return false;
+      const d = new Date(paidAt);
+      const dateOnly = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      const timeOnly = d.toTimeString().slice(0,5);
+      return isInAdminShift(dateOnly, timeOnly, adminShiftRange);
+    };
+
+    const paidBookings = bookings.filter(b =>
+      b.paymentStatus === 'paid' && b.paidAt && isPaidInShift(b.paidAt)
+    );
+    const lateFeeBookings = bookings.filter(b =>
+      b.isLate && (b.lateSurcharge || 0) > 0 && b.status === 'checked-out' &&
+      !isPaidInShift(b.paidAt) && isPaidInShift(b.checkedOutAt)
+    );
+    const pendingBookings = bookings.filter(b =>
+      b.paymentMethod === 'pay-on-leave' && b.paymentStatus === 'pending' &&
+      b.status === 'arrived' && isInAdminShift(b.arrivalDate, b.arrivalTime, adminShiftRange)
+    );
+    const activeLateBookings = bookings.filter(b =>
+      b.isLate && (b.lateSurcharge || 0) > 0 && b.status === 'arrived' &&
+      isInAdminShift(b.arrivalDate, b.arrivalTime, adminShiftRange)
+    );
+    const lostBookings = bookings.filter(b =>
+      (b.status === 'no-show' || b.status === 'cancelled' || b.status === 'declined') &&
+      isInAdminShift(b.arrivalDate, b.arrivalTime, adminShiftRange)
+    );
+
+    const allTransactions = [
+      ...paidBookings.map(b => ({
+        id: b.id, name: b.name,
+        amount: b.finalPrice || b.totalPrice,
+        basePrice: b.totalPrice,
+        lateFee: b.isLate ? (b.lateSurcharge || 0) : 0,
+        paymentMethod: b.paymentMethod || '',
+        type: 'full' as const,
+      })),
+      ...lateFeeBookings.map(b => ({
+        id: b.id + '_lf', name: b.name,
+        amount: b.lateSurcharge || 0,
+        basePrice: 0,
+        lateFee: b.lateSurcharge || 0,
+        paymentMethod: b.paymentMethod || '',
+        type: 'late_only' as const,
+      })),
+    ];
+
+    const totalCollected = allTransactions.reduce((s, t) => s + t.amount, 0);
+    const totalCash = allTransactions.filter(t => t.paymentMethod === 'cash').reduce((s, t) => s + t.amount, 0);
+    const totalCard = allTransactions.filter(t => t.paymentMethod === 'card').reduce((s, t) => s + t.amount, 0);
+    const totalPending = pendingBookings.reduce((s, b) => s + b.totalPrice, 0);
+    const totalActiveLate = activeLateBookings.reduce((s, b) => s + (b.lateSurcharge || 0), 0);
+    const totalLost = lostBookings.reduce((s, b) => s + b.totalPrice, 0);
+
+    return {
+      totalCollected, totalCash, totalCard, totalPending, totalActiveLate, totalLost,
+      transactions: allTransactions,
+      pendingBookings: pendingBookings.map(b => ({ id: b.id, name: b.name, amount: b.totalPrice })),
+      activeLateBookings: activeLateBookings.map(b => ({ id: b.id, name: b.name, lateFee: b.lateSurcharge || 0 })),
+      lostBookings: lostBookings.map(b => ({ id: b.id, name: b.name, amount: b.totalPrice, reason: b.status === 'no-show' ? 'Не се е явил' : 'Отказана' })),
+    };
+  }, [bookings, adminShiftRange]);
 
   // ============= USER MANAGEMENT FUNCTIONS =============
 
@@ -1948,6 +2069,16 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                   {bg.revenueTab}
                 </button>
                 <button
+                  onClick={() => setActiveTab("shift-revenue")}
+                  className={`px-4 sm:px-6 py-3 sm:py-4 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors min-h-[48px] flex items-center ${
+                    activeTab === "shift-revenue"
+                      ? "border-green-600 text-green-700"
+                      : "border-transparent text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  💰 Приходи смяна
+                </button>
+                <button
                   onClick={() => setActiveTab("reservations")}
                   className={`px-4 sm:px-6 py-3 sm:py-4 font-medium text-base sm:text-lg whitespace-nowrap border-b-2 transition-colors min-h-[48px] flex items-center ${
                     activeTab === "reservations"
@@ -2451,6 +2582,190 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
         ) : activeTab === "revenue" ? (
           /* ========== REVENUE TAB ========== */
           <RevenueManagement bookings={bookings} users={users} />
+        ) : activeTab === "shift-revenue" ? (
+          /* ========== SHIFT REVENUE TAB ========== */
+          (() => {
+            const prevShift = () => {
+              const d = new Date(adminRevDate);
+              if (adminRevShift === 'day') {
+                setAdminRevShift('night');
+                d.setDate(d.getDate() - 1);
+                setAdminRevDate(d);
+              } else {
+                setAdminRevShift('day');
+                setAdminRevDate(d);
+              }
+            };
+            const nextShift = () => {
+              const d = new Date(adminRevDate);
+              if (adminRevShift === 'night') {
+                setAdminRevShift('day');
+                d.setDate(d.getDate() + 1);
+                setAdminRevDate(d);
+              } else {
+                setAdminRevShift('night');
+                setAdminRevDate(d);
+              }
+            };
+            const goToNow = () => {
+              setAdminRevDate(new Date());
+              const h = new Date().getHours();
+              setAdminRevShift(h >= 8 && h < 20 ? 'day' : 'night');
+            };
+            const dateInputVal = `${adminRevDate.getFullYear()}-${String(adminRevDate.getMonth()+1).padStart(2,'0')}-${String(adminRevDate.getDate()).padStart(2,'0')}`;
+
+            return (
+              <div className="space-y-4">
+                {/* Header & shift nav */}
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-2xl font-bold flex items-center gap-2">💰 Приходи по смяна</h2>
+                    <Button variant="ghost" className="text-sm text-gray-500" onClick={goToNow}>Текуща смяна</Button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" onClick={prevShift} className="min-h-[44px] min-w-[44px] px-3">‹</Button>
+                    <div className="flex-1 flex items-center gap-2 bg-gray-50 border-2 border-gray-200 rounded-xl px-4 py-2">
+                      <span className="text-2xl">{adminRevShift === 'day' ? '🌞' : '🌙'}</span>
+                      <div>
+                        <div className="font-bold text-base">{adminRevShift === 'day' ? 'Дневна 08:00–20:00' : 'Нощна 20:00–08:00'}</div>
+                        <div className="text-sm text-gray-600">{formatAdminShiftDisplay(adminShiftRange)}</div>
+                      </div>
+                      <div className="ml-auto flex items-center gap-2">
+                        <button onClick={() => setAdminRevShift('day')} className={`px-3 py-1 rounded-lg text-sm font-bold transition-all ${adminRevShift === 'day' ? 'bg-amber-400 text-white' : 'bg-white border border-gray-300 text-gray-600'}`}>🌞</button>
+                        <button onClick={() => setAdminRevShift('night')} className={`px-3 py-1 rounded-lg text-sm font-bold transition-all ${adminRevShift === 'night' ? 'bg-indigo-600 text-white' : 'bg-white border border-gray-300 text-gray-600'}`}>🌙</button>
+                      </div>
+                    </div>
+                    <Button variant="outline" onClick={nextShift} className="min-h-[44px] min-w-[44px] px-3">›</Button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm font-medium text-gray-600 whitespace-nowrap">Избери дата:</label>
+                    <input type="date" value={dateInputVal}
+                      onChange={e => { if (e.target.value) setAdminRevDate(new Date(e.target.value + 'T12:00:00')); }}
+                      className="px-3 py-2 border-2 border-gray-300 rounded-lg text-base focus:border-blue-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Summary */}
+                <Card className="p-4">
+                  {/* Total collected big */}
+                  <div className="text-center mb-4 pb-4 border-b-2 border-gray-100">
+                    <div className="text-sm font-semibold text-gray-500 mb-1">✅ Общо събрани</div>
+                    <div className="text-5xl font-black text-green-700">€{adminShiftRevenue.totalCollected.toFixed(2)}</div>
+                    <div className="text-sm text-gray-500 mt-1">{adminShiftRevenue.transactions.length} транзакции</div>
+                  </div>
+
+                  {/* Cash / Card split */}
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className="bg-green-50 border-2 border-green-300 rounded-xl p-4 text-center">
+                      <div className="text-sm font-semibold text-gray-600 mb-1">💵 В брой</div>
+                      <div className="text-3xl font-black text-green-800">€{adminShiftRevenue.totalCash.toFixed(2)}</div>
+                      {adminShiftRevenue.totalCollected > 0 && (
+                        <div className="text-xs text-gray-500 mt-1">{((adminShiftRevenue.totalCash / adminShiftRevenue.totalCollected) * 100).toFixed(0)}%</div>
+                      )}
+                    </div>
+                    <div className="bg-blue-50 border-2 border-blue-300 rounded-xl p-4 text-center">
+                      <div className="text-sm font-semibold text-gray-600 mb-1">💳 С карта</div>
+                      <div className="text-3xl font-black text-blue-800">€{adminShiftRevenue.totalCard.toFixed(2)}</div>
+                      {adminShiftRevenue.totalCollected > 0 && (
+                        <div className="text-xs text-gray-500 mt-1">{((adminShiftRevenue.totalCard / adminShiftRevenue.totalCollected) * 100).toFixed(0)}%</div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Pending */}
+                  {adminShiftRevenue.totalPending > 0 && (
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-3 flex justify-between items-center">
+                      <span className="text-sm font-semibold text-orange-800">⏳ Неплатени (плаща при тръгване)</span>
+                      <span className="font-black text-orange-700">€{adminShiftRevenue.totalPending.toFixed(2)}</span>
+                    </div>
+                  )}
+
+                  {/* Active late */}
+                  {adminShiftRevenue.totalActiveLate > 0 && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3 flex justify-between items-center">
+                      <span className="text-sm font-semibold text-amber-800">⏰ Активни закъснения (в паркинга)</span>
+                      <span className="font-black text-amber-700">€{adminShiftRevenue.totalActiveLate.toFixed(2)}</span>
+                    </div>
+                  )}
+
+                  {/* Lost */}
+                  {adminShiftRevenue.totalLost > 0 && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-3 flex justify-between items-center">
+                      <span className="text-sm font-semibold text-red-800">❌ Отпаднали (no-show / отказани)</span>
+                      <span className="font-black text-red-600">€{adminShiftRevenue.totalLost.toFixed(2)}</span>
+                    </div>
+                  )}
+                </Card>
+
+                {/* Transactions breakdown */}
+                <div className="border-2 border-gray-200 rounded-xl overflow-hidden">
+                  <button
+                    onClick={() => setAdminRevExpanded(!adminRevExpanded)}
+                    className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors bg-white"
+                  >
+                    <span className="text-lg font-bold">📊 Разбивка по транзакции ({adminShiftRevenue.transactions.length})</span>
+                    {adminRevExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                  </button>
+
+                  {adminRevExpanded && (
+                    <div className="border-t-2 border-gray-200 bg-gray-50">
+                      {adminShiftRevenue.transactions.length === 0 ? (
+                        <p className="text-center text-gray-500 py-8">Няма транзакции за тази смяна</p>
+                      ) : (
+                        <div className="divide-y divide-gray-200">
+                          {adminShiftRevenue.transactions.map(t => (
+                            <div key={t.id} className="flex items-center justify-between px-4 py-3 bg-white">
+                              <div>
+                                <div className="font-semibold text-base">{t.name}</div>
+                                <div className="text-sm text-gray-500 flex items-center gap-2">
+                                  {t.paymentMethod === 'cash' ? '💵 В брой' : t.paymentMethod === 'card' ? '💳 С карта' : '—'}
+                                  {t.type === 'late_only' && <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">само закъснение</span>}
+                                  {t.type === 'full' && t.lateFee > 0 && <span className="text-xs text-orange-600">+ €{t.lateFee.toFixed(2)} закъснение</span>}
+                                </div>
+                              </div>
+                              <div className="text-xl font-black text-green-700">€{t.amount.toFixed(2)}</div>
+                            </div>
+                          ))}
+                          {/* Footer total */}
+                          <div className="flex items-center justify-between px-4 py-3 bg-gray-100 font-bold">
+                            <span>Общо</span>
+                            <span className="text-xl text-green-800">€{adminShiftRevenue.totalCollected.toFixed(2)}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Pending breakdown */}
+                      {adminShiftRevenue.pendingBookings.length > 0 && (
+                        <div className="border-t-2 border-orange-200 bg-orange-50 p-4">
+                          <div className="text-sm font-bold text-orange-800 mb-2">⏳ Неплатени в смяната</div>
+                          {adminShiftRevenue.pendingBookings.map(b => (
+                            <div key={b.id} className="flex justify-between text-sm text-orange-700 py-1">
+                              <span>{b.name}</span>
+                              <span className="font-semibold">€{b.amount.toFixed(2)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Lost breakdown */}
+                      {adminShiftRevenue.lostBookings.length > 0 && (
+                        <div className="border-t-2 border-red-200 bg-red-50 p-4">
+                          <div className="text-sm font-bold text-red-800 mb-2">❌ Отпаднали в смяната</div>
+                          {adminShiftRevenue.lostBookings.map(b => (
+                            <div key={b.id} className="flex justify-between text-sm text-red-700 py-1">
+                              <span>{b.name} <span className="text-xs text-red-500">({b.reason})</span></span>
+                              <span className="font-semibold">€{b.amount.toFixed(2)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })()
         ) : activeTab === "reservations" ? (
           /* ========== RESERVATIONS TAB ========== */
           <ReservationPerformance bookings={bookings} users={users} />
@@ -3457,7 +3772,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
       )}
 
       {/* Floating Action Button (FAB) - Create Reservation */}
-      {!["users", "settings", "pricing", "discounts", "calendar", "revenue"].includes(activeTab) && (
+      {!["users", "settings", "pricing", "discounts", "calendar", "revenue", "shift-revenue"].includes(activeTab) && (
         <button
           onClick={() => { originalEditDates.current = null; setIsAddingNew(true); setFormData({ paymentStatus: "manual", status: "confirmed", passengers: 2, numberOfCars: 1 }); }}
           className="fixed bottom-4 right-4 z-50 flex items-center gap-2 bg-[#073590] hover:bg-[#052558] active:bg-[#041a3d] text-white font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-200 px-4 sm:px-6 py-3 sm:py-4 min-h-[56px] touch-manipulation"

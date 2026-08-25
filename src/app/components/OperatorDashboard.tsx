@@ -2261,14 +2261,18 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
       paidBookings.reduce((sum, b) => sum + (b.finalPrice || b.totalPrice), 0) +
       lateFeeBookings.reduce((sum, b) => sum + (b.lateSurcharge || 0), 0);
     
-    // By payment method
-    const cashRevenue = paidBookings
-      .filter(b => b.paymentMethod === "cash")
-      .reduce((sum, b) => sum + (b.finalPrice || b.totalPrice), 0);
-    
-    const cardRevenue = paidBookings
-      .filter(b => b.paymentMethod === "card")
-      .reduce((sum, b) => sum + (b.finalPrice || b.totalPrice), 0);
+    // By payment method (including late fee-only bookings)
+    const cashRevenue =
+      paidBookings.filter(b => b.paymentMethod === "cash")
+        .reduce((sum, b) => sum + (b.finalPrice || b.totalPrice), 0) +
+      lateFeeBookings.filter(b => b.paymentMethod === "cash")
+        .reduce((sum, b) => sum + (b.lateSurcharge || 0), 0);
+
+    const cardRevenue =
+      paidBookings.filter(b => b.paymentMethod === "card")
+        .reduce((sum, b) => sum + (b.finalPrice || b.totalPrice), 0) +
+      lateFeeBookings.filter(b => b.paymentMethod === "card")
+        .reduce((sum, b) => sum + (b.lateSurcharge || 0), 0);
     
     // Breakdown by booking (for expandable view)
     const breakdown = paidBookings.map(b => ({
@@ -2313,14 +2317,26 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
       breakdown: breakdown,
 
       // Detailed breakdowns for new UI
-      collectedBookings: paidBookings.map(b => ({
-        id: b.id,
-        name: b.name,
-        amount: b.finalPrice || b.totalPrice,
-        paymentMethod: b.paymentMethod,
-        isLate: b.isLate || false,
-        lateFee: b.isLate ? (b.lateSurcharge || 0) : 0
-      })),
+      collectedBookings: [
+        ...paidBookings.map(b => ({
+          id: b.id,
+          name: b.name,
+          amount: b.finalPrice || b.totalPrice,
+          paymentMethod: b.paymentMethod,
+          isLate: b.isLate || false,
+          lateFee: b.isLate ? (b.lateSurcharge || 0) : 0,
+          type: 'full' as const,
+        })),
+        ...lateFeeBookings.map(b => ({
+          id: b.id + '_latefee',
+          name: b.name,
+          amount: b.lateSurcharge || 0,
+          paymentMethod: b.paymentMethod,
+          isLate: true,
+          lateFee: b.lateSurcharge || 0,
+          type: 'late_only' as const,
+        })),
+      ],
 
       pendingBookings: pendingPaymentBookings.map(b => ({
         id: b.id,
@@ -3219,10 +3235,15 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                               {revenueStats.collectedBookings.map(item => (
                                 <div key={item.id} className="flex justify-between items-center bg-white p-3 rounded-lg border border-green-200">
                                   <div>
-                                    <div className="font-semibold text-base">{item.name}</div>
+                                    <div className="font-semibold text-base flex items-center gap-1">
+                                      {item.name}
+                                      {(item.type as any) === 'late_only' && (
+                                        <span className="ml-1 text-xs text-orange-600 bg-orange-50 border border-orange-200 px-1.5 py-0.5 rounded-full">само закъснение</span>
+                                      )}
+                                    </div>
                                     <div className="text-sm text-gray-600">
                                       {item.paymentMethod === "cash" ? "💵 В брой" : "💳 С карта"}
-                                      {item.isLate && item.lateFee > 0 && (
+                                      {item.isLate && item.lateFee > 0 && (item.type as any) !== 'late_only' && (
                                         <span className="ml-2 text-red-600">+ €{item.lateFee.toFixed(2)} закъснение</span>
                                       )}
                                     </div>
@@ -3319,6 +3340,16 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                       <h3 className="font-semibold text-2xl">В брой</h3>
                     </div>
                     <p className="text-5xl font-bold">€{revenueStats.cash.toFixed(2)}</p>
+                    {revenueStats.collectedBookings.filter(b => b.paymentMethod === "cash").length > 0 && (
+                      <div className="mt-4 pt-4 border-t border-gray-100 space-y-1">
+                        {revenueStats.collectedBookings.filter(b => b.paymentMethod === "cash").map(b => (
+                          <div key={b.id} className="flex justify-between text-sm text-gray-600">
+                            <span className="truncate mr-2">{b.name}{(b.type as any) === 'late_only' ? ' (закъснение)' : ''}</span>
+                            <span className="font-medium text-gray-800 whitespace-nowrap">€{b.amount.toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </Card>
 
                   {/* Card */}
@@ -3328,6 +3359,16 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                       <h3 className="font-semibold text-2xl">С карта</h3>
                     </div>
                     <p className="text-5xl font-bold">€{revenueStats.card.toFixed(2)}</p>
+                    {revenueStats.collectedBookings.filter(b => b.paymentMethod === "card").length > 0 && (
+                      <div className="mt-4 pt-4 border-t border-gray-100 space-y-1">
+                        {revenueStats.collectedBookings.filter(b => b.paymentMethod === "card").map(b => (
+                          <div key={b.id} className="flex justify-between text-sm text-gray-600">
+                            <span className="truncate mr-2">{b.name}{(b.type as any) === 'late_only' ? ' (закъснение)' : ''}</span>
+                            <span className="font-medium text-gray-800 whitespace-nowrap">€{b.amount.toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </Card>
                 </div>
                 </>
