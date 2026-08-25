@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Card } from "./ui/card";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -469,6 +469,8 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [allTabDisplayLimit, setAllTabDisplayLimit] = useState(50);
   const [departureDateFilter, setDepartureDateFilter] = useState(""); // Filter by departure date
   const [isLoading, setIsLoading] = useState(true);
   const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
@@ -725,6 +727,17 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
     updatePrice();
   }, [formData.arrivalDate, formData.arrivalTime, formData.departureDate, formData.departureTime, formData.numberOfCars, formData.vehicleSize]);
 
+  // Debounce search term (300ms) to avoid re-rendering on every keystroke
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearchTerm(searchTerm), 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Reset display limit when tab or search changes
+  useEffect(() => {
+    setAllTabDisplayLimit(50);
+  }, [activeTab, debouncedSearchTerm, departureDateFilter]);
+
   // Filter bookings by tab and search
   useEffect(() => {
     let filtered = bookings;
@@ -763,14 +776,15 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
         break;
     }
 
-    // Filter by search term
-    if (searchTerm) {
+    // Filter by search term (debounced)
+    if (debouncedSearchTerm) {
+      const lower = debouncedSearchTerm.toLowerCase();
       filtered = filtered.filter(booking =>
-        booking.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        booking.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        booking.licensePlate?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        booking.phone?.includes(searchTerm) ||
-        booking.bookingCode?.toLowerCase().includes(searchTerm.toLowerCase())
+        booking.name?.toLowerCase().includes(lower) ||
+        booking.email?.toLowerCase().includes(lower) ||
+        booking.licensePlate?.toLowerCase().includes(lower) ||
+        booking.phone?.includes(debouncedSearchTerm) ||
+        booking.bookingCode?.toLowerCase().includes(lower)
       );
     }
 
@@ -780,7 +794,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
     }
 
     setFilteredBookings(filtered);
-  }, [searchTerm, bookings, activeTab, departureDateFilter]);
+  }, [debouncedSearchTerm, bookings, activeTab, departureDateFilter]);
 
   // ============= USER MANAGEMENT FUNCTIONS =============
 
@@ -2691,7 +2705,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
           </div>
         ) : (
           <div className="grid gap-4">
-            {filteredBookings.map((booking) => (
+            {filteredBookings.slice(0, activeTab === "all" ? allTabDisplayLimit : filteredBookings.length).map((booking) => (
               <ReservationCard
                 key={booking.id}
                 reservation={booking as ReservationData}
@@ -2701,6 +2715,17 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
                 showEditHistory={true}
               />
             ))}
+            {activeTab === "all" && filteredBookings.length > allTabDisplayLimit && (
+              <div className="text-center py-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setAllTabDisplayLimit(prev => prev + 50)}
+                  className="text-base px-8"
+                >
+                  Зареди още ({filteredBookings.length - allTabDisplayLimit} останали)
+                </Button>
+              </div>
+            )}
           </div>
         )}
           </>
