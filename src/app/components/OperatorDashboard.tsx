@@ -1720,62 +1720,67 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
         </tr>`).join('')
       : '';
 
-    // Expenses rows — 8 blank handwrite lines
-    const expenseRows = Array.from({ length: 8 }, (_, i) => `
+    // Expenses rows — 6 blank handwrite lines
+    const expenseRows = Array.from({ length: 6 }, () => `
       <tr class="expense-row">
-        <td colspan="3" style="border-bottom:1px solid #ccc">&nbsp;</td>
-        <td class="right" style="border-bottom:1px solid #ccc">&nbsp;</td>
+        <td style="border-bottom:1px solid #bbb">&nbsp;</td>
+        <td class="right" style="border-bottom:1px solid #bbb;width:90px">&nbsp;</td>
       </tr>`).join('');
 
     const html = `<!DOCTYPE html>
 <html lang="bg">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=960">
+<meta name="viewport" content="width=780">
 <title>Финансов отчет – ${dateStr} ${shiftLabel}</title>
 <style>
-  @page { margin: 12mm; size: A4 portrait; }
+  @page { margin: 8mm; size: A4 portrait; }
   * { box-sizing: border-box; }
-  body { font-family: Arial, sans-serif; font-size: 13px; color: #000; margin: 0; }
-  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; border-bottom: 3px solid #073590; padding-bottom: 8px; }
-  .header-left h1 { font-size: 20px; margin: 0 0 2px 0; color: #073590; }
-  .header-left p { margin: 0; font-size: 12px; color: #555; }
-  .header-right { text-align: right; font-size: 12px; color: #555; }
-  .header-right .shift-badge { font-size: 15px; font-weight: bold; color: #073590; }
+  body { font-family: Arial, sans-serif; font-size: 11px; color: #000; margin: 0; }
 
-  .summary-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px; }
-  .summary-box { border: 2px solid #ddd; border-radius: 6px; padding: 8px 12px; }
+  /* Header */
+  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; border-bottom: 2px solid #073590; padding-bottom: 5px; }
+  .header-left h1 { font-size: 15px; margin: 0 0 1px 0; color: #073590; }
+  .header-left p { margin: 0; font-size: 10px; color: #444; }
+  .header-right { text-align: right; font-size: 10px; color: #444; line-height: 1.5; }
+  .shift-badge { font-size: 12px; font-weight: bold; color: #073590; }
+
+  /* Summary */
+  .summary-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-bottom: 7px; }
+  .summary-box { border: 2px solid #ddd; border-radius: 4px; padding: 5px 8px; }
   .summary-box.green { border-color: #16a34a; background: #f0fdf4; }
   .summary-box.cash  { border-color: #15803d; background: #f0fdf4; }
   .summary-box.card  { border-color: #1d4ed8; background: #eff6ff; }
-  .summary-box label { font-size: 11px; color: #555; display: block; margin-bottom: 2px; }
-  .summary-box .amount { font-size: 22px; font-weight: 900; }
+  .summary-box label { font-size: 9px; color: #555; display: block; margin-bottom: 1px; }
+  .summary-box .amount { font-size: 17px; font-weight: 900; line-height: 1.1; }
   .summary-box.green .amount { color: #15803d; }
   .summary-box.cash  .amount { color: #15803d; }
   .summary-box.card  .amount { color: #1d4ed8; }
-  .summary-box .sub { font-size: 11px; color: #666; }
+  .summary-box .sub { font-size: 9px; color: #666; }
 
-  section { margin-bottom: 14px; }
-  h2 { font-size: 13px; font-weight: bold; margin: 0 0 6px 0; padding: 4px 8px; border-radius: 4px; }
+  /* Sections */
+  section { margin-bottom: 7px; }
+  h2 { font-size: 10px; font-weight: bold; margin: 0 0 3px 0; padding: 3px 6px; border-radius: 3px; }
   h2.collected { background: #dcfce7; color: #166534; }
   h2.expenses  { background: #fef3c7; color: #92400e; }
-  h2.net       { background: #dbeafe; color: #1e3a8a; }
+  h2.bottom    { background: #dbeafe; color: #1e3a8a; }
 
+  /* Tables */
   table { width: 100%; border-collapse: collapse; }
-  th { background: #073590; color: #fff; padding: 6px 8px; font-size: 12px; text-align: left; }
-  td { padding: 6px 8px; font-size: 12px; border-bottom: 1px solid #e5e7eb; vertical-align: middle; }
-  tr:last-child td { border-bottom: none; }
+  th { background: #073590; color: #fff; padding: 4px 6px; font-size: 10px; text-align: left; }
+  td { padding: 3px 6px; font-size: 11px; border-bottom: 1px solid #e5e7eb; vertical-align: middle; }
   .center { text-align: center; }
   .right   { text-align: right; }
   .bold    { font-weight: bold; }
-  .expense-row td { height: 28px; }
+  .expense-row td { height: 22px; }
 
-  .net-row { display: flex; justify-content: space-between; align-items: center; border: 2px solid #1d4ed8; border-radius: 6px; padding: 10px 14px; }
-  .net-row .label { font-size: 14px; font-weight: bold; color: #1e3a8a; }
-  .net-row .value { font-size: 26px; font-weight: 900; color: #1e3a8a; }
-
-  .signature-row { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 20px; }
-  .signature-box { border-top: 1px solid #333; padding-top: 4px; font-size: 11px; color: #555; }
+  /* Bottom row: net + signatures side by side */
+  .bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 2px; }
+  .net-box { border: 2px solid #1d4ed8; border-radius: 4px; padding: 5px 10px; display: flex; justify-content: space-between; align-items: center; }
+  .net-box .lbl { font-size: 11px; font-weight: bold; color: #1e3a8a; }
+  .net-box .val { font-size: 16px; font-weight: 900; color: #1e3a8a; }
+  .sig-box { display: flex; flex-direction: column; gap: 8px; }
+  .sig-line { border-top: 1px solid #333; padding-top: 2px; font-size: 9px; color: #555; }
 
   @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
 </style>
@@ -1790,11 +1795,10 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
   <div class="header-right">
     <div class="shift-badge">${shiftRange.shift === "day" ? "🌞 Дневна" : "🌙 Нощна"}</div>
     <div>Отпечатано: ${printedAt}</div>
-    <div>Оператор: _______________________</div>
+    <div>Оператор: _____________________</div>
   </div>
 </div>
 
-<!-- Revenue summary -->
 <div class="summary-grid">
   <div class="summary-box green">
     <label>✅ Общо събрани</label>
@@ -1813,16 +1817,15 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
   </div>
 </div>
 
-<!-- Collected transactions -->
 <section>
   <h2 class="collected">Събрани приходи</h2>
   <table>
     <thead>
       <tr>
         <th>Клиент</th>
-        <th class="center">Метод</th>
-        <th class="right">Тип</th>
-        <th class="right">Сума</th>
+        <th class="center" style="width:80px">Метод</th>
+        <th class="right" style="width:140px">Тип</th>
+        <th class="right" style="width:70px">Сума</th>
       </tr>
     </thead>
     <tbody>
@@ -1831,46 +1834,39 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
     </tbody>
     <tfoot>
       <tr style="background:#f0fdf4">
-        <td colspan="3" class="right bold">Общо:</td>
+        <td colspan="3" class="right bold">Общо приходи:</td>
         <td class="right bold">€${stats.actual.toFixed(2)}</td>
       </tr>
     </tfoot>
   </table>
 </section>
 
-<!-- Daily expenses — handwritten -->
 <section>
   <h2 class="expenses">Разходи за смяната (попълни на ръка)</h2>
   <table>
-    <thead>
-      <tr>
-        <th colspan="3">Описание</th>
-        <th class="right">Сума (€)</th>
-      </tr>
-    </thead>
+    <thead><tr><th>Описание</th><th class="right" style="width:90px">Сума (€)</th></tr></thead>
     <tbody>
       ${expenseRows}
       <tr style="background:#fef9c3">
-        <td colspan="3" class="right bold">Общо разходи:</td>
+        <td class="right bold">Общо разходи:</td>
         <td class="right bold">&nbsp;</td>
       </tr>
     </tbody>
   </table>
 </section>
 
-<!-- Net result -->
-<section>
-  <h2 class="net">Нетен резултат</h2>
-  <div class="net-row">
-    <div class="label">Приходи − Разходи =</div>
-    <div class="value">€ ___________</div>
+<div class="bottom-grid">
+  <div>
+    <h2 class="bottom">Нетен резултат</h2>
+    <div class="net-box">
+      <div class="lbl">Приходи − Разходи =</div>
+      <div class="val">€ __________</div>
+    </div>
   </div>
-</section>
-
-<!-- Signatures -->
-<div class="signature-row">
-  <div class="signature-box">Предал смяната: _________________________</div>
-  <div class="signature-box">Приел смяната: __________________________</div>
+  <div class="sig-box" style="padding-top:16px">
+    <div class="sig-line">Предал смяната: ___________________________</div>
+    <div class="sig-line">Приел смяната: ____________________________</div>
+  </div>
 </div>
 
 </body>
