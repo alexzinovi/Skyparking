@@ -1684,7 +1684,7 @@ export function AdminDashboard({ onLogout, currentUser, permissions }: AdminDash
   const [isManualRefreshing, setIsManualRefreshing] = React.useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gray-50 pb-20 overflow-x-hidden">
       {/* Hamburger Menu Drawer */}
       {menuOpen && (
         <>

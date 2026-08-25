@@ -131,6 +131,8 @@
 
   body {
     @apply bg-background text-foreground;
+    overflow-x: clip;
+    overscroll-behavior-x: none;
   }
 
   /**
@@ -140,6 +142,8 @@
 
   html {
     font-size: var(--font-size);
+    overflow-x: clip;
+    overscroll-behavior-x: none;
   }
 
   h1 {
