@@ -1702,34 +1702,25 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
     const cashBookings = revenueStats.collectedBookings.filter(b => b.paymentMethod === 'cash');
     const cardBookings = revenueStats.collectedBookings.filter(b => b.paymentMethod === 'card');
 
-    const cashRows = cashBookings.map(b => `
-      <tr>
-        <td>${b.name}</td>
-        <td style="text-align:right">€${(b.amount - (b.lateFee || 0)).toFixed(2)}</td>
-        <td style="text-align:right;color:#c2410c">${(b.lateFee || 0) > 0 ? '+€' + (b.lateFee || 0).toFixed(2) : '—'}</td>
-        <td style="text-align:right;font-weight:bold">€${b.amount.toFixed(2)}</td>
-      </tr>`).join('');
+    const cashRows = cashBookings.map(b => `<tr>
+      <td>${b.name}</td>
+      <td style="text-align:right">€${(b.amount - (b.lateFee || 0)).toFixed(2)}${(b.lateFee || 0) > 0 ? ' <span style="color:#c2410c">+€' + (b.lateFee || 0).toFixed(2) + '</span>' : ''}</td>
+      <td style="text-align:right;font-weight:bold">€${b.amount.toFixed(2)}</td>
+    </tr>`).join('');
 
-    const cardRows = cardBookings.map(b => `
-      <tr>
-        <td>${b.name}</td>
-        <td style="text-align:right">€${(b.amount - (b.lateFee || 0)).toFixed(2)}</td>
-        <td style="text-align:right;color:#c2410c">${(b.lateFee || 0) > 0 ? '+€' + (b.lateFee || 0).toFixed(2) : '—'}</td>
-        <td style="text-align:right;font-weight:bold">€${b.amount.toFixed(2)}</td>
-      </tr>`).join('');
+    const cardRows = cardBookings.map(b => `<tr>
+      <td>${b.name}</td>
+      <td style="text-align:right">€${(b.amount - (b.lateFee || 0)).toFixed(2)}${(b.lateFee || 0) > 0 ? ' <span style="color:#c2410c">+€' + (b.lateFee || 0).toFixed(2) + '</span>' : ''}</td>
+      <td style="text-align:right;font-weight:bold">€${b.amount.toFixed(2)}</td>
+    </tr>`).join('');
 
-    const noShowRows = revenueStats.lostBookings.map(b => `
-      <tr>
-        <td>${b.name}</td>
-        <td>${b.reason}</td>
-        <td style="text-align:right">€${b.amount.toFixed(2)}</td>
-      </tr>`).join('');
+    const noShowRows = revenueStats.lostBookings.map(b => `<tr>
+      <td>${b.name}</td>
+      <td style="text-align:right">€${b.amount.toFixed(2)}</td>
+    </tr>`).join('');
 
-    const expenseLines = Array.from({ length: 6 }, () => `
-      <tr class="expense-row">
-        <td>&nbsp;</td>
-        <td>&nbsp;</td>
-      </tr>`).join('');
+    const expenseLines = Array.from({ length: 5 }, () =>
+      `<tr><td style="height:22px">&nbsp;</td><td>&nbsp;</td></tr>`).join('');
 
     const html = `<!DOCTYPE html>
 <html lang="bg">
@@ -1737,39 +1728,35 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
 <meta charset="UTF-8">
 <title>Отчет смяна – ${dateStr} ${shiftLabel}</title>
 <style>
-  @page { margin: 14mm; size: A4; }
+  @page { margin: 10mm; size: A4; }
   * { box-sizing: border-box; }
-  body { font-family: Arial, sans-serif; font-size: 13px; color: #000; margin: 0; }
-  h1 { font-size: 20px; margin: 0 0 4px 0; }
-  h2 { font-size: 14px; margin: 16px 0 5px 0; border-bottom: 2px solid #073590; padding-bottom: 3px; color: #073590; text-transform: uppercase; letter-spacing: 0.5px; }
-  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; border-bottom: 3px solid #073590; padding-bottom: 10px; }
-  .shift-badge { display: inline-block; background: #073590; color: #fff; padding: 3px 10px; border-radius: 4px; font-size: 13px; font-weight: bold; margin-top: 5px; }
-  .header-right { text-align: right; font-size: 12px; color: #444; line-height: 1.7; }
-  table { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
-  th { background: #073590; color: #fff; padding: 6px 8px; font-size: 12px; text-align: left; }
-  td { border: 1px solid #ddd; padding: 7px 9px; font-size: 13px; }
+  body { font-family: Arial, sans-serif; font-size: 11px; color: #000; margin: 0; }
+  .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #073590; padding-bottom: 6px; margin-bottom: 8px; }
+  .header h1 { font-size: 15px; margin: 0; }
+  .shift-badge { background: #073590; color: #fff; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: bold; margin-top: 3px; display: inline-block; }
+  .header-right { text-align: right; font-size: 10px; color: #444; line-height: 1.6; }
+  .cols { display: flex; gap: 10px; margin-bottom: 8px; }
+  .col { flex: 1; }
+  h2 { font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.4px; color: #073590; border-bottom: 1px solid #073590; padding-bottom: 2px; margin: 8px 0 3px 0; }
+  table { width: 100%; border-collapse: collapse; }
+  th { background: #073590; color: #fff; padding: 3px 5px; font-size: 9px; text-align: left; }
+  td { border: 1px solid #ddd; padding: 3px 5px; font-size: 10px; }
   tr:nth-child(even) td { background: #f5f7fc; }
-  .summary-table td { font-size: 14px; padding: 9px 12px; }
-  .total-row td { font-size: 17px; font-weight: bold; background: #eff6ff !important; border-top: 2px solid #073590; }
-  .cash-row td { color: #166534; }
-  .card-row td { color: #1e40af; }
-  .noshow-row td { color: #991b1b; }
-  .pending-row td { color: #92400e; }
-  .net-section { margin-top: 14px; }
-  .net-row td { font-size: 16px; font-weight: bold; border: 2px solid #073590; background: #eff6ff !important; padding: 10px 12px; }
-  .expenses-table td { height: 30px; }
-  .expenses-total td { font-weight: bold; background: #fef9c3 !important; border-top: 2px solid #ca8a04; }
-  .empty-msg { color: #999; font-style: italic; padding: 6px 0; font-size: 12px; }
-  .page-break { page-break-before: always; }
-  .detail-total-cash td { font-weight: bold; background: #dcfce7 !important; border-top: 2px solid #16a34a; }
-  .detail-total-card td { font-weight: bold; background: #dbeafe !important; border-top: 2px solid #2563eb; }
-  .detail-total-noshow td { font-weight: bold; background: #fee2e2 !important; border-top: 2px solid #dc2626; }
+  .sum-table td { font-size: 12px; padding: 5px 8px; }
+  .sum-total td { font-size: 14px; font-weight: bold; background: #eff6ff !important; border-top: 2px solid #073590; }
+  .sum-cash td { color: #166534; }
+  .sum-card td { color: #1e40af; }
+  .sum-noshow td { color: #991b1b; }
+  .sum-pending td { color: #92400e; }
+  .detail-total td { font-weight: bold; border-top: 1px solid #999; background: #f0f0f0 !important; }
+  .net-row td { font-size: 13px; font-weight: bold; border: 2px solid #073590; background: #eff6ff !important; padding: 6px 8px; }
+  .exp-total td { font-weight: bold; border-top: 1px solid #ca8a04; background: #fef9c3 !important; }
+  .empty { color: #aaa; font-style: italic; font-size: 10px; padding: 3px 0; }
   @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
 </style>
 </head>
 <body>
 
-<!-- PAGE 1: SUMMARY -->
 <div class="header">
   <div>
     <h1>SkyParking – Отчет смяна</h1>
@@ -1777,133 +1764,89 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
   </div>
   <div class="header-right">
     <div>Оператор: <strong>${operatorName}</strong></div>
-    <div>Разпечатано: ${printTime}</div>
+    <div>${printTime}</div>
   </div>
 </div>
 
-<h2>Обобщение</h2>
-<table class="summary-table">
-  <tbody>
-    <tr class="total-row">
-      <td>✅ Събрани приходи</td>
-      <td style="text-align:right">€${revenueStats.collected.toFixed(2)}</td>
-    </tr>
-    <tr class="cash-row">
-      <td style="padding-left:24px">💵 В брой (${cashBookings.length})</td>
-      <td style="text-align:right">€${revenueStats.cash.toFixed(2)}</td>
-    </tr>
-    <tr class="card-row">
-      <td style="padding-left:24px">💳 С карта (${cardBookings.length})</td>
-      <td style="text-align:right">€${revenueStats.card.toFixed(2)}</td>
-    </tr>
-    ${revenueStats.pending > 0 ? `<tr class="pending-row">
-      <td>⏳ Неплатени – в паркинга (${revenueStats.pendingCount})</td>
-      <td style="text-align:right">€${revenueStats.pending.toFixed(2)}</td>
-    </tr>` : ''}
-    ${revenueStats.lost > 0 ? `<tr class="noshow-row">
-      <td>❌ No-show / Отпаднали (${revenueStats.lostBookings.length})</td>
-      <td style="text-align:right">€${revenueStats.lost.toFixed(2)}</td>
-    </tr>` : ''}
-  </tbody>
-</table>
+<div class="cols">
+  <!-- LEFT: Summary + Expenses + Net -->
+  <div class="col" style="flex:1.1">
+    <h2>Обобщение</h2>
+    <table class="sum-table">
+      <tbody>
+        <tr class="sum-total">
+          <td>✅ Събрани</td>
+          <td style="text-align:right">€${revenueStats.collected.toFixed(2)}</td>
+        </tr>
+        <tr class="sum-cash">
+          <td style="padding-left:14px">💵 В брой (${cashBookings.length})</td>
+          <td style="text-align:right">€${revenueStats.cash.toFixed(2)}</td>
+        </tr>
+        <tr class="sum-card">
+          <td style="padding-left:14px">💳 С карта (${cardBookings.length})</td>
+          <td style="text-align:right">€${revenueStats.card.toFixed(2)}</td>
+        </tr>
+        ${revenueStats.pending > 0 ? `<tr class="sum-pending">
+          <td>⏳ Неплатени (${revenueStats.pendingCount})</td>
+          <td style="text-align:right">€${revenueStats.pending.toFixed(2)}</td>
+        </tr>` : ''}
+        ${revenueStats.lost > 0 ? `<tr class="sum-noshow">
+          <td>❌ No-show (${revenueStats.lostBookings.length})</td>
+          <td style="text-align:right">€${revenueStats.lost.toFixed(2)}</td>
+        </tr>` : ''}
+      </tbody>
+    </table>
 
-<h2>Разходи</h2>
-<table class="expenses-table">
-  <thead>
-    <tr>
-      <th style="width:68%">Описание</th>
-      <th style="text-align:right">Сума (€)</th>
-    </tr>
-  </thead>
-  <tbody>
-    ${expenseLines}
-    <tr class="expenses-total">
-      <td>Общо разходи</td>
-      <td style="text-align:right">&nbsp;</td>
-    </tr>
-  </tbody>
-</table>
+    <h2>Разходи</h2>
+    <table>
+      <thead><tr><th style="width:68%">Описание</th><th style="text-align:right">€</th></tr></thead>
+      <tbody>
+        ${expenseLines}
+        <tr class="exp-total"><td>Общо разходи</td><td>&nbsp;</td></tr>
+      </tbody>
+    </table>
 
-<div class="net-section">
-  <h2>Нетен приход на смяната</h2>
-  <table>
-    <tbody>
-      <tr class="net-row">
-        <td>Събрани приходи (€${revenueStats.collected.toFixed(2)}) &minus; Разходи =</td>
-        <td style="text-align:right;min-width:130px">&nbsp;</td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-
-<!-- PAGE 2: DETAILS -->
-<div class="page-break"></div>
-
-<div class="header">
-  <div>
-    <h1>SkyParking – Детайлна разбивка</h1>
-    <div class="shift-badge">${shiftLabel} &nbsp;·&nbsp; ${dateStr} &nbsp;·&nbsp; ${shiftTime}</div>
+    <h2>Нетен приход</h2>
+    <table>
+      <tbody>
+        <tr class="net-row">
+          <td>€${revenueStats.collected.toFixed(2)} &minus; разходи =</td>
+          <td style="text-align:right;min-width:90px">&nbsp;</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
-  <div class="header-right">
-    <div>Оператор: <strong>${operatorName}</strong></div>
+
+  <!-- RIGHT: Detail tables -->
+  <div class="col" style="flex:1.3">
+    <h2>💵 В брой (${cashBookings.length}) – общо €${revenueStats.cash.toFixed(2)}</h2>
+    ${cashBookings.length > 0 ? `<table>
+      <thead><tr><th>Клиент</th><th style="text-align:right">Цена</th><th style="text-align:right">Общо</th></tr></thead>
+      <tbody>
+        ${cashRows}
+        <tr class="detail-total"><td>Общо</td><td></td><td style="text-align:right">€${revenueStats.cash.toFixed(2)}</td></tr>
+      </tbody>
+    </table>` : `<p class="empty">Няма плащания в брой</p>`}
+
+    <h2>💳 С карта (${cardBookings.length}) – общо €${revenueStats.card.toFixed(2)}</h2>
+    ${cardBookings.length > 0 ? `<table>
+      <thead><tr><th>Клиент</th><th style="text-align:right">Цена</th><th style="text-align:right">Общо</th></tr></thead>
+      <tbody>
+        ${cardRows}
+        <tr class="detail-total"><td>Общо</td><td></td><td style="text-align:right">€${revenueStats.card.toFixed(2)}</td></tr>
+      </tbody>
+    </table>` : `<p class="empty">Няма плащания с карта</p>`}
+
+    <h2>❌ No-show / Отпаднали (${revenueStats.lostBookings.length})</h2>
+    ${revenueStats.lostBookings.length > 0 ? `<table>
+      <thead><tr><th>Клиент</th><th style="text-align:right">Сума</th></tr></thead>
+      <tbody>
+        ${noShowRows}
+        <tr class="detail-total"><td>Общо</td><td style="text-align:right">€${revenueStats.lost.toFixed(2)}</td></tr>
+      </tbody>
+    </table>` : `<p class="empty">Няма no-show или отпаднали</p>`}
   </div>
 </div>
-
-<h2>💵 Платени в брой (${cashBookings.length})</h2>
-${cashBookings.length > 0 ? `<table>
-  <thead>
-    <tr>
-      <th>Клиент</th>
-      <th style="text-align:right">Базова цена</th>
-      <th style="text-align:right">Закъснение</th>
-      <th style="text-align:right">Общо</th>
-    </tr>
-  </thead>
-  <tbody>
-    ${cashRows}
-    <tr class="detail-total-cash">
-      <td colspan="3">Общо в брой</td>
-      <td style="text-align:right">€${revenueStats.cash.toFixed(2)}</td>
-    </tr>
-  </tbody>
-</table>` : `<p class="empty-msg">Няма плащания в брой</p>`}
-
-<h2>💳 Платени с карта (${cardBookings.length})</h2>
-${cardBookings.length > 0 ? `<table>
-  <thead>
-    <tr>
-      <th>Клиент</th>
-      <th style="text-align:right">Базова цена</th>
-      <th style="text-align:right">Закъснение</th>
-      <th style="text-align:right">Общо</th>
-    </tr>
-  </thead>
-  <tbody>
-    ${cardRows}
-    <tr class="detail-total-card">
-      <td colspan="3">Общо с карта</td>
-      <td style="text-align:right">€${revenueStats.card.toFixed(2)}</td>
-    </tr>
-  </tbody>
-</table>` : `<p class="empty-msg">Няма плащания с карта</p>`}
-
-<h2>❌ No-show / Отпаднали (${revenueStats.lostBookings.length})</h2>
-${revenueStats.lostBookings.length > 0 ? `<table>
-  <thead>
-    <tr>
-      <th>Клиент</th>
-      <th>Статус</th>
-      <th style="text-align:right">Очаквана сума</th>
-    </tr>
-  </thead>
-  <tbody>
-    ${noShowRows}
-    <tr class="detail-total-noshow">
-      <td colspan="2">Общо отпаднали</td>
-      <td style="text-align:right">€${revenueStats.lost.toFixed(2)}</td>
-    </tr>
-  </tbody>
-</table>` : `<p class="empty-msg">Няма no-show или отпаднали резервации</p>`}
 
 </body>
 </html>`;
