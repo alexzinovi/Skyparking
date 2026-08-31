@@ -1690,184 +1690,220 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
     setTimeout(() => win.print(), 400);
   };
 
-  // Print shift financial summary
-  const printShiftSummary = () => {
+  // Print end-of-shift revenue report
+  const printShiftReport = () => {
     const shiftLabel = shiftRange.shift === "day" ? "Дневна смяна" : "Нощна смяна";
     const dateStr = `${String(shiftRange.start.getDate()).padStart(2,'0')}/${String(shiftRange.start.getMonth()+1).padStart(2,'0')}/${shiftRange.start.getFullYear()}`;
     const shiftTime = `${String(shiftRange.start.getHours()).padStart(2,'0')}:00 – ${String(shiftRange.end.getHours()).padStart(2,'0')}:00`;
-    const printedAt = new Date().toLocaleTimeString('bg-BG', { hour: '2-digit', minute: '2-digit' });
+    const operatorName = currentUser.fullName;
+    const now = new Date();
+    const printTime = `${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
 
-    const stats = revenueStats;
+    const cashBookings = revenueStats.collectedBookings.filter(b => b.paymentMethod === 'cash');
+    const cardBookings = revenueStats.collectedBookings.filter(b => b.paymentMethod === 'card');
 
-    // Transaction rows
-    const txRows = stats.collectedBookings.length > 0
-      ? stats.collectedBookings.map(b => `
-        <tr>
-          <td>${b.name}</td>
-          <td class="center">${b.paymentMethod === 'cash' ? 'В брой' : 'С карта'}</td>
-          <td class="right">${(b.type as any) === 'late_only' ? '⏰ закъснение' : b.isLate && b.lateFee > 0 ? `базова + €${b.lateFee.toFixed(2)} закъснение` : 'базова'}</td>
-          <td class="right bold">€${b.amount.toFixed(2)}</td>
-        </tr>`).join('')
-      : `<tr><td colspan="4" class="center" style="color:#888;padding:16px">Няма събрани приходи за тази смяна</td></tr>`;
+    const cashRows = cashBookings.map(b => `
+      <tr>
+        <td>${b.name}</td>
+        <td style="text-align:right">€${(b.amount - (b.lateFee || 0)).toFixed(2)}</td>
+        <td style="text-align:right;color:#c2410c">${(b.lateFee || 0) > 0 ? '+€' + (b.lateFee || 0).toFixed(2) : '—'}</td>
+        <td style="text-align:right;font-weight:bold">€${b.amount.toFixed(2)}</td>
+      </tr>`).join('');
 
-    // Pending rows
-    const pendingRows = stats.pendingBookings.length > 0
-      ? stats.pendingBookings.map(b => `
-        <tr style="background:#fff7ed">
-          <td>${b.name}</td>
-          <td class="center" colspan="2" style="color:#b45309">Плаща при тръгване (неплатено)</td>
-          <td class="right bold" style="color:#b45309">€${b.amount.toFixed(2)}</td>
-        </tr>`).join('')
-      : '';
+    const cardRows = cardBookings.map(b => `
+      <tr>
+        <td>${b.name}</td>
+        <td style="text-align:right">€${(b.amount - (b.lateFee || 0)).toFixed(2)}</td>
+        <td style="text-align:right;color:#c2410c">${(b.lateFee || 0) > 0 ? '+€' + (b.lateFee || 0).toFixed(2) : '—'}</td>
+        <td style="text-align:right;font-weight:bold">€${b.amount.toFixed(2)}</td>
+      </tr>`).join('');
 
-    // Expenses rows — 6 blank handwrite lines
-    const expenseRows = Array.from({ length: 6 }, () => `
+    const noShowRows = revenueStats.lostBookings.map(b => `
+      <tr>
+        <td>${b.name}</td>
+        <td>${b.reason}</td>
+        <td style="text-align:right">€${b.amount.toFixed(2)}</td>
+      </tr>`).join('');
+
+    const expenseLines = Array.from({ length: 6 }, () => `
       <tr class="expense-row">
-        <td style="border-bottom:1px solid #bbb">&nbsp;</td>
-        <td class="right" style="border-bottom:1px solid #bbb;width:90px">&nbsp;</td>
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
       </tr>`).join('');
 
     const html = `<!DOCTYPE html>
 <html lang="bg">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=780">
-<title>Финансов отчет – ${dateStr} ${shiftLabel}</title>
+<title>Отчет смяна – ${dateStr} ${shiftLabel}</title>
 <style>
-  @page { margin: 8mm; size: A4 portrait; }
+  @page { margin: 14mm; size: A4; }
   * { box-sizing: border-box; }
-  body { font-family: Arial, sans-serif; font-size: 11px; color: #000; margin: 0; }
-
-  /* Header */
-  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; border-bottom: 2px solid #073590; padding-bottom: 5px; }
-  .header-left h1 { font-size: 15px; margin: 0 0 1px 0; color: #073590; }
-  .header-left p { margin: 0; font-size: 10px; color: #444; }
-  .header-right { text-align: right; font-size: 10px; color: #444; line-height: 1.5; }
-  .shift-badge { font-size: 12px; font-weight: bold; color: #073590; }
-
-  /* Summary */
-  .summary-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-bottom: 7px; }
-  .summary-box { border: 2px solid #ddd; border-radius: 4px; padding: 5px 8px; }
-  .summary-box.green { border-color: #16a34a; background: #f0fdf4; }
-  .summary-box.cash  { border-color: #15803d; background: #f0fdf4; }
-  .summary-box.card  { border-color: #1d4ed8; background: #eff6ff; }
-  .summary-box label { font-size: 9px; color: #555; display: block; margin-bottom: 1px; }
-  .summary-box .amount { font-size: 17px; font-weight: 900; line-height: 1.1; }
-  .summary-box.green .amount { color: #15803d; }
-  .summary-box.cash  .amount { color: #15803d; }
-  .summary-box.card  .amount { color: #1d4ed8; }
-  .summary-box .sub { font-size: 9px; color: #666; }
-
-  /* Sections */
-  section { margin-bottom: 7px; }
-  h2 { font-size: 10px; font-weight: bold; margin: 0 0 3px 0; padding: 3px 6px; border-radius: 3px; }
-  h2.collected { background: #dcfce7; color: #166534; }
-  h2.expenses  { background: #fef3c7; color: #92400e; }
-  h2.bottom    { background: #dbeafe; color: #1e3a8a; }
-
-  /* Tables */
-  table { width: 100%; border-collapse: collapse; }
-  th { background: #073590; color: #fff; padding: 4px 6px; font-size: 10px; text-align: left; }
-  td { padding: 3px 6px; font-size: 11px; border-bottom: 1px solid #e5e7eb; vertical-align: middle; }
-  .center { text-align: center; }
-  .right   { text-align: right; }
-  .bold    { font-weight: bold; }
-  .expense-row td { height: 22px; }
-
-  /* Bottom row: net + signatures side by side */
-  .bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 2px; }
-  .net-box { border: 2px solid #1d4ed8; border-radius: 4px; padding: 5px 10px; display: flex; justify-content: space-between; align-items: center; }
-  .net-box .lbl { font-size: 11px; font-weight: bold; color: #1e3a8a; }
-  .net-box .val { font-size: 16px; font-weight: 900; color: #1e3a8a; }
-  .sig-box { display: flex; flex-direction: column; gap: 8px; }
-  .sig-line { border-top: 1px solid #333; padding-top: 2px; font-size: 9px; color: #555; }
-
+  body { font-family: Arial, sans-serif; font-size: 13px; color: #000; margin: 0; }
+  h1 { font-size: 20px; margin: 0 0 4px 0; }
+  h2 { font-size: 14px; margin: 16px 0 5px 0; border-bottom: 2px solid #073590; padding-bottom: 3px; color: #073590; text-transform: uppercase; letter-spacing: 0.5px; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; border-bottom: 3px solid #073590; padding-bottom: 10px; }
+  .shift-badge { display: inline-block; background: #073590; color: #fff; padding: 3px 10px; border-radius: 4px; font-size: 13px; font-weight: bold; margin-top: 5px; }
+  .header-right { text-align: right; font-size: 12px; color: #444; line-height: 1.7; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
+  th { background: #073590; color: #fff; padding: 6px 8px; font-size: 12px; text-align: left; }
+  td { border: 1px solid #ddd; padding: 7px 9px; font-size: 13px; }
+  tr:nth-child(even) td { background: #f5f7fc; }
+  .summary-table td { font-size: 14px; padding: 9px 12px; }
+  .total-row td { font-size: 17px; font-weight: bold; background: #eff6ff !important; border-top: 2px solid #073590; }
+  .cash-row td { color: #166534; }
+  .card-row td { color: #1e40af; }
+  .noshow-row td { color: #991b1b; }
+  .pending-row td { color: #92400e; }
+  .net-section { margin-top: 14px; }
+  .net-row td { font-size: 16px; font-weight: bold; border: 2px solid #073590; background: #eff6ff !important; padding: 10px 12px; }
+  .expenses-table td { height: 30px; }
+  .expenses-total td { font-weight: bold; background: #fef9c3 !important; border-top: 2px solid #ca8a04; }
+  .empty-msg { color: #999; font-style: italic; padding: 6px 0; font-size: 12px; }
+  .page-break { page-break-before: always; }
+  .detail-total-cash td { font-weight: bold; background: #dcfce7 !important; border-top: 2px solid #16a34a; }
+  .detail-total-card td { font-weight: bold; background: #dbeafe !important; border-top: 2px solid #2563eb; }
+  .detail-total-noshow td { font-weight: bold; background: #fee2e2 !important; border-top: 2px solid #dc2626; }
   @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
 </style>
 </head>
 <body>
 
+<!-- PAGE 1: SUMMARY -->
 <div class="header">
-  <div class="header-left">
-    <h1>SkyParking – Финансов отчет</h1>
-    <p>${shiftLabel} &nbsp;|&nbsp; ${dateStr} &nbsp;|&nbsp; ${shiftTime}</p>
+  <div>
+    <h1>SkyParking – Отчет смяна</h1>
+    <div class="shift-badge">${shiftLabel} &nbsp;·&nbsp; ${dateStr} &nbsp;·&nbsp; ${shiftTime}</div>
   </div>
   <div class="header-right">
-    <div class="shift-badge">${shiftRange.shift === "day" ? "🌞 Дневна" : "🌙 Нощна"}</div>
-    <div>Отпечатано: ${printedAt}</div>
-    <div>Оператор: _____________________</div>
+    <div>Оператор: <strong>${operatorName}</strong></div>
+    <div>Разпечатано: ${printTime}</div>
   </div>
 </div>
 
-<div class="summary-grid">
-  <div class="summary-box green">
-    <label>✅ Общо събрани</label>
-    <div class="amount">€${stats.actual.toFixed(2)}</div>
-    <div class="sub">${stats.collectedBookings.length} транзакции</div>
-  </div>
-  <div class="summary-box cash">
-    <label>💵 В брой</label>
-    <div class="amount">€${stats.cash.toFixed(2)}</div>
-    <div class="sub">${stats.collectedBookings.filter((b: any) => b.paymentMethod === 'cash').length} плащания</div>
-  </div>
-  <div class="summary-box card">
-    <label>💳 С карта</label>
-    <div class="amount">€${stats.card.toFixed(2)}</div>
-    <div class="sub">${stats.collectedBookings.filter((b: any) => b.paymentMethod === 'card').length} плащания</div>
-  </div>
+<h2>Обобщение</h2>
+<table class="summary-table">
+  <tbody>
+    <tr class="total-row">
+      <td>✅ Събрани приходи</td>
+      <td style="text-align:right">€${revenueStats.collected.toFixed(2)}</td>
+    </tr>
+    <tr class="cash-row">
+      <td style="padding-left:24px">💵 В брой (${cashBookings.length})</td>
+      <td style="text-align:right">€${revenueStats.cash.toFixed(2)}</td>
+    </tr>
+    <tr class="card-row">
+      <td style="padding-left:24px">💳 С карта (${cardBookings.length})</td>
+      <td style="text-align:right">€${revenueStats.card.toFixed(2)}</td>
+    </tr>
+    ${revenueStats.pending > 0 ? `<tr class="pending-row">
+      <td>⏳ Неплатени – в паркинга (${revenueStats.pendingCount})</td>
+      <td style="text-align:right">€${revenueStats.pending.toFixed(2)}</td>
+    </tr>` : ''}
+    ${revenueStats.lost > 0 ? `<tr class="noshow-row">
+      <td>❌ No-show / Отпаднали (${revenueStats.lostBookings.length})</td>
+      <td style="text-align:right">€${revenueStats.lost.toFixed(2)}</td>
+    </tr>` : ''}
+  </tbody>
+</table>
+
+<h2>Разходи</h2>
+<table class="expenses-table">
+  <thead>
+    <tr>
+      <th style="width:68%">Описание</th>
+      <th style="text-align:right">Сума (€)</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${expenseLines}
+    <tr class="expenses-total">
+      <td>Общо разходи</td>
+      <td style="text-align:right">&nbsp;</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="net-section">
+  <h2>Нетен приход на смяната</h2>
+  <table>
+    <tbody>
+      <tr class="net-row">
+        <td>Събрани приходи (€${revenueStats.collected.toFixed(2)}) &minus; Разходи =</td>
+        <td style="text-align:right;min-width:130px">&nbsp;</td>
+      </tr>
+    </tbody>
+  </table>
 </div>
 
-<section>
-  <h2 class="collected">Събрани приходи</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>Клиент</th>
-        <th class="center" style="width:80px">Метод</th>
-        <th class="right" style="width:140px">Тип</th>
-        <th class="right" style="width:70px">Сума</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${txRows}
-      ${pendingRows}
-    </tbody>
-    <tfoot>
-      <tr style="background:#f0fdf4">
-        <td colspan="3" class="right bold">Общо приходи:</td>
-        <td class="right bold">€${stats.actual.toFixed(2)}</td>
-      </tr>
-    </tfoot>
-  </table>
-</section>
+<!-- PAGE 2: DETAILS -->
+<div class="page-break"></div>
 
-<section>
-  <h2 class="expenses">Разходи за смяната (попълни на ръка)</h2>
-  <table>
-    <thead><tr><th>Описание</th><th class="right" style="width:90px">Сума (€)</th></tr></thead>
-    <tbody>
-      ${expenseRows}
-      <tr style="background:#fef9c3">
-        <td class="right bold">Общо разходи:</td>
-        <td class="right bold">&nbsp;</td>
-      </tr>
-    </tbody>
-  </table>
-</section>
-
-<div class="bottom-grid">
+<div class="header">
   <div>
-    <h2 class="bottom">Нетен резултат</h2>
-    <div class="net-box">
-      <div class="lbl">Приходи − Разходи =</div>
-      <div class="val">€ __________</div>
-    </div>
+    <h1>SkyParking – Детайлна разбивка</h1>
+    <div class="shift-badge">${shiftLabel} &nbsp;·&nbsp; ${dateStr} &nbsp;·&nbsp; ${shiftTime}</div>
   </div>
-  <div class="sig-box" style="padding-top:16px">
-    <div class="sig-line">Предал смяната: ___________________________</div>
-    <div class="sig-line">Приел смяната: ____________________________</div>
+  <div class="header-right">
+    <div>Оператор: <strong>${operatorName}</strong></div>
   </div>
 </div>
+
+<h2>💵 Платени в брой (${cashBookings.length})</h2>
+${cashBookings.length > 0 ? `<table>
+  <thead>
+    <tr>
+      <th>Клиент</th>
+      <th style="text-align:right">Базова цена</th>
+      <th style="text-align:right">Закъснение</th>
+      <th style="text-align:right">Общо</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${cashRows}
+    <tr class="detail-total-cash">
+      <td colspan="3">Общо в брой</td>
+      <td style="text-align:right">€${revenueStats.cash.toFixed(2)}</td>
+    </tr>
+  </tbody>
+</table>` : `<p class="empty-msg">Няма плащания в брой</p>`}
+
+<h2>💳 Платени с карта (${cardBookings.length})</h2>
+${cardBookings.length > 0 ? `<table>
+  <thead>
+    <tr>
+      <th>Клиент</th>
+      <th style="text-align:right">Базова цена</th>
+      <th style="text-align:right">Закъснение</th>
+      <th style="text-align:right">Общо</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${cardRows}
+    <tr class="detail-total-card">
+      <td colspan="3">Общо с карта</td>
+      <td style="text-align:right">€${revenueStats.card.toFixed(2)}</td>
+    </tr>
+  </tbody>
+</table>` : `<p class="empty-msg">Няма плащания с карта</p>`}
+
+<h2>❌ No-show / Отпаднали (${revenueStats.lostBookings.length})</h2>
+${revenueStats.lostBookings.length > 0 ? `<table>
+  <thead>
+    <tr>
+      <th>Клиент</th>
+      <th>Статус</th>
+      <th style="text-align:right">Очаквана сума</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${noShowRows}
+    <tr class="detail-total-noshow">
+      <td colspan="2">Общо отпаднали</td>
+      <td style="text-align:right">€${revenueStats.lost.toFixed(2)}</td>
+    </tr>
+  </tbody>
+</table>` : `<p class="empty-msg">Няма no-show или отпаднали резервации</p>`}
 
 </body>
 </html>`;
@@ -2451,18 +2487,14 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
       paidBookings.reduce((sum, b) => sum + (b.finalPrice || b.totalPrice), 0) +
       lateFeeBookings.reduce((sum, b) => sum + (b.lateSurcharge || 0), 0);
     
-    // By payment method (including late fee-only bookings)
-    const cashRevenue =
-      paidBookings.filter(b => b.paymentMethod === "cash")
-        .reduce((sum, b) => sum + (b.finalPrice || b.totalPrice), 0) +
-      lateFeeBookings.filter(b => b.paymentMethod === "cash")
-        .reduce((sum, b) => sum + (b.lateSurcharge || 0), 0);
-
-    const cardRevenue =
-      paidBookings.filter(b => b.paymentMethod === "card")
-        .reduce((sum, b) => sum + (b.finalPrice || b.totalPrice), 0) +
-      lateFeeBookings.filter(b => b.paymentMethod === "card")
-        .reduce((sum, b) => sum + (b.lateSurcharge || 0), 0);
+    // By payment method
+    const cashRevenue = paidBookings
+      .filter(b => b.paymentMethod === "cash")
+      .reduce((sum, b) => sum + (b.finalPrice || b.totalPrice), 0);
+    
+    const cardRevenue = paidBookings
+      .filter(b => b.paymentMethod === "card")
+      .reduce((sum, b) => sum + (b.finalPrice || b.totalPrice), 0);
     
     // Breakdown by booking (for expandable view)
     const breakdown = paidBookings.map(b => ({
@@ -2507,26 +2539,14 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
       breakdown: breakdown,
 
       // Detailed breakdowns for new UI
-      collectedBookings: [
-        ...paidBookings.map(b => ({
-          id: b.id,
-          name: b.name,
-          amount: b.finalPrice || b.totalPrice,
-          paymentMethod: b.paymentMethod,
-          isLate: b.isLate || false,
-          lateFee: b.isLate ? (b.lateSurcharge || 0) : 0,
-          type: 'full' as const,
-        })),
-        ...lateFeeBookings.map(b => ({
-          id: b.id + '_latefee',
-          name: b.name,
-          amount: b.lateSurcharge || 0,
-          paymentMethod: b.paymentMethod,
-          isLate: true,
-          lateFee: b.lateSurcharge || 0,
-          type: 'late_only' as const,
-        })),
-      ],
+      collectedBookings: paidBookings.map(b => ({
+        id: b.id,
+        name: b.name,
+        amount: b.finalPrice || b.totalPrice,
+        paymentMethod: b.paymentMethod,
+        isLate: b.isLate || false,
+        lateFee: b.isLate ? (b.lateSurcharge || 0) : 0
+      })),
 
       pendingBookings: pendingPaymentBookings.map(b => ({
         id: b.id,
@@ -3300,17 +3320,9 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
             {/* Revenue */}
             {activeTab === "revenue" && (
               <div className="space-y-4">
-                <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                <div className="flex items-center justify-between mb-4">
                   <h2 className="text-2xl font-bold">Дневни приходи</h2>
-                  <div className="flex items-center gap-2">
-                    {/* Print button */}
-                    <Button
-                      onClick={printShiftSummary}
-                      variant="outline"
-                      className="border-[#073590] text-[#073590] font-bold"
-                    >
-                      🖨️ Отчет
-                    </Button>
+                  <div className="flex items-center gap-3">
                     {/* Shift indicator (read-only) */}
                     <div className="px-4 py-2 bg-gray-100 border-2 border-gray-300 rounded-lg">
                       <div className="flex items-center gap-2">
@@ -3321,6 +3333,14 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                         </div>
                       </div>
                     </div>
+                    <Button
+                      variant="outline"
+                      onClick={printShiftReport}
+                      className="flex items-center gap-2 border-[#073590] text-[#073590] hover:bg-[#073590] hover:text-white"
+                    >
+                      <FileText className="w-4 h-4" />
+                      Отчет смяна
+                    </Button>
                   </div>
                 </div>
                 
@@ -3435,15 +3455,10 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                               {revenueStats.collectedBookings.map(item => (
                                 <div key={item.id} className="flex justify-between items-center bg-white p-3 rounded-lg border border-green-200">
                                   <div>
-                                    <div className="font-semibold text-base flex items-center gap-1">
-                                      {item.name}
-                                      {(item.type as any) === 'late_only' && (
-                                        <span className="ml-1 text-xs text-orange-600 bg-orange-50 border border-orange-200 px-1.5 py-0.5 rounded-full">само закъснение</span>
-                                      )}
-                                    </div>
+                                    <div className="font-semibold text-base">{item.name}</div>
                                     <div className="text-sm text-gray-600">
                                       {item.paymentMethod === "cash" ? "💵 В брой" : "💳 С карта"}
-                                      {item.isLate && item.lateFee > 0 && (item.type as any) !== 'late_only' && (
+                                      {item.isLate && item.lateFee > 0 && (
                                         <span className="ml-2 text-red-600">+ €{item.lateFee.toFixed(2)} закъснение</span>
                                       )}
                                     </div>
@@ -3532,25 +3547,23 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                   </div>
                 </Card>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Cash */}
-                  <Card className="p-6">
-                    <div className="flex items-center gap-3 mb-3">
-                      <Banknote className="w-7 h-7 text-green-600" />
-                      <h3 className="font-semibold text-xl">В брой</h3>
+                  <Card className="p-8">
+                    <div className="flex items-center gap-4 mb-6">
+                      <Banknote className="w-10 h-10 text-green-600" />
+                      <h3 className="font-semibold text-2xl">В брой</h3>
                     </div>
-                    <p className="text-4xl font-bold">€{revenueStats.cash.toFixed(2)}</p>
-                    <p className="text-sm text-gray-500 mt-1">{revenueStats.collectedBookings.filter(b => b.paymentMethod === "cash").length} плащания</p>
+                    <p className="text-5xl font-bold">€{revenueStats.cash.toFixed(2)}</p>
                   </Card>
 
                   {/* Card */}
-                  <Card className="p-6">
-                    <div className="flex items-center gap-3 mb-3">
-                      <CreditCard className="w-7 h-7 text-blue-600" />
-                      <h3 className="font-semibold text-xl">С карта</h3>
+                  <Card className="p-8">
+                    <div className="flex items-center gap-4 mb-6">
+                      <CreditCard className="w-10 h-10 text-blue-600" />
+                      <h3 className="font-semibold text-2xl">С карта</h3>
                     </div>
-                    <p className="text-4xl font-bold">€{revenueStats.card.toFixed(2)}</p>
-                    <p className="text-sm text-gray-500 mt-1">{revenueStats.collectedBookings.filter(b => b.paymentMethod === "card").length} плащания</p>
+                    <p className="text-5xl font-bold">€{revenueStats.card.toFixed(2)}</p>
                   </Card>
                 </div>
                 </>
