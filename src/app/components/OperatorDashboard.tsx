@@ -1810,7 +1810,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
     <table>
       <tbody>
         <tr class="net-row">
-          <td>€${revenueStats.collected.toFixed(2)} &minus; разходи =</td>
+          <td>💵 В брой (€${revenueStats.cash.toFixed(2)}) &minus; разходи =</td>
           <td style="text-align:right;min-width:90px">&nbsp;</td>
         </tr>
       </tbody>
