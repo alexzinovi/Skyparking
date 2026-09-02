@@ -72,7 +72,8 @@ export function CheckoutModal({
       setExtraDays(extra);
 
       if (extra > 0) {
-        const fee = await calculateLateFee(extra, booking.numberOfCars);
+        const totalStayPrice = await calculateLateFee(totalDays, booking.numberOfCars);
+        const fee = Math.max(0, totalStayPrice - booking.totalPrice);
         setAutoCalculatedFee(fee);
         setAdjustedFee(fee);
       } else {
