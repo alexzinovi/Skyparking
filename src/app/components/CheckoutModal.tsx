@@ -72,11 +72,8 @@ export function CheckoutModal({
       setExtraDays(extra);
 
       if (extra > 0) {
-        const [origPrice, extPrice] = await Promise.all([
-          calculateLateFee(originalDays, booking.numberOfCars),
-          calculateLateFee(totalDays, booking.numberOfCars),
-        ]);
-        const fee = Math.max(0, extPrice - origPrice);
+        const extPrice = await calculateLateFee(totalDays, booking.numberOfCars);
+        const fee = Math.max(0, extPrice - booking.totalPrice);
         setAutoCalculatedFee(fee);
         setAdjustedFee(fee);
       } else {

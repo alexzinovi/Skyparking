@@ -796,15 +796,15 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
               let lateSurcharge = 0;
               if (extendedDays > originalDays) {
                 try {
-                  const [origRes, extRes] = await Promise.all([
-                    fetch(`https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/pricing/calculate?days=${originalDays}`, { headers: { "Authorization": `Bearer ${publicAnonKey}` } }),
-                    fetch(`https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/pricing/calculate?days=${extendedDays}`, { headers: { "Authorization": `Bearer ${publicAnonKey}` } }),
-                  ]);
-                  if (origRes.ok && extRes.ok) {
-                    const [origData, extData] = await Promise.all([origRes.json(), extRes.json()]);
-                    if (origData.success && extData.success) {
+                  const extRes = await fetch(
+                    `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/pricing/calculate?days=${extendedDays}`,
+                    { headers: { "Authorization": `Bearer ${publicAnonKey}` } }
+                  );
+                  if (extRes.ok) {
+                    const extData = await extRes.json();
+                    if (extData.success) {
                       const cars = b.numberOfCars || 1;
-                      lateSurcharge = Math.max(0, (extData.price - origData.price) * cars);
+                      lateSurcharge = Math.max(0, extData.price * cars - b.totalPrice);
                     }
                   }
                 } catch (e) {
