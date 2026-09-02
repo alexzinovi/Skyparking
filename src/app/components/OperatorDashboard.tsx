@@ -795,16 +795,17 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
 
               let lateSurcharge = 0;
               if (extendedDays > originalDays) {
+                const extraDays = extendedDays - originalDays;
                 try {
-                  const extRes = await fetch(
-                    `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/pricing/calculate?days=${extendedDays}`,
+                  const dayRateRes = await fetch(
+                    `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/pricing/calculate?days=1`,
                     { headers: { "Authorization": `Bearer ${publicAnonKey}` } }
                   );
-                  if (extRes.ok) {
-                    const extData = await extRes.json();
-                    if (extData.success) {
+                  if (dayRateRes.ok) {
+                    const dayRateData = await dayRateRes.json();
+                    if (dayRateData.success) {
                       const cars = b.numberOfCars || 1;
-                      lateSurcharge = Math.max(0, extData.price * cars - b.totalPrice);
+                      lateSurcharge = dayRateData.price * extraDays * cars;
                     }
                   }
                 } catch (e) {
