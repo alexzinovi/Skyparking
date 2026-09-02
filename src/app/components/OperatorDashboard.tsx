@@ -797,15 +797,15 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
               if (extendedDays > originalDays) {
                 const extraDays = extendedDays - originalDays;
                 try {
-                  const dayRateRes = await fetch(
-                    `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/pricing/calculate?days=1`,
+                  const extRes = await fetch(
+                    `https://${projectId}.supabase.co/functions/v1/make-server-47a4914e/pricing/calculate?days=${extraDays}`,
                     { headers: { "Authorization": `Bearer ${publicAnonKey}` } }
                   );
-                  if (dayRateRes.ok) {
-                    const dayRateData = await dayRateRes.json();
-                    if (dayRateData.success) {
+                  if (extRes.ok) {
+                    const extData = await extRes.json();
+                    if (extData.success) {
                       const cars = b.numberOfCars || 1;
-                      lateSurcharge = dayRateData.price * extraDays * cars;
+                      lateSurcharge = extData.price * cars;
                     }
                   }
                 } catch (e) {

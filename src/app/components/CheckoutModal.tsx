@@ -72,8 +72,7 @@ export function CheckoutModal({
       setExtraDays(extra);
 
       if (extra > 0) {
-        const dayRatePerCar = await calculateLateFee(1, 1);
-        const fee = dayRatePerCar * extra * booking.numberOfCars;
+        const fee = await calculateLateFee(extra, booking.numberOfCars);
         setAutoCalculatedFee(fee);
         setAdjustedFee(fee);
       } else {
