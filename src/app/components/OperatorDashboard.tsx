@@ -2430,14 +2430,22 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
       paidBookings.reduce((sum, b) => sum + (b.finalPrice || b.totalPrice), 0) +
       lateFeeBookings.reduce((sum, b) => sum + (b.lateSurcharge || 0), 0);
     
-    // By payment method
-    const cashRevenue = paidBookings
-      .filter(b => b.paymentMethod === "cash")
-      .reduce((sum, b) => sum + (b.finalPrice || b.totalPrice), 0);
-    
-    const cardRevenue = paidBookings
-      .filter(b => b.paymentMethod === "card")
-      .reduce((sum, b) => sum + (b.finalPrice || b.totalPrice), 0);
+    // By payment method — include late fees from lateFeeBookings so cash+card = collected total
+    const cashRevenue =
+      paidBookings
+        .filter(b => b.paymentMethod === "cash")
+        .reduce((sum, b) => sum + (b.finalPrice || b.totalPrice), 0) +
+      lateFeeBookings
+        .filter(b => b.paymentMethod === "cash")
+        .reduce((sum, b) => sum + (b.lateSurcharge || 0), 0);
+
+    const cardRevenue =
+      paidBookings
+        .filter(b => b.paymentMethod === "card")
+        .reduce((sum, b) => sum + (b.finalPrice || b.totalPrice), 0) +
+      lateFeeBookings
+        .filter(b => b.paymentMethod === "card")
+        .reduce((sum, b) => sum + (b.lateSurcharge || 0), 0);
     
     // Breakdown by booking (for expandable view)
     const breakdown = paidBookings.map(b => ({
@@ -2482,14 +2490,24 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
       breakdown: breakdown,
 
       // Detailed breakdowns for new UI
-      collectedBookings: paidBookings.map(b => ({
-        id: b.id,
-        name: b.name,
-        amount: b.finalPrice || b.totalPrice,
-        paymentMethod: b.paymentMethod,
-        isLate: b.isLate || false,
-        lateFee: b.isLate ? (b.lateSurcharge || 0) : 0
-      })),
+      collectedBookings: [
+        ...paidBookings.map(b => ({
+          id: b.id,
+          name: b.name,
+          amount: b.finalPrice || b.totalPrice,
+          paymentMethod: b.paymentMethod,
+          isLate: b.isLate || false,
+          lateFee: b.isLate ? (b.lateSurcharge || 0) : 0
+        })),
+        ...lateFeeBookings.map(b => ({
+          id: b.id + '-latefee',
+          name: b.name,
+          amount: b.lateSurcharge || 0,
+          paymentMethod: b.paymentMethod,
+          isLate: true,
+          lateFee: b.lateSurcharge || 0
+        })),
+      ],
 
       pendingBookings: pendingPaymentBookings.map(b => ({
         id: b.id,
