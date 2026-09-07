@@ -285,7 +285,7 @@ export function ReservationCard({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Euro className="h-5 w-5 text-green-700" />
-            <span className="font-black text-2xl text-green-800">€{(reservation.finalPrice || reservation.totalPrice).toFixed(2)}</span>
+            <span className="font-black text-2xl text-green-800">{(reservation.finalPrice || reservation.totalPrice).toFixed(2)}</span>
           </div>
           {/* Simple Paid/Unpaid Status */}
           <div className="flex items-center gap-1">
