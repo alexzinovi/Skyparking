@@ -1285,6 +1285,16 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
   };
 
   // Accept new reservation
+  const saveContactToGoogle = (name: string, phone: string, arrivalDate: string, departureDate: string) => {
+    const fmtDate = (d: string) => { const [, m, day] = d.split('-'); return `${day}.${m}`; };
+    const contactName = `${name} ${fmtDate(arrivalDate)}-${fmtDate(departureDate)}`;
+    fetch("https://hook.eu1.make.com/i4gw1wwikq7a48wueepf7iapsntaa6d6", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contactName, phone, arrivalDate, departureDate }),
+    }).catch(() => {});
+  };
+
   const handleAcceptReservation = async (booking: Booking) => {
     if (!confirm(`Потвърждавате ли резервацията на ${booking.name}?`)) return;
 
@@ -1312,18 +1322,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
         fetchBookings(false);
 
         // Save contact to Google via Make.com webhook
-        const fmtDate = (d: string) => { const [, m, day] = d.split('-'); return `${day}.${m}`; };
-        const contactName = `${booking.name} ${fmtDate(booking.arrivalDate)}-${fmtDate(booking.departureDate)}`;
-        fetch("https://hook.eu1.make.com/i4gw1wwikq7a48wueepf7iapsntaa6d6", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contactName,
-            phone: booking.phone,
-            arrivalDate: booking.arrivalDate,
-            departureDate: booking.departureDate,
-          }),
-        }).catch(() => {}); // fire and forget
+        saveContactToGoogle(booking.name, booking.phone, booking.arrivalDate, booking.departureDate);
       } else {
         toast.error(data.message || "Грешка");
       }
@@ -2182,6 +2181,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
           toast.success("Резервацията е създадена");
           setShowBookingForm(false);
           fetchBookings(false);
+          saveContactToGoogle(bookingForm.name, bookingForm.phone, bookingForm.arrivalDate, bookingForm.departureDate);
         } else {
           toast.error(data.message || "Грешка");
         }
