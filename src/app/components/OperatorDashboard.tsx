@@ -591,6 +591,7 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
   
   // Revenue breakdown expansion
   const [revenueExpanded, setRevenueExpanded] = useState(false);
+  const [expandedLeavingIds, setExpandedLeavingIds] = useState<Set<string>>(new Set());
   
   // Auto-refresh state
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
@@ -3158,10 +3159,83 @@ export function OperatorDashboard({ onLogout, currentUser, permissions }: Operat
                 </div>
                 {leavingToday.length === 0 ? (
                   <Card className="p-16 text-center text-gray-500 text-xl">
-                    {searchQuery ? `Няма ре��ултати за "${searchQuery}"` : "Няма напускащи за тази смяна"}
+                    {searchQuery ? `Няма резултати за "${searchQuery}"` : "Няма напускащи за тази смяна"}
                   </Card>
                 ) : (
-                  leavingToday.map(booking => renderBookingCard(booking, "leaving"))
+                  <div className="space-y-2">
+                    {leavingToday.map(booking => {
+                      const isExpanded = expandedLeavingIds.has(booking.id);
+                      const toggleExpand = () => setExpandedLeavingIds(prev => {
+                        const next = new Set(prev);
+                        if (next.has(booking.id)) next.delete(booking.id);
+                        else next.add(booking.id);
+                        return next;
+                      });
+                      const amountDue = booking.finalPrice ?? booking.totalPrice;
+                      const isPaid = booking.paymentStatus === "paid";
+
+                      return (
+                        <div key={booking.id} className="bg-white rounded-xl border-2 border-gray-200 overflow-hidden shadow-sm">
+                          {/* Compact row */}
+                          <div
+                            className="flex items-center gap-3 p-3 cursor-pointer active:bg-gray-50"
+                            onClick={toggleExpand}
+                          >
+                            {/* Left: name + badges */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-bold text-base truncate">{booking.name}</span>
+                                {booking.isLate && (
+                                  <span className="text-xs font-bold text-white bg-red-500 rounded px-1.5 py-0.5 shrink-0">⏰ ЗАКЪСНЯВА</span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                <span className="text-sm text-gray-500">🕐 {booking.departureTime}</span>
+                                <span className={`text-xs font-semibold px-1.5 py-0.5 rounded ${isPaid ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                                  {isPaid ? '✓ Платено' : '⚠ Неплатено'}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Right: amount + chevron */}
+                            <div className="text-right shrink-0">
+                              <div className="font-black text-lg text-[#073590]">€{amountDue.toFixed(2)}</div>
+                              {booking.isLate && booking.lateSurcharge ? (
+                                <div className="text-xs text-red-600 font-semibold">+€{booking.lateSurcharge.toFixed(2)}</div>
+                              ) : null}
+                            </div>
+                            <ChevronDown className={`w-5 h-5 text-gray-400 shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                          </div>
+
+                          {/* Action buttons row (always visible) */}
+                          <div className="flex gap-2 px-3 pb-3">
+                            <a
+                              href={`tel:${booking.phone}`}
+                              onClick={e => e.stopPropagation()}
+                              className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border-2 border-gray-300 text-gray-700 font-semibold text-sm bg-white hover:bg-gray-50 shrink-0"
+                            >
+                              <Phone className="w-4 h-4" />
+                              Обади се
+                            </a>
+                            <Button
+                              onClick={e => { e.stopPropagation(); handleCheckout(booking); }}
+                              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold h-10"
+                            >
+                              <CheckCircle className="w-4 h-4 mr-1" />
+                              {booking.isLate ? `Напусна (+€${(booking.lateSurcharge || 0).toFixed(2)})` : 'Напусна'}
+                            </Button>
+                          </div>
+
+                          {/* Expanded full card */}
+                          {isExpanded && (
+                            <div className="border-t-2 border-gray-100 p-3">
+                              {renderBookingCard(booking, "leaving")}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
             )}
